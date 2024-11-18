@@ -144,7 +144,7 @@ const fetchPackagesDirectory = async (
 export const fetchPlugins = async (): Promise<Plugin[]> => {
   try {
     const response = await fetch(
-      "https://api.github.com/search/repositories?q=topic:payload-plugin+fork:true&sort=stars&order=desc&per_page=100",
+      "https://api.github.com/search/repositories?q=topic:payload-plugin+fork:true&sort=stars&order=desc&per_page=500",
       {
         headers: { Accept: "application/vnd.github.v3+json" },
         next: { revalidate: 86400 } // 24 hours
