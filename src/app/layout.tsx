@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -35,8 +35,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+           
         {children}
         </ThemeProvider>
+        <SpeedInsights/>
       </body>
     </html>
   );
