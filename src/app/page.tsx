@@ -1,10 +1,10 @@
-import PluginDirectory from "@/components/PluginDirectory";
+import { PluginDirectory } from "@/components/PluginDirectory";
+import { fetchPlugins } from "@/lib/getPlugins";
 
+ 
 
-export default function Home() {
-  return (
-    <div>
-      <PluginDirectory />
-    </div>
-  );
+export default async function Page() {
+  const plugins = await fetchPlugins();
+
+  return <PluginDirectory plugins={plugins} />;
 }
