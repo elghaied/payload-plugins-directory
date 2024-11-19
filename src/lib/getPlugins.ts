@@ -36,7 +36,7 @@ export const fetchPackageJsonContent = async (
 ): Promise<PackageJson | null> => {
   try {
     const packageJsonUrl = `https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/${repo.default_branch}/${path}/package.json`;
-    console.log(packageJsonUrl);
+ 
     const response = await fetch(packageJsonUrl);
     return response.ok ? await response.json() : null;
   } catch (err) {
@@ -110,7 +110,7 @@ const fetchPackagesDirectory = async (
 ): Promise<PackagePlugin[]> => {
   try {
     const packagesApiUrl = `https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/packages?ref=${repo.default_branch}`;
-    console.log(packagesApiUrl);
+   
     const response = await fetch(packagesApiUrl);
 
     if (!response.ok) return [];
