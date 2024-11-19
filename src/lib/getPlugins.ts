@@ -36,6 +36,7 @@ export const fetchPackageJsonContent = async (
 ): Promise<PackageJson | null> => {
   try {
     const packageJsonUrl = `https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/${repo.default_branch}/${path}/package.json`;
+    console.log(packageJsonUrl);
     const response = await fetch(packageJsonUrl);
     return response.ok ? await response.json() : null;
   } catch (err) {
@@ -58,7 +59,7 @@ export const fetchPluginDetails = async (repo: GitHubRepo): Promise<Plugin[]> =>
           description: repo.description || "No description available",
           stars: repo.stargazers_count,
           forks: repo.forks_count,
-          lastUpdate: repo.updated_at,
+          lastUpdate: repo.pushed_at,
           owner: repo.owner.login,
           url: repo.html_url,
           topics: repo.topics || [],
@@ -78,7 +79,7 @@ export const fetchPluginDetails = async (repo: GitHubRepo): Promise<Plugin[]> =>
               description: pkg.packageJson.description || "No description available",
               stars: repo.stargazers_count,
               forks: repo.forks_count,
-              lastUpdate: repo.updated_at,
+              lastUpdate: repo.pushed_at,
               owner: repo.owner.login,
               url: `${repo.html_url}/tree/${repo.default_branch}/${pkg.path}`,
               topics: repo.topics || [],
@@ -109,6 +110,7 @@ const fetchPackagesDirectory = async (
 ): Promise<PackagePlugin[]> => {
   try {
     const packagesApiUrl = `https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/packages?ref=${repo.default_branch}`;
+    console.log(packagesApiUrl);
     const response = await fetch(packagesApiUrl);
 
     if (!response.ok) return [];

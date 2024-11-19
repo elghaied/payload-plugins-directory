@@ -11,6 +11,7 @@ export interface GitHubContent {
     stargazers_count: number;
     forks_count: number;
     updated_at: string;
+    pushed_at:string;
     html_url: string;
     topics: string[];
     owner: {
