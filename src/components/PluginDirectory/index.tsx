@@ -25,7 +25,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   plugins,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("stars");
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
   const [versionFilter, setVersionFilter] = useState<VersionFilter>("all");
 
   const formatDate = (dateString: string): string => {
