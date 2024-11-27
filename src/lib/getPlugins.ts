@@ -1,6 +1,12 @@
 import { GitHubContent, GitHubRepo, PackageJson, Plugin } from "../types";
-
+let cachedPlugins: Plugin[] | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 export const extractMajorVersions = (version: string): number[] => {
+  if (version.toLowerCase().includes('beta')) {
+    return [3];
+  }
+
   const versionRanges = version.split("||").map((v) => v.trim());
   const majorVersions = new Set<number>();
 
@@ -144,12 +150,18 @@ const fetchPackagesDirectory = async (
 };
 
 export const fetchPlugins = async (): Promise<Plugin[]> => {
+
+  const now = Date.now();
+
+  if (cachedPlugins && (now - lastFetchTime < CACHE_DURATION)) {
+    return cachedPlugins;
+  }
   try {
     const response = await fetch(
       "https://api.github.com/search/repositories?q=topic:payload-plugin+fork:true&sort=stars&order=desc&per_page=500",
       {
         headers: { Accept: "application/vnd.github.v3+json" },
-        next: { revalidate: 86400 } // 24 hours
+        next: { revalidate: CACHE_DURATION / 1000 } // 24 hours
       }
     );
 
@@ -162,12 +174,16 @@ export const fetchPlugins = async (): Promise<Plugin[]> => {
       data.items.map((repo: GitHubRepo) => fetchPluginDetails(repo))
     );
 
-    return pluginsWithVersion.flat().filter(
+    cachedPlugins = pluginsWithVersion.flat().filter(
       (plugin): plugin is Plugin =>
         plugin !== null && plugin !== undefined
     );
+
+    lastFetchTime = now;
+
+    return cachedPlugins;
   } catch (err) {
     console.error("Error fetching plugins:", err);
-    return [];
+    return cachedPlugins || [];  
   }
 };
