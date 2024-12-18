@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plugin, SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ModeToggle } from "../mode-toggler";
-import Link from "next/link";
+ 
 
 interface PluginDirectoryProps {
   plugins: Plugin[];
@@ -73,27 +73,29 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             <h1 className="text-4xl font-bold mb-4">
               Payload CMS Plugin Directory
             </h1>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               Discover community-made plugins for Payload CMS.
             </p>
           </div>
           <div className="  flex items-start justify-start  gap-2 ">
-            <Link
+            <a
               href="https://github.com/payloadcms/payload"
               target="_blank"
               rel="noopener noreferrer"
               className=" rounded-full  h-9 w-9 bg-background border flex items-center justify-center"
+              aria-label="Payload CMS Github repo"
             >
               <PayloadIcon className="  h-4 w-4" />
-            </Link>
-            <Link
+            </a>
+            <a
               href="https://github.com/elghaied/payload-plugins-directory"
               target="_blank"
               rel="noopener noreferrer"
               className=" rounded-full  h-9 w-9 bg-background border flex items-center justify-center"
+              aria-label="Github repo"
             >
               <Github className="  h-4 w-4" />
-            </Link>
+            </a>
 
             <ModeToggle />
           </div>
@@ -101,7 +103,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
         <div className="flex flex-col gap-4 mb-6 sm:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-600 dark:text-gray-400" />
             <Input
               placeholder="Search plugins..."
               className="pl-10"
@@ -142,12 +144,12 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
       </div>
 
       {filteredAndSortedPlugins.length === 0 ? (
-        <div className="text-center py-12 text-gray-600">
+        <div className="text-center py-12 text-gray-600 dark:text-gray-400">
           No plugins found matching your search criteria.
         </div>
       ) : (
-        <div>
-          <p className="text-gray-600 mb-4">
+        <main>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             {filteredAndSortedPlugins.length} plugins found
           </p>
 
@@ -200,7 +202,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 mb-4">{plugin.description}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">{plugin.description}</p>
 
                   <div className="flex gap-4 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
@@ -221,7 +223,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                       .map((topic) => (
                         <span
                           key={`${plugin.id}-${topic}`}
-                          className="px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600"
+                          className="px-2 py-1 bg-gray-100 rounded-full text-sm text-gray-600 "
                         >
                           {topic}
                         </span>
@@ -231,7 +233,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               </Card>
             ))}
           </div>
-        </div>
+        </main>
       )}
     </div>
   );
