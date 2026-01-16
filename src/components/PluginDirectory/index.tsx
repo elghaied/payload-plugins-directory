@@ -41,7 +41,7 @@ interface PluginDirectoryProps {
 }
 
 const versionColors: Record<number, string> = {
-  0: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300",
+  0: "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300", // Unknown version
   1: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   2: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   3: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
@@ -128,7 +128,8 @@ function PluginCard({ plugin }: { plugin: Plugin }) {
               variant="secondary"
               className={`${versionColors[v] || "bg-gray-100"} text-xs font-medium`}
             >
-              <PayloadIcon className="h-3 w-3 mr-1" />v{v}
+              <PayloadIcon className="h-3 w-3 mr-1" />
+              {v === 0 ? "v?" : `v${v}`}
             </Badge>
           ))}
           {plugin.license && (
@@ -308,8 +309,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   // Stats
   const stats = useMemo(() => {
-    const result = { v1: 0, v2: 0, v3: 0, official: 0, community: 0 };
+    const result = { v1: 0, v2: 0, v3: 0, unknown: 0, official: 0, community: 0 };
     plugins.forEach((p) => {
+      if (p.payloadVersionMajor.includes(0)) result.unknown++;
       if (p.payloadVersionMajor.includes(1)) result.v1++;
       if (p.payloadVersionMajor.includes(2)) result.v2++;
       if (p.payloadVersionMajor.includes(3)) result.v3++;
@@ -390,6 +392,15 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               >
                 v1: {stats.v1}
               </Badge>
+              <Badge
+                variant="outline"
+                className={`${versionColors[0]} border-0 cursor-pointer hover:opacity-80`}
+                onClick={() =>
+                  handleVersionChange(versionFilter === "0" ? "all" : "0")
+                }
+              >
+                v?: {stats.unknown}
+              </Badge>
             </div>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2 text-sm">
@@ -437,6 +448,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 <SelectItem value="3">Payload v3</SelectItem>
                 <SelectItem value="2">Payload v2</SelectItem>
                 <SelectItem value="1">Payload v1</SelectItem>
+                <SelectItem value="0">Unknown (v?)</SelectItem>
               </SelectContent>
             </Select>
 

@@ -283,7 +283,7 @@ async function processRepository(repo: GitHubRepo): Promise<Plugin[]> {
       const payloadVersion = getPayloadVersion(rootPackageJson);
 
       if (payloadVersion) {
-        // Single package repo
+        // Single package repo with detected payload version
         const readme = await fetchReadmePreview(repo);
 
         plugins.push({
@@ -311,9 +311,10 @@ async function processRepository(repo: GitHubRepo): Promise<Plugin[]> {
         // Check for monorepo structure
         const packagePlugins = await fetchPackagesDirectory(repo);
 
-        for (const pkg of packagePlugins) {
-          const payloadVersion = getPayloadVersion(pkg.packageJson);
-          if (payloadVersion) {
+        if (packagePlugins.length > 0) {
+          // It's a monorepo
+          for (const pkg of packagePlugins) {
+            const pkgPayloadVersion = getPayloadVersion(pkg.packageJson);
             plugins.push({
               id: `${repo.id}-${pkg.name}`,
               name: pkg.name.replace(/-/g, ' '),
@@ -329,18 +330,144 @@ async function processRepository(repo: GitHubRepo): Promise<Plugin[]> {
               url: `${repo.html_url}/tree/${repo.default_branch}/${pkg.path}`,
               topics: repo.topics || [],
               isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
-              payloadVersion,
-              payloadVersionMajor: extractMajorVersions(payloadVersion),
+              payloadVersion: pkgPayloadVersion,
+              payloadVersionMajor: pkgPayloadVersion ? extractMajorVersions(pkgPayloadVersion) : [0],
               license: repo.license?.spdx_id || null,
               openIssues: repo.open_issues_count,
               isArchived: repo.archived,
             });
           }
+        } else {
+          // Single package repo without detected payload version - include as unknown
+          const readme = await fetchReadmePreview(repo);
+
+          plugins.push({
+            id: `${repo.id}-root`,
+            name: repo.name.replace(/-/g, ' '),
+            packageName: rootPackageJson.name,
+            description: rootPackageJson.description || repo.description || 'No description available',
+            stars: repo.stargazers_count,
+            forks: repo.forks_count,
+            lastUpdate: repo.pushed_at,
+            createdAt: repo.created_at,
+            owner: repo.owner.login,
+            ownerAvatar: repo.owner.avatar_url,
+            url: repo.html_url,
+            topics: repo.topics || [],
+            isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
+            payloadVersion: null,
+            payloadVersionMajor: [0], // 0 represents unknown version
+            license: repo.license?.spdx_id || null,
+            openIssues: repo.open_issues_count,
+            isArchived: repo.archived,
+            readme,
+          });
         }
       }
+    } else {
+      // No package.json found - still include the plugin as unknown version
+      const readme = await fetchReadmePreview(repo);
+
+      plugins.push({
+        id: `${repo.id}-root`,
+        name: repo.name.replace(/-/g, ' '),
+        description: repo.description || 'No description available',
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        lastUpdate: repo.pushed_at,
+        createdAt: repo.created_at,
+        owner: repo.owner.login,
+        ownerAvatar: repo.owner.avatar_url,
+        url: repo.html_url,
+        topics: repo.topics || [],
+        isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
+        payloadVersion: null,
+        payloadVersionMajor: [0], // 0 represents unknown version
+        license: repo.license?.spdx_id || null,
+        openIssues: repo.open_issues_count,
+        isArchived: repo.archived,
+        readme,
+      });
     }
   } catch (error) {
     console.error(`Error processing ${repo.full_name}:`, error);
+  }
+
+  return plugins;
+}
+
+async function fetchOfficialPayloadPlugins(): Promise<Plugin[]> {
+  console.log('Fetching official Payload plugins from payloadcms/payload...');
+  const plugins: Plugin[] = [];
+
+  try {
+    // Fetch the main payload repo info for metadata
+    const repoUrl = 'https://api.github.com/repos/payloadcms/payload';
+    const repoResponse = await fetchWithRetry(repoUrl);
+    const payloadRepo: GitHubRepo = await repoResponse.json();
+
+    // Fetch packages directory
+    const packagesUrl = 'https://api.github.com/repos/payloadcms/payload/contents/packages?ref=main';
+    const packagesResponse = await fetchWithRetry(packagesUrl);
+
+    if (!packagesResponse.ok) {
+      console.warn('Failed to fetch packages directory from payload repo');
+      return plugins;
+    }
+
+    const contents = await packagesResponse.json();
+
+    // Filter for directories starting with 'plugin-'
+    const pluginDirs = contents.filter((item: { type: string; name: string }) =>
+      item.type === 'dir' && item.name.startsWith('plugin-')
+    );
+
+    console.log(`Found ${pluginDirs.length} official plugins`);
+
+    // Fetch package.json for each plugin
+    for (const dir of pluginDirs) {
+      try {
+        const packageJsonUrl = `https://raw.githubusercontent.com/payloadcms/payload/main/packages/${dir.name}/package.json`;
+        const response = await fetch(packageJsonUrl);
+
+        if (response.ok) {
+          const packageJson: PackageJson = await response.json();
+          const payloadVersion = getPayloadVersion(packageJson);
+
+          // Create a readable name from the directory (e.g., "plugin-seo" -> "seo")
+          const displayName = dir.name.replace('plugin-', '').replace(/-/g, ' ');
+
+          plugins.push({
+            id: `official-${dir.name}`,
+            name: displayName,
+            packageName: packageJson.name || `@payloadcms/${dir.name}`,
+            collection: 'payload',
+            description: packageJson.description || `Official Payload CMS ${displayName} plugin`,
+            stars: payloadRepo.stargazers_count,
+            forks: payloadRepo.forks_count,
+            lastUpdate: payloadRepo.pushed_at,
+            createdAt: payloadRepo.created_at,
+            owner: 'payloadcms',
+            ownerAvatar: payloadRepo.owner.avatar_url,
+            url: `https://github.com/payloadcms/payload/tree/main/packages/${dir.name}`,
+            topics: ['payload-plugin', 'official'],
+            isOfficial: true,
+            payloadVersion: payloadVersion,
+            payloadVersionMajor: payloadVersion ? extractMajorVersions(payloadVersion) : [3], // Official plugins default to v3
+            license: payloadRepo.license?.spdx_id || 'MIT',
+            openIssues: 0, // Individual plugins don't have separate issue counts
+            isArchived: false,
+          });
+        }
+      } catch (error) {
+        console.error(`Error fetching ${dir.name}:`, error);
+      }
+
+      // Small delay to avoid rate limiting
+      await sleep(50);
+    }
+  } catch (error) {
+    console.error('Error fetching official Payload plugins:', error);
   }
 
   return plugins;
@@ -350,27 +477,44 @@ async function main() {
   console.log('Starting plugin fetch...\n');
   const startTime = Date.now();
 
-  // Fetch all repositories
+  // Fetch official Payload plugins from the main repo
+  const officialPlugins = await fetchOfficialPayloadPlugins();
+  console.log(`Found ${officialPlugins.length} official plugins from payload monorepo\n`);
+
+  // Fetch all repositories with payload-plugin topic
   const repos = await searchRepositories();
   console.log(`\nProcessing ${repos.length} repositories...`);
 
   // Process repositories in batches
-  const allPlugins: Plugin[] = [];
+  const communityPlugins: Plugin[] = [];
   const batchSize = 10;
 
   for (let i = 0; i < repos.length; i += batchSize) {
     const batch = repos.slice(i, i + batchSize);
     const results = await Promise.all(batch.map(processRepository));
-    allPlugins.push(...results.flat());
+    communityPlugins.push(...results.flat());
 
     const progress = Math.min(i + batchSize, repos.length);
-    console.log(`Processed ${progress}/${repos.length} repositories (${allPlugins.length} plugins found)`);
+    console.log(`Processed ${progress}/${repos.length} repositories (${communityPlugins.length} plugins found)`);
 
     // Small delay between batches to be nice to GitHub
     if (i + batchSize < repos.length) {
       await sleep(200);
     }
   }
+
+  // Merge official and community plugins, avoiding duplicates
+  // Official plugins from monorepo take precedence
+  const officialPackageNames = new Set(officialPlugins.map(p => p.packageName?.toLowerCase()));
+  const filteredCommunityPlugins = communityPlugins.filter(p => {
+    // Skip if it's a duplicate of an official plugin by package name
+    if (p.packageName && officialPackageNames.has(p.packageName.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  const allPlugins = [...officialPlugins, ...filteredCommunityPlugins];
 
   // Sort by stars descending
   allPlugins.sort((a, b) => b.stars - a.stars);
@@ -392,7 +536,7 @@ async function main() {
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(outputData, null, 2));
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`\nDone! Found ${allPlugins.length} plugins in ${elapsed}s`);
+  console.log(`\nDone! Found ${allPlugins.length} plugins (${officialPlugins.length} official, ${filteredCommunityPlugins.length} community) in ${elapsed}s`);
   console.log(`Output saved to ${OUTPUT_PATH}`);
 }
 
