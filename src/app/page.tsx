@@ -1,10 +1,9 @@
 import { PluginDirectory } from "@/components/PluginDirectory";
-import { fetchPlugins } from "@/lib/getPlugins";
+import { getPlugins, getPluginsMetadata } from "@/lib/getPlugins";
 
- 
+export default function Page() {
+  const plugins = getPlugins();
+  const metadata = getPluginsMetadata();
 
-export default async function Page() {
-  const plugins = await fetchPlugins();
-
-  return <PluginDirectory plugins={plugins} />;
+  return <PluginDirectory plugins={plugins} metadata={metadata} />;
 }

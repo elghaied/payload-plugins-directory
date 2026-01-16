@@ -1,0 +1,44 @@
+name: Fetch Plugins
+
+on:
+  schedule:
+    # Run twice daily at 6 AM and 6 PM UTC
+    - cron: '0 6,18 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  fetch-plugins:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Fetch plugins from GitHub
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+        run: npx tsx scripts/fetch-plugins.ts
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code data/plugins.json || echo "changes=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/plugins.json
+          git commit -m "chore: update plugins data [skip ci]"
+          git push
