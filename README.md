@@ -14,10 +14,10 @@ A community-driven discovery platform for Payload CMS plugins, allowing develope
 
 ## Technology Stack
 
-- Next.js 15.0.3
-- React 19 RC
+- Next.js 16
+- React 19
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS 4
 - Shadcn/UI Components
 - GitHub API
 
@@ -49,7 +49,7 @@ A community-driven discovery platform for Payload CMS plugins, allowing develope
         └── PayloadIcon.tsx
         └── theme-provider.tsx
     └── 📁lib
-        └── getPlugins.ts           // API and Logic with cache and revalidation each day 
+        └── getPlugins.ts           // API and Logic with 6-hour cache
         └── utils.ts
     └── types.ts
 ```
