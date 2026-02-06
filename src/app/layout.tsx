@@ -15,8 +15,37 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Payload plugin directory",
-  description: "A directory of Payload plugins",
+  title: "Payload CMS Plugin Directory — Discover Community & Official Plugins",
+  description:
+    "Browse and discover 160+ Payload CMS plugins. Filter by version (v1, v2, v3), sort by stars, forks, or recent updates. Find official and community plugins for your Payload project.",
+  metadataBase: new URL("https://payload-plugins-directory.vercel.app"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Payload CMS Plugin Directory",
+    description:
+      "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",
+    url: "https://payload-plugins-directory.vercel.app",
+    siteName: "Payload Plugin Directory",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Payload CMS Plugin Directory",
+    description:
+      "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",
+  },
+  keywords: [
+    "payload cms",
+    "payload plugins",
+    "payload cms plugins",
+    "payload v3 plugins",
+    "payload v2 plugins",
+    "headless cms plugins",
+    "payload plugin directory",
+  ],
 };
 
 export default function RootLayout({
