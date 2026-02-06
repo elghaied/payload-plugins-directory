@@ -26,6 +26,13 @@ export function getPluginsMetadata(): { lastUpdated: string; totalCount: number 
 }
 
 /**
+ * Get a single plugin by its ID
+ */
+export function getPluginById(id: string): Plugin | undefined {
+  return (pluginsData as PluginsData).plugins.find((p) => p.id === id);
+}
+
+/**
  * Extract major versions from a Payload version string.
  * Useful for filtering and display.
  */

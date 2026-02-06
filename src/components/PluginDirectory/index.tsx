@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useCallback } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
@@ -92,14 +93,12 @@ function PluginCard({ plugin }: { plugin: Plugin }) {
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <a
-                href={plugin.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/plugins/${plugin.id}`}
                 className="font-semibold text-lg hover:text-primary transition-colors capitalize truncate"
               >
                 {plugin.name}
-              </a>
+              </Link>
               {plugin.isOfficial && (
                 <Badge className="bg-blue-500 text-white hover:bg-blue-600 text-xs">
                   Official
