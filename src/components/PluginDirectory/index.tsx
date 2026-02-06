@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
   GitFork,
@@ -220,11 +221,30 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   plugins,
   metadata,
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("featured");
-  const [versionFilter, setVersionFilter] = useState<VersionFilter>("all");
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const searchTerm = searchParams.get("q") || "";
+  const sortBy = (searchParams.get("sort") as SortOption) || "featured";
+  const versionFilter = (searchParams.get("version") as VersionFilter) || "all";
+  const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
+  const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+
+  const updateParams = useCallback(
+    (updates: Record<string, string | null>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === "" || value === "all" || value === "featured" || (key === "page" && value === "1")) {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      }
+      const qs = params.toString();
+      router.replace(qs ? `?${qs}` : "/", { scroll: false });
+    },
+    [searchParams, router]
+  );
 
   // Memoize filtered and sorted plugins
   const filteredAndSortedPlugins = useMemo(() => {
@@ -310,26 +330,22 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   // Reset to page 1 when filters change
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearchTerm(e.target.value);
-      setCurrentPage(1);
+      updateParams({ q: e.target.value, page: null });
     },
-    []
+    [updateParams]
   );
 
   const handleVersionChange = useCallback((value: VersionFilter) => {
-    setVersionFilter(value);
-    setCurrentPage(1);
-  }, []);
+    updateParams({ version: value, page: null });
+  }, [updateParams]);
 
   const handleSortChange = useCallback((value: SortOption) => {
-    setSortBy(value);
-    setCurrentPage(1);
-  }, []);
+    updateParams({ sort: value, page: null });
+  }, [updateParams]);
 
   const handleSourceChange = useCallback((value: SourceFilter) => {
-    setSourceFilter(value);
-    setCurrentPage(1);
-  }, []);
+    updateParams({ source: value, page: null });
+  }, [updateParams]);
 
   // Stats
   const stats = useMemo(() => {
@@ -539,9 +555,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               variant="outline"
               className="mt-4 cursor-pointer"
               onClick={() => {
-                setSearchTerm("");
-                setVersionFilter("all");
-                setSourceFilter("all");
+                updateParams({ q: null, version: null, source: null, sort: null, page: null });
               }}
             >
               Clear filters
@@ -561,7 +575,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onClick={() => updateParams({ page: String(Math.max(1, currentPage - 1)) })}
                   disabled={currentPage === 1}
                   className="cursor-pointer disabled:cursor-not-allowed"
                 >
@@ -595,7 +609,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                               currentPage === page ? "default" : "outline"
                             }
                             size="icon"
-                            onClick={() => setCurrentPage(page)}
+                            onClick={() => updateParams({ page: String(page) })}
                             className="w-10 cursor-pointer"
                           >
                             {page}
@@ -609,7 +623,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                   variant="outline"
                   size="icon"
                   onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    updateParams({ page: String(Math.min(totalPages, currentPage + 1)) })
                   }
                   disabled={currentPage === totalPages}
                   className="cursor-pointer disabled:cursor-not-allowed"
