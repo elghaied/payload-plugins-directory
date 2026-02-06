@@ -221,7 +221,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   metadata,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("stars");
+  const [sortBy, setSortBy] = useState<SortOption>("featured");
   const [versionFilter, setVersionFilter] = useState<VersionFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -229,6 +229,20 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   // Memoize filtered and sorted plugins
   const filteredAndSortedPlugins = useMemo(() => {
     const searchLower = searchTerm.toLowerCase();
+
+    // For "featured" sort: official plugins inherit the payload monorepo's
+    // stars (~40k), which vastly inflates their ranking. Compute a fair
+    // score by using the median of the top 10 community plugins' stars,
+    // so official plugins rank among popular community ones, not above all.
+    const communityByStars = plugins
+      .filter((p) => !p.isOfficial)
+      .map((p) => p.stars)
+      .sort((a, b) => b - a);
+    const top10 = communityByStars.slice(0, 10);
+    const officialEffectiveStars =
+      top10.length > 0
+        ? top10[Math.floor(top10.length / 2)]
+        : 0;
 
     return plugins
       .filter((plugin) => {
@@ -255,6 +269,16 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
       })
       .sort((a, b) => {
         switch (sortBy) {
+          case "featured": {
+            // Official plugins inherit the payload repo's stars (~40k),
+            // which isn't representative of the individual plugin's popularity.
+            // Cap official plugin stars to the max community plugin stars
+            // so they appear near the top but don't dominate the list.
+            const aStars = a.isOfficial ? officialEffectiveStars : a.stars;
+            const bStars = b.isOfficial ? officialEffectiveStars : b.stars;
+            if (bStars !== aStars) return bStars - aStars;
+            return new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime();
+          }
           case "stars":
             return b.stars - a.stars;
           case "forks":
@@ -469,6 +493,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="featured">Featured</SelectItem>
                 <SelectItem value="stars">Most Stars</SelectItem>
                 <SelectItem value="forks">Most Forks</SelectItem>
                 <SelectItem value="recent">Recently Updated</SelectItem>

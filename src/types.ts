@@ -66,5 +66,5 @@ export interface PluginsData {
   plugins: Plugin[];
 }
 
-export type SortOption = "stars" | "forks" | "recent" | "created" | "name";
+export type SortOption = "featured" | "stars" | "forks" | "recent" | "created" | "name";
 export type VersionFilter = "all" | "0" | "1" | "2" | "3"; // 0 = unknown version
