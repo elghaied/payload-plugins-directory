@@ -94,7 +94,32 @@ export default async function PluginDetailPage({
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: plugin.name,
+    description: plugin.description,
+    url: `https://payload-plugins-directory.vercel.app/plugins/${plugin.id}`,
+    applicationCategory: "Plugin",
+    operatingSystem: "Node.js",
+    author: {
+      "@type": "Person",
+      name: plugin.owner,
+    },
+    dateModified: plugin.lastUpdate,
+    dateCreated: plugin.createdAt,
+    ...(plugin.license ? { license: plugin.license } : {}),
+    ...(plugin.packageName
+      ? { offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } }
+      : {}),
+  };
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back navigation */}
@@ -287,5 +312,6 @@ export default async function PluginDetailPage({
         </a>
       </div>
     </div>
+    </>
   );
 }
