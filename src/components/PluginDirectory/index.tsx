@@ -19,6 +19,7 @@ import {
   Check,
   Sparkles,
   Rss,
+  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
@@ -581,6 +582,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               >
                 <Github className="h-4 w-4" />
               </a>
+              <Link
+                href="/stats"
+                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
+                aria-label="Ecosystem Stats"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </Link>
               <a
                 href="/feed.xml"
                 className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
