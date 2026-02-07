@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
   GitFork,
@@ -10,8 +11,6 @@ import {
   Clock,
   Github,
   ExternalLink,
-  ChevronLeft,
-  ChevronRight,
   Package,
   Scale,
   AlertCircle,
@@ -37,7 +36,7 @@ import { Plugin, SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ModeToggle } from "../mode-toggler";
 
-const ITEMS_PER_PAGE = 24;
+const ROW_HEIGHT_ESTIMATE = 420;
 
 interface PluginDirectoryProps {
   plugins: Plugin[];
@@ -304,7 +303,6 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   const versionFilter = (searchParams.get("version") as VersionFilter) || "all";
   const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
   const licenseFilter = searchParams.get("license") || "all";
-  const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
 
   const licenses = useMemo(() => {
     const set = new Set(plugins.map((p) => p.license).filter(Boolean) as string[]);
@@ -315,7 +313,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     (updates: Record<string, string | null>) => {
       const params = new URLSearchParams(searchParams.toString());
       for (const [key, value] of Object.entries(updates)) {
-        if (value === null || value === "" || value === "all" || value === "featured" || (key === "page" && value === "1")) {
+        if (value === null || value === "" || value === "all" || value === "featured") {
           params.delete(key);
         } else {
           params.set(key, value);
@@ -404,39 +402,59 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
       });
   }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
 
-  // Pagination
-  const totalPages = Math.ceil(filteredAndSortedPlugins.length / ITEMS_PER_PAGE);
-  const paginatedPlugins = useMemo(() => {
-    const start = (currentPage - 1) * ITEMS_PER_PAGE;
-    return filteredAndSortedPlugins.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredAndSortedPlugins, currentPage]);
+  // Responsive column count
+  const [columnCount, setColumnCount] = useState(3);
+  const parentRef = useRef<HTMLDivElement>(null);
 
-  // Reset to page 1 when filters change
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      setColumnCount(w >= 1024 ? 3 : w >= 640 ? 2 : 1);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const rowCount = Math.ceil(filteredAndSortedPlugins.length / columnCount);
+
+  const virtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT_ESTIMATE,
+    overscan: 3,
+  });
+
+  // Scroll to top when filters change
+  useEffect(() => {
+    parentRef.current?.scrollTo({ top: 0 });
+  }, [searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateParams({ q: e.target.value, page: null });
+      updateParams({ q: e.target.value });
     },
     [updateParams]
   );
 
   const handleVersionChange = useCallback((value: VersionFilter) => {
-    updateParams({ version: value, page: null });
+    updateParams({ version: value });
   }, [updateParams]);
 
   const handleSortChange = useCallback((value: SortOption) => {
-    updateParams({ sort: value, page: null });
+    updateParams({ sort: value });
   }, [updateParams]);
 
   const handleSourceChange = useCallback((value: SourceFilter) => {
-    updateParams({ source: value, page: null });
+    updateParams({ source: value });
   }, [updateParams]);
 
   const handleLicenseChange = useCallback((value: string) => {
-    updateParams({ license: value, page: null });
+    updateParams({ license: value });
   }, [updateParams]);
 
   const handleTopicClick = useCallback((topic: string) => {
-    updateParams({ q: topic, page: null });
+    updateParams({ q: topic });
   }, [updateParams]);
 
   // Stats
@@ -468,8 +486,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     versionFilter === "all" &&
     sourceFilter === "all" &&
     licenseFilter === "all" &&
-    sortBy === "featured" &&
-    currentPage === 1;
+    sortBy === "featured";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -686,8 +703,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         {/* Results count */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-muted-foreground">
-            Showing {paginatedPlugins.length} of {filteredAndSortedPlugins.length}{" "}
-            plugins
+            {filteredAndSortedPlugins.length} plugins
             {searchTerm && (
               <span>
                 {" "}
@@ -696,15 +712,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               </span>
             )}
           </p>
-          {totalPages > 1 && (
-            <p className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages}
-            </p>
-          )}
         </div>
 
         {/* Plugin grid */}
-        {paginatedPlugins.length === 0 ? (
+        {filteredAndSortedPlugins.length === 0 ? (
           <div className="text-center py-16">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary mb-4">
               <Search className="h-8 w-8 text-muted-foreground" />
@@ -718,84 +729,51 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               variant="outline"
               className="mt-4 cursor-pointer"
               onClick={() => {
-                updateParams({ q: null, version: null, source: null, license: null, sort: null, page: null });
+                updateParams({ q: null, version: null, source: null, license: null, sort: null });
               }}
             >
               Clear filters
             </Button>
           </div>
         ) : (
-          <>
-            <main className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {paginatedPlugins.map((plugin) => (
-                <PluginCard key={plugin.id} plugin={plugin} onTopicClick={handleTopicClick} />
-              ))}
+          <div
+            ref={parentRef}
+            className="overflow-auto"
+            style={{ height: "calc(100vh - 200px)" }}
+          >
+            <main
+              className="relative w-full"
+              style={{ height: virtualizer.getTotalSize() }}
+            >
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const startIndex = virtualRow.index * columnCount;
+                const rowPlugins = filteredAndSortedPlugins.slice(
+                  startIndex,
+                  startIndex + columnCount
+                );
+                return (
+                  <div
+                    key={virtualRow.key}
+                    data-index={virtualRow.index}
+                    ref={virtualizer.measureElement}
+                    className="absolute left-0 w-full grid gap-6"
+                    style={{
+                      transform: `translateY(${virtualRow.start}px)`,
+                      gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {rowPlugins.map((plugin) => (
+                      <PluginCard
+                        key={plugin.id}
+                        plugin={plugin}
+                        onTopicClick={handleTopicClick}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
             </main>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <nav className="flex items-center justify-center gap-2 mt-8">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => updateParams({ page: String(Math.max(1, currentPage - 1)) })}
-                  disabled={currentPage === 1}
-                  className="cursor-pointer disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((page) => {
-                      // Show first, last, current, and pages around current
-                      return (
-                        page === 1 ||
-                        page === totalPages ||
-                        Math.abs(page - currentPage) <= 1
-                      );
-                    })
-                    .map((page, index, array) => {
-                      // Add ellipsis if there's a gap
-                      const prevPage = array[index - 1];
-                      const showEllipsis = prevPage && page - prevPage > 1;
-
-                      return (
-                        <React.Fragment key={page}>
-                          {showEllipsis && (
-                            <span className="px-2 text-muted-foreground">
-                              ...
-                            </span>
-                          )}
-                          <Button
-                            variant={
-                              currentPage === page ? "default" : "outline"
-                            }
-                            size="icon"
-                            onClick={() => updateParams({ page: String(page) })}
-                            className="w-10 cursor-pointer"
-                          >
-                            {page}
-                          </Button>
-                        </React.Fragment>
-                      );
-                    })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() =>
-                    updateParams({ page: String(Math.min(totalPages, currentPage + 1)) })
-                  }
-                  disabled={currentPage === totalPages}
-                  className="cursor-pointer disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </nav>
-            )}
-          </>
+          </div>
         )}
 
         {/* Footer */}
