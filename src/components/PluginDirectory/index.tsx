@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -16,6 +16,8 @@ import {
   Scale,
   AlertCircle,
   SortAsc,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -78,6 +80,36 @@ function formatNumber(num: number): string {
     return `${(num / 1000).toFixed(1)}k`;
   }
   return num.toString();
+}
+
+function CopyInstallButton({ packageName }: { packageName: string }) {
+  const [copied, setCopied] = useState(false);
+  const command = `npm i ${packageName}`;
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(command);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [command]);
+
+  return (
+    <div className="flex items-center gap-1.5 mt-3 px-2.5 py-1.5 bg-secondary/50 rounded-md">
+      <code className="flex-1 truncate text-xs font-mono text-muted-foreground">
+        {command}
+      </code>
+      <button
+        onClick={handleCopy}
+        className="shrink-0 p-1 rounded hover:bg-secondary transition-colors cursor-pointer"
+        title="Copy install command"
+      >
+        {copied ? (
+          <Check className="h-3 w-3 text-emerald-500" />
+        ) : (
+          <Copy className="h-3 w-3 text-muted-foreground" />
+        )}
+      </button>
+    </div>
+  );
 }
 
 function PluginCard({ plugin }: { plugin: Plugin }) {
@@ -145,6 +177,10 @@ function PluginCard({ plugin }: { plugin: Plugin }) {
         <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
           {plugin.description}
         </p>
+
+        {plugin.packageName && (
+          <CopyInstallButton packageName={plugin.packageName} />
+        )}
 
         <div className="flex items-center justify-between mt-4 pt-3 border-t text-sm text-muted-foreground">
           <div className="flex items-center gap-3">
