@@ -303,7 +303,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   const sortBy = (searchParams.get("sort") as SortOption) || "featured";
   const versionFilter = (searchParams.get("version") as VersionFilter) || "all";
   const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
+  const licenseFilter = searchParams.get("license") || "all";
   const currentPage = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+
+  const licenses = useMemo(() => {
+    const set = new Set(plugins.map((p) => p.license).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [plugins]);
 
   const updateParams = useCallback(
     (updates: Record<string, string | null>) => {
@@ -360,7 +366,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           (sourceFilter === "official" && plugin.isOfficial) ||
           (sourceFilter === "community" && !plugin.isOfficial);
 
-        return matchesSearch && matchesVersion && matchesSource;
+        const matchesLicense =
+          licenseFilter === "all" || plugin.license === licenseFilter;
+
+        return matchesSearch && matchesVersion && matchesSource && matchesLicense;
       })
       .sort((a, b) => {
         switch (sortBy) {
@@ -393,7 +402,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             return 0;
         }
       });
-  }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter]);
+  }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
 
   // Pagination
   const totalPages = Math.ceil(filteredAndSortedPlugins.length / ITEMS_PER_PAGE);
@@ -420,6 +429,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   const handleSourceChange = useCallback((value: SourceFilter) => {
     updateParams({ source: value, page: null });
+  }, [updateParams]);
+
+  const handleLicenseChange = useCallback((value: string) => {
+    updateParams({ license: value, page: null });
   }, [updateParams]);
 
   const handleTopicClick = useCallback((topic: string) => {
@@ -454,6 +467,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     !searchTerm &&
     versionFilter === "all" &&
     sourceFilter === "all" &&
+    licenseFilter === "all" &&
     sortBy === "featured" &&
     currentPage === 1;
 
@@ -606,6 +620,20 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               </SelectContent>
             </Select>
 
+            <Select value={licenseFilter} onValueChange={handleLicenseChange}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue placeholder="License" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Licenses</SelectItem>
+                {licenses.map((lic) => (
+                  <SelectItem key={lic} value={lic}>
+                    {lic}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={sortBy} onValueChange={handleSortChange}>
               <SelectTrigger className="w-full sm:w-44">
                 <SortAsc className="h-4 w-4 mr-2" />
@@ -690,7 +718,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               variant="outline"
               className="mt-4 cursor-pointer"
               onClick={() => {
-                updateParams({ q: null, version: null, source: null, sort: null, page: null });
+                updateParams({ q: null, version: null, source: null, license: null, sort: null, page: null });
               }}
             >
               Clear filters
