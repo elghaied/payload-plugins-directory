@@ -112,7 +112,7 @@ function CopyInstallButton({ packageName }: { packageName: string }) {
   );
 }
 
-function PluginCard({ plugin }: { plugin: Plugin }) {
+function PluginCard({ plugin, onTopicClick }: { plugin: Plugin; onTopicClick?: (topic: string) => void }) {
   return (
     <Card className="group h-full flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-200">
       <CardHeader className="pb-3">
@@ -223,12 +223,13 @@ function PluginCard({ plugin }: { plugin: Plugin }) {
               .filter((t) => t !== "payload-plugin")
               .slice(0, 4)
               .map((topic) => (
-                <span
+                <button
                   key={topic}
-                  className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs"
+                  onClick={() => onTopicClick?.(topic)}
+                  className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded-full text-xs cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all"
                 >
                   {topic}
-                </span>
+                </button>
               ))}
             {plugin.topics.filter((t) => t !== "payload-plugin").length > 4 && (
               <span className="px-2 py-0.5 text-muted-foreground text-xs">
@@ -380,6 +381,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   const handleSourceChange = useCallback((value: SourceFilter) => {
     updateParams({ source: value, page: null });
+  }, [updateParams]);
+
+  const handleTopicClick = useCallback((topic: string) => {
+    updateParams({ q: topic, page: null });
   }, [updateParams]);
 
   // Stats
@@ -600,7 +605,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           <>
             <main className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {paginatedPlugins.map((plugin) => (
-                <PluginCard key={plugin.id} plugin={plugin} />
+                <PluginCard key={plugin.id} plugin={plugin} onTopicClick={handleTopicClick} />
               ))}
             </main>
 
