@@ -21,6 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -126,12 +127,30 @@ function PluginCard({ plugin, onTopicClick }: { plugin: Plugin; onTopicClick?: (
           />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <Link
-                href={`/plugins/${plugin.id}`}
-                className="font-semibold text-lg hover:text-primary transition-colors capitalize truncate"
-              >
-                {plugin.name}
-              </Link>
+              {plugin.readme ? (
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <Link
+                      href={`/plugins/${plugin.id}`}
+                      className="font-semibold text-lg hover:text-primary transition-colors capitalize truncate"
+                    >
+                      {plugin.name}
+                    </Link>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="w-80">
+                    <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-[8]">
+                      {plugin.readme}
+                    </p>
+                  </HoverCardContent>
+                </HoverCard>
+              ) : (
+                <Link
+                  href={`/plugins/${plugin.id}`}
+                  className="font-semibold text-lg hover:text-primary transition-colors capitalize truncate"
+                >
+                  {plugin.name}
+                </Link>
+              )}
               {plugin.isOfficial && (
                 <Badge className="bg-blue-500 text-white hover:bg-blue-600 text-xs">
                   Official
