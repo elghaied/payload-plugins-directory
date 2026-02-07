@@ -153,30 +153,32 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
           </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              {plugin.readme ? (
-                <HoverCard>
-                  <HoverCardTrigger asChild>
-                    <Link
-                      href={`/plugins/${plugin.id}`}
-                      className="font-semibold text-lg hover:text-primary transition-colors capitalize truncate"
-                    >
-                      {plugin.name}
-                    </Link>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-80">
-                    <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-[8]">
-                      {plugin.readme}
-                    </p>
-                  </HoverCardContent>
-                </HoverCard>
-              ) : (
-                <Link
-                  href={`/plugins/${plugin.id}`}
-                  className="font-semibold text-lg hover:text-primary transition-colors capitalize truncate"
-                >
-                  {plugin.name}
-                </Link>
-              )}
+              <h3 className="font-semibold text-lg capitalize truncate">
+                {plugin.readme ? (
+                  <HoverCard>
+                    <HoverCardTrigger asChild>
+                      <Link
+                        href={`/plugins/${plugin.id}`}
+                        className="hover:text-primary transition-colors"
+                      >
+                        {plugin.name}
+                      </Link>
+                    </HoverCardTrigger>
+                    <HoverCardContent className="w-80">
+                      <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-[8] font-normal">
+                        {plugin.readme}
+                      </p>
+                    </HoverCardContent>
+                  </HoverCard>
+                ) : (
+                  <Link
+                    href={`/plugins/${plugin.id}`}
+                    className="hover:text-primary transition-colors"
+                  >
+                    {plugin.name}
+                  </Link>
+                )}
+              </h3>
               {plugin.isOfficial && (
                 <Badge className="bg-blue-500 text-white hover:bg-blue-600 text-xs">
                   Official
@@ -601,65 +603,65 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 mt-6 flex-wrap">
+          <div className="flex items-center gap-4 mt-6 flex-wrap" role="group" aria-label="Quick filters">
             <div className="flex items-center gap-2 text-sm">
-              <Badge
-                variant="outline"
-                className={`${versionColors[3]} border-0 cursor-pointer hover:opacity-80`}
-                onClick={() =>
-                  handleVersionChange(versionFilter === "3" ? "all" : "3")
-                }
+              <button
+                onClick={() => handleVersionChange(versionFilter === "3" ? "all" : "3")}
+                aria-pressed={versionFilter === "3"}
+                className="cursor-pointer"
               >
-                v3: {stats.v3}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={`${versionColors[2]} border-0 cursor-pointer hover:opacity-80`}
-                onClick={() =>
-                  handleVersionChange(versionFilter === "2" ? "all" : "2")
-                }
+                <Badge variant="outline" className={`${versionColors[3]} border-0 hover:opacity-80`}>
+                  v3: {stats.v3}
+                </Badge>
+              </button>
+              <button
+                onClick={() => handleVersionChange(versionFilter === "2" ? "all" : "2")}
+                aria-pressed={versionFilter === "2"}
+                className="cursor-pointer"
               >
-                v2: {stats.v2}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={`${versionColors[1]} border-0 cursor-pointer hover:opacity-80`}
-                onClick={() =>
-                  handleVersionChange(versionFilter === "1" ? "all" : "1")
-                }
+                <Badge variant="outline" className={`${versionColors[2]} border-0 hover:opacity-80`}>
+                  v2: {stats.v2}
+                </Badge>
+              </button>
+              <button
+                onClick={() => handleVersionChange(versionFilter === "1" ? "all" : "1")}
+                aria-pressed={versionFilter === "1"}
+                className="cursor-pointer"
               >
-                v1: {stats.v1}
-              </Badge>
-              <Badge
-                variant="outline"
-                className={`${versionColors[0]} border-0 cursor-pointer hover:opacity-80`}
-                onClick={() =>
-                  handleVersionChange(versionFilter === "0" ? "all" : "0")
-                }
+                <Badge variant="outline" className={`${versionColors[1]} border-0 hover:opacity-80`}>
+                  v1: {stats.v1}
+                </Badge>
+              </button>
+              <button
+                onClick={() => handleVersionChange(versionFilter === "0" ? "all" : "0")}
+                aria-pressed={versionFilter === "0"}
+                className="cursor-pointer"
               >
-                v?: {stats.unknown}
-              </Badge>
+                <Badge variant="outline" className={`${versionColors[0]} border-0 hover:opacity-80`}>
+                  v?: {stats.unknown}
+                </Badge>
+              </button>
             </div>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2 text-sm">
-              <Badge
-                variant="outline"
-                className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-0 cursor-pointer hover:opacity-80"
-                onClick={() =>
-                  handleSourceChange(sourceFilter === "official" ? "all" : "official")
-                }
+              <button
+                onClick={() => handleSourceChange(sourceFilter === "official" ? "all" : "official")}
+                aria-pressed={sourceFilter === "official"}
+                className="cursor-pointer"
               >
-                Official: {stats.official}
-              </Badge>
-              <Badge
-                variant="outline"
-                className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-0 cursor-pointer hover:opacity-80"
-                onClick={() =>
-                  handleSourceChange(sourceFilter === "community" ? "all" : "community")
-                }
+                <Badge variant="outline" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 border-0 hover:opacity-80">
+                  Official: {stats.official}
+                </Badge>
+              </button>
+              <button
+                onClick={() => handleSourceChange(sourceFilter === "community" ? "all" : "community")}
+                aria-pressed={sourceFilter === "community"}
+                className="cursor-pointer"
               >
-                Community: {stats.community}
-              </Badge>
+                <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 border-0 hover:opacity-80">
+                  Community: {stats.community}
+                </Badge>
+              </button>
             </div>
           </div>
         </header>
@@ -668,8 +670,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 -mx-4 px-4 border-b mb-6">
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
+              <label htmlFor="plugin-search" className="sr-only">Search plugins</label>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                id="plugin-search"
                 placeholder="Search plugins by name, description, topic, or author..."
                 className="pl-10"
                 value={searchTerm}
@@ -678,7 +682,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </div>
 
             <Select value={versionFilter} onValueChange={handleVersionChange}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by version">
                 <SelectValue placeholder="Version" />
               </SelectTrigger>
               <SelectContent>
@@ -691,7 +695,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
 
             <Select value={sourceFilter} onValueChange={handleSourceChange}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by source">
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
               <SelectContent>
@@ -702,7 +706,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
 
             <Select value={licenseFilter} onValueChange={handleLicenseChange}>
-              <SelectTrigger className="w-full sm:w-36">
+              <SelectTrigger className="w-full sm:w-36" aria-label="Filter by license">
                 <SelectValue placeholder="License" />
               </SelectTrigger>
               <SelectContent>
@@ -716,7 +720,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
 
             <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-full sm:w-44">
+              <SelectTrigger className="w-full sm:w-44" aria-label="Sort plugins">
                 <SortAsc className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -789,7 +793,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
         {/* Plugin grid */}
         {filteredAndSortedPlugins.length === 0 ? (
-          <div className="text-center py-16">
+          <div className="text-center py-16" role="status">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-secondary mb-4">
               <Search className="h-8 w-8 text-muted-foreground" />
             </div>
