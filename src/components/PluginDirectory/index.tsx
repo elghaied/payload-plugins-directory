@@ -126,19 +126,21 @@ function CopyInstallButton({ packageName }: { packageName: string }) {
   );
 }
 
-function PluginCard({ plugin, onTopicClick }: { plugin: Plugin; onTopicClick?: (topic: string) => void }) {
+function PluginCard({ plugin, onTopicClick, onOwnerClick }: { plugin: Plugin; onTopicClick?: (topic: string) => void; onOwnerClick?: (owner: string) => void }) {
   const health = getHealthStatus(plugin);
 
   return (
     <Card className="group h-full flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-200">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <img
-            src={plugin.ownerAvatar}
-            alt={plugin.owner}
-            className="w-10 h-10 rounded-full ring-2 ring-background"
-            loading="lazy"
-          />
+          <button onClick={() => onOwnerClick?.(plugin.owner)} className="shrink-0 cursor-pointer" title={`View all plugins by ${plugin.owner}`}>
+            <img
+              src={plugin.ownerAvatar}
+              alt={plugin.owner}
+              className="w-10 h-10 rounded-full ring-2 ring-background hover:ring-primary transition-all"
+              loading="lazy"
+            />
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               {plugin.readme ? (
@@ -176,7 +178,12 @@ function PluginCard({ plugin, onTopicClick }: { plugin: Plugin; onTopicClick?: (
               />
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
-              <span className="truncate">by {plugin.owner}</span>
+              <button
+                onClick={() => onOwnerClick?.(plugin.owner)}
+                className="truncate hover:text-primary hover:underline transition-colors cursor-pointer"
+              >
+                by {plugin.owner}
+              </button>
               {plugin.collection && (
                 <Badge
                   variant="outline"
@@ -455,6 +462,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   const handleTopicClick = useCallback((topic: string) => {
     updateParams({ q: topic });
+  }, [updateParams]);
+
+  const handleOwnerClick = useCallback((owner: string) => {
+    updateParams({ q: owner });
   }, [updateParams]);
 
   // Stats
@@ -767,6 +778,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                         key={plugin.id}
                         plugin={plugin}
                         onTopicClick={handleTopicClick}
+                        onOwnerClick={handleOwnerClick}
                       />
                     ))}
                   </div>
