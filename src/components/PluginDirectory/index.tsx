@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { Plugin, SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ModeToggle } from "../mode-toggler";
+import { ComparisonView } from "../ComparisonView";
 
 const ROW_HEIGHT_ESTIMATE = 420;
 
@@ -126,13 +127,21 @@ function CopyInstallButton({ packageName }: { packageName: string }) {
   );
 }
 
-function PluginCard({ plugin, onTopicClick, onOwnerClick }: { plugin: Plugin; onTopicClick?: (topic: string) => void; onOwnerClick?: (owner: string) => void }) {
+function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelected, onToggleSelect }: { plugin: Plugin; onTopicClick?: (topic: string) => void; onOwnerClick?: (owner: string) => void; compareMode?: boolean; isSelected?: boolean; onToggleSelect?: (id: string) => void }) {
   const health = getHealthStatus(plugin);
 
   return (
-    <Card className="group h-full flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-200">
+    <Card className={`group h-full flex flex-col hover:shadow-lg transition-all duration-200 ${isSelected ? "ring-2 ring-primary border-primary/40" : "hover:border-primary/20"}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
+          {compareMode && (
+            <button
+              onClick={() => onToggleSelect?.(plugin.id)}
+              className={`shrink-0 mt-1 h-5 w-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/40 hover:border-primary"}`}
+            >
+              {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
+            </button>
+          )}
           <button onClick={() => onOwnerClick?.(plugin.owner)} className="shrink-0 cursor-pointer" title={`View all plugins by ${plugin.owner}`}>
             <img
               src={plugin.ownerAvatar}
@@ -468,6 +477,42 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     updateParams({ q: owner });
   }, [updateParams]);
 
+  // Compare mode
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else if (next.size < 3) {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleCompareMode = useCallback(() => {
+    setCompareMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const selectedPlugins = useMemo(
+    () => plugins.filter((p) => selectedIds.has(p.id)),
+    [plugins, selectedIds]
+  );
+
+  const handleRemoveFromComparison = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
   // Stats
   const stats = useMemo(() => {
     const result = { v1: 0, v2: 0, v3: 0, unknown: 0, official: 0, community: 0 };
@@ -676,6 +721,15 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 <SelectItem value="name">Name (A-Z)</SelectItem>
               </SelectContent>
             </Select>
+
+            <Button
+              variant={compareMode ? "default" : "outline"}
+              size="default"
+              onClick={handleToggleCompareMode}
+              className="w-full sm:w-auto cursor-pointer"
+            >
+              {compareMode ? "Exit Compare" : "Compare"}
+            </Button>
           </div>
         </div>
 
@@ -779,6 +833,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                         plugin={plugin}
                         onTopicClick={handleTopicClick}
                         onOwnerClick={handleOwnerClick}
+                        compareMode={compareMode}
+                        isSelected={selectedIds.has(plugin.id)}
+                        onToggleSelect={handleToggleSelect}
                       />
                     ))}
                   </div>
@@ -802,6 +859,35 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           </p>
         </footer>
       </div>
+
+      {/* Floating compare bar */}
+      {compareMode && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-background border shadow-lg rounded-full px-5 py-2.5 flex items-center gap-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <Button
+            size="sm"
+            disabled={selectedIds.size < 2}
+            className="cursor-pointer rounded-full"
+            onClick={() => {/* ComparisonView will show */}}
+          >
+            Compare
+          </Button>
+        </div>
+      )}
+
+      {/* Comparison view */}
+      {compareMode && selectedIds.size >= 2 && (
+        <ComparisonView
+          plugins={selectedPlugins}
+          onRemove={handleRemoveFromComparison}
+          onClose={() => {
+            setCompareMode(false);
+            setSelectedIds(new Set());
+          }}
+        />
+      )}
     </div>
   );
 };
