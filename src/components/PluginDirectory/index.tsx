@@ -18,6 +18,7 @@ import {
   SortAsc,
   Copy,
   Check,
+  Sparkles,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -401,6 +402,23 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     return result;
   }, [plugins]);
 
+  // Recently added plugins (last 90 days), shown only on unfiltered view
+  const recentlyAdded = useMemo(() => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    return [...plugins]
+      .filter((p) => new Date(p.createdAt).getTime() > cutoff)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 4);
+  }, [plugins]);
+
+  const showRecentlyAdded =
+    recentlyAdded.length > 0 &&
+    !searchTerm &&
+    versionFilter === "all" &&
+    sourceFilter === "all" &&
+    sortBy === "featured" &&
+    currentPage === 1;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -559,6 +577,38 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
           </div>
         </div>
+
+        {/* Recently Added */}
+        {showRecentlyAdded && (
+          <section className="mb-8">
+            <h2 className="text-sm font-semibold mb-3 flex items-center gap-1.5 text-muted-foreground">
+              <Sparkles className="h-4 w-4" />
+              Recently Added
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {recentlyAdded.map((plugin) => (
+                <Link
+                  key={plugin.id}
+                  href={`/plugins/${plugin.id}`}
+                  className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:shadow-md hover:border-primary/20 transition-all"
+                >
+                  <img
+                    src={plugin.ownerAvatar}
+                    alt={plugin.owner}
+                    className="w-8 h-8 rounded-full"
+                    loading="lazy"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium capitalize truncate">{plugin.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Added {formatRelativeTime(plugin.createdAt)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Results count */}
         <div className="flex items-center justify-between mb-4">
