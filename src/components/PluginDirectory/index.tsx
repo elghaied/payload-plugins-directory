@@ -9,7 +9,6 @@ import {
   GitFork,
   Star,
   Clock,
-  Github,
   ExternalLink,
   Package,
   Scale,
@@ -18,11 +17,8 @@ import {
   Copy,
   Check,
   Sparkles,
-  Rss,
-  BarChart3,
   Download,
   Box,
-  Info,
   Flag,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -39,7 +35,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plugin, SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
-import { ModeToggle } from "../mode-toggler";
 import { ComparisonView } from "../ComparisonView";
 
 const ROW_HEIGHT_ESTIMATE = 420;
@@ -622,61 +617,17 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Header */}
         <header className="mb-8">
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                Payload CMS Plugin Directory
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Discover {metadata.totalCount} community-made plugins for
-                Payload CMS
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Last updated: {formatRelativeTime(metadata.lastUpdated)}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <a
-                href="https://github.com/payloadcms/payload"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
-                aria-label="Payload CMS GitHub"
-              >
-                <PayloadIcon className="h-4 w-4" />
-              </a>
-              <a
-                href="https://github.com/elghaied/payload-plugins-directory"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
-                aria-label="Directory GitHub"
-              >
-                <Github className="h-4 w-4" />
-              </a>
-              <Link
-                href="/stats"
-                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
-                aria-label="Ecosystem Stats"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/about"
-                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
-                aria-label="About"
-              >
-                <Info className="h-4 w-4" />
-              </Link>
-              <a
-                href="/feed.xml"
-                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
-                aria-label="RSS Feed"
-              >
-                <Rss className="h-4 w-4" />
-              </a>
-              <ModeToggle />
-            </div>
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Payload CMS Plugin Directory
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Discover {metadata.totalCount} community-made plugins for
+              Payload CMS
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Last updated: {formatRelativeTime(metadata.lastUpdated)}
+            </p>
           </div>
 
           {/* Stats */}

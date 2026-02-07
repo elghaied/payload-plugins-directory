@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 
@@ -18,14 +17,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
         <div className="mb-8">
-          <Link
-            href="/"
-            replace
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            &larr; Back to directory
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight mt-4">About</h1>
+          <h1 className="text-3xl font-bold tracking-tight">About</h1>
           <p className="text-muted-foreground mt-1">
             Everything you need to know about the Payload Plugin Directory
           </p>

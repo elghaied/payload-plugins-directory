@@ -1,5 +1,4 @@
 import { getPluginStats, getPluginsMetadata } from "@/lib/getPlugins";
-import Link from "next/link";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -64,14 +63,7 @@ export default function StatsPage() {
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="mb-8">
-          <Link
-            href="/"
-            replace
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            &larr; Back to directory
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight mt-4">
+          <h1 className="text-3xl font-bold tracking-tight">
             Ecosystem Stats
           </h1>
           <p className="text-muted-foreground mt-1">
