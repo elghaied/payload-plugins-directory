@@ -23,6 +23,7 @@ import {
   Download,
   Box,
   Info,
+  Flag,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
@@ -348,15 +349,28 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
           </div>
         )}
 
-        <a
-          href={plugin.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-4 flex items-center justify-center gap-2 py-2 px-4 bg-secondary text-secondary-foreground rounded-md transition-colors text-sm font-medium cursor-pointer hover:bg-primary hover:text-primary-foreground"
-        >
-          View on GitHub
-          <ExternalLink className="h-4 w-4" />
-        </a>
+        <div className="mt-4 flex items-center gap-2">
+          <a
+            href={plugin.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-secondary text-secondary-foreground rounded-md transition-colors text-sm font-medium cursor-pointer hover:bg-primary hover:text-primary-foreground"
+          >
+            View on GitHub
+            <ExternalLink className="h-4 w-4" />
+          </a>
+          {!plugin.isOfficial && (
+            <a
+              href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.id}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 flex items-center justify-center h-9 w-9 rounded-md bg-secondary text-muted-foreground transition-colors cursor-pointer hover:bg-destructive/10 hover:text-destructive"
+              title="Report this plugin"
+            >
+              <Flag className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

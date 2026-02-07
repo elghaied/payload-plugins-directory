@@ -15,6 +15,7 @@ import {
   Tag,
   Box,
   Layers,
+  Flag,
 } from "lucide-react";
 import { getPlugins, getPluginById } from "@/lib/getPlugins";
 import { Card, CardContent } from "@/components/ui/card";
@@ -433,6 +434,17 @@ export default async function PluginDetailPage({
             >
               View on npm
               <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+          {!plugin.isOfficial && (
+            <a
+              href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.id}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 py-3 px-6 border rounded-lg transition-colors text-sm font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5"
+            >
+              <Flag className="h-4 w-4" />
+              Report
             </a>
           )}
         </div>

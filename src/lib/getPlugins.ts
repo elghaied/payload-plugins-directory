@@ -1,5 +1,8 @@
 import { Plugin, PluginsData } from "../types";
 import pluginsData from "../../data/plugins.json";
+import blocklistData from "../../data/blocklist.json";
+
+const blocklist = new Set<string>(blocklistData.ids);
 
 /**
  * Get plugins from the static JSON file.
@@ -11,7 +14,9 @@ import pluginsData from "../../data/plugins.json";
  * - Provides instant page loads
  */
 export function getPlugins(): Plugin[] {
-  return (pluginsData as PluginsData).plugins;
+  return (pluginsData as PluginsData).plugins.filter(
+    (p) => !blocklist.has(p.id)
+  );
 }
 
 /**
@@ -21,7 +26,7 @@ export function getPluginsMetadata(): { lastUpdated: string; totalCount: number 
   const data = pluginsData as PluginsData;
   return {
     lastUpdated: data.lastUpdated,
-    totalCount: data.totalCount,
+    totalCount: data.totalCount - blocklist.size,
   };
 }
 
@@ -29,6 +34,7 @@ export function getPluginsMetadata(): { lastUpdated: string; totalCount: number 
  * Get a single plugin by its ID
  */
 export function getPluginById(id: string): Plugin | undefined {
+  if (blocklist.has(id)) return undefined;
   return (pluginsData as PluginsData).plugins.find((p) => p.id === id);
 }
 
