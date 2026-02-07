@@ -84,6 +84,18 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
+function getHealthStatus(plugin: Plugin): { color: string; label: string } {
+  if (plugin.isArchived) return { color: "bg-red-500", label: "Archived" };
+
+  const daysSinceUpdate = Math.floor(
+    (Date.now() - new Date(plugin.lastUpdate).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  if (daysSinceUpdate < 90) return { color: "bg-green-500", label: "Active" };
+  if (daysSinceUpdate < 365) return { color: "bg-yellow-500", label: "Moderate" };
+  return { color: "bg-orange-500", label: "Stale" };
+}
+
 function CopyInstallButton({ packageName }: { packageName: string }) {
   const [copied, setCopied] = useState(false);
   const command = `npm i ${packageName}`;
@@ -115,6 +127,8 @@ function CopyInstallButton({ packageName }: { packageName: string }) {
 }
 
 function PluginCard({ plugin, onTopicClick }: { plugin: Plugin; onTopicClick?: (topic: string) => void }) {
+  const health = getHealthStatus(plugin);
+
   return (
     <Card className="group h-full flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-200">
       <CardHeader className="pb-3">
@@ -156,6 +170,10 @@ function PluginCard({ plugin, onTopicClick }: { plugin: Plugin; onTopicClick?: (
                   Official
                 </Badge>
               )}
+              <span
+                className={`h-2 w-2 rounded-full shrink-0 ${health.color}`}
+                title={health.label}
+              />
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
               <span className="truncate">by {plugin.owner}</span>
