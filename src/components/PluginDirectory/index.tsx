@@ -19,6 +19,7 @@ import {
   Copy,
   Check,
   Sparkles,
+  Rss,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
@@ -492,6 +493,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 aria-label="Directory GitHub"
               >
                 <Github className="h-4 w-4" />
+              </a>
+              <a
+                href="/feed.xml"
+                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
+                aria-label="RSS Feed"
+              >
+                <Rss className="h-4 w-4" />
               </a>
               <ModeToggle />
             </div>

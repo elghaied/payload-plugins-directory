@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://payload-plugins-directory.vercel.app"),
   alternates: {
     canonical: "/",
+    types: { "application/rss+xml": "/feed.xml" },
   },
   openGraph: {
     title: "Payload CMS Plugin Directory",
