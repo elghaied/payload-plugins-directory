@@ -47,6 +47,15 @@ interface PackageJson {
   peerDependencies?: Record<string, string>;
 }
 
+interface NpmData {
+  weeklyDownloads: number;
+  monthlyDownloads: number;
+  latestVersion: string;
+  unpackedSize: number | null;
+  lastPublish: string;
+  dependencyCount: number;
+}
+
 interface Plugin {
   id: string;
   name: string;
@@ -68,6 +77,8 @@ interface Plugin {
   openIssues: number;
   isArchived: boolean;
   readme?: string;
+  npm?: NpmData;
+  healthScore?: number;
 }
 
 interface PluginsData {
@@ -473,6 +484,167 @@ async function fetchOfficialPayloadPlugins(): Promise<Plugin[]> {
   return plugins;
 }
 
+// npm data fetching
+
+const INVALID_PACKAGE_NAMES = new Set([
+  'dev', 'test', 'tests', 'example', 'examples', 'demo', 'sample',
+  'app', 'web', 'client', 'server', 'api', 'core', 'lib', 'utils',
+  'config', 'docs', 'packages', 'src', 'dist', 'build', 'scripts',
+  'undefined', 'null', 'true', 'false',
+]);
+
+function isValidPackageName(name: string | undefined): name is string {
+  if (!name) return false;
+  if (INVALID_PACKAGE_NAMES.has(name.toLowerCase())) return false;
+  // npm package names must match this pattern
+  if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name)) return false;
+  return true;
+}
+
+async function fetchNpmData(packageName: string): Promise<NpmData | null> {
+  try {
+    const [metaRes, weeklyRes, monthlyRes] = await Promise.all([
+      fetch(`https://registry.npmjs.org/${encodeURIComponent(packageName)}`),
+      fetch(`https://api.npmjs.org/downloads/point/last-week/${encodeURIComponent(packageName)}`),
+      fetch(`https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(packageName)}`),
+    ]);
+
+    if (!metaRes.ok) return null;
+
+    const meta = await metaRes.json();
+    const weekly = weeklyRes.ok ? await weeklyRes.json() : null;
+    const monthly = monthlyRes.ok ? await monthlyRes.json() : null;
+
+    const latestTag = meta['dist-tags']?.latest;
+    if (!latestTag) return null;
+
+    const latestMeta = meta.versions?.[latestTag];
+    const publishTime = meta.time?.[latestTag];
+
+    return {
+      weeklyDownloads: weekly?.downloads ?? 0,
+      monthlyDownloads: monthly?.downloads ?? 0,
+      latestVersion: latestTag,
+      unpackedSize: latestMeta?.dist?.unpackedSize ?? null,
+      lastPublish: publishTime ?? '',
+      dependencyCount: Object.keys(latestMeta?.dependencies ?? {}).length,
+    };
+  } catch (err) {
+    console.warn(`  Warning: Failed to fetch npm data for ${packageName}:`, err);
+    return null;
+  }
+}
+
+async function enrichPluginsWithNpmData(plugins: Plugin[]): Promise<void> {
+  const pluginsWithPackage = plugins.filter(p => isValidPackageName(p.packageName));
+  console.log(`\nFetching npm data for ${pluginsWithPackage.length} plugins...`);
+
+  const batchSize = 10;
+  let fetched = 0;
+
+  for (let i = 0; i < pluginsWithPackage.length; i += batchSize) {
+    const batch = pluginsWithPackage.slice(i, i + batchSize);
+    const results = await Promise.all(
+      batch.map(async (plugin) => {
+        const data = await fetchNpmData(plugin.packageName!);
+        return { plugin, data };
+      })
+    );
+
+    for (const { plugin, data } of results) {
+      if (data) {
+        plugin.npm = data;
+        fetched++;
+      }
+    }
+
+    const progress = Math.min(i + batchSize, pluginsWithPackage.length);
+    console.log(`  npm: ${progress}/${pluginsWithPackage.length} checked (${fetched} found)`);
+
+    if (i + batchSize < pluginsWithPackage.length) {
+      await sleep(300);
+    }
+  }
+
+  console.log(`npm enrichment complete: ${fetched}/${pluginsWithPackage.length} plugins have npm data`);
+}
+
+function computeHealthScore(plugin: Plugin): number {
+  if (plugin.isArchived) return 0;
+
+  let score = 0;
+
+  // GitHub recency (max 20)
+  const daysSinceUpdate = (Date.now() - new Date(plugin.lastUpdate).getTime()) / (1000 * 60 * 60 * 24);
+  if (daysSinceUpdate < 30) score += 20;
+  else if (daysSinceUpdate < 90) score += 15;
+  else if (daysSinceUpdate < 180) score += 10;
+  else if (daysSinceUpdate < 365) score += 5;
+
+  // Star popularity - log scale (max 15)
+  if (plugin.stars > 0) {
+    const starScore = Math.min(Math.log10(plugin.stars) / Math.log10(1000), 1) * 15;
+    score += Math.round(starScore);
+  }
+
+  // Low issue ratio (max 10)
+  if (plugin.stars > 0) {
+    const issueRatio = plugin.openIssues / plugin.stars;
+    if (issueRatio < 0.05) score += 10;
+    else if (issueRatio < 0.1) score += 7;
+    else if (issueRatio < 0.2) score += 4;
+  } else if (plugin.openIssues === 0) {
+    score += 10;
+  }
+
+  // Has license (max 5)
+  if (plugin.license) score += 5;
+
+  // npm-based signals
+  if (plugin.npm) {
+    // Weekly downloads - log scale (max 20)
+    if (plugin.npm.weeklyDownloads > 0) {
+      const dlScore = Math.min(Math.log10(plugin.npm.weeklyDownloads) / Math.log10(10000), 1) * 20;
+      score += Math.round(dlScore);
+    }
+
+    // npm publish recency (max 15)
+    if (plugin.npm.lastPublish) {
+      const daysSincePublish = (Date.now() - new Date(plugin.npm.lastPublish).getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSincePublish < 30) score += 15;
+      else if (daysSincePublish < 90) score += 12;
+      else if (daysSincePublish < 180) score += 8;
+      else if (daysSincePublish < 365) score += 4;
+    }
+
+    // Low dependency count (max 10)
+    if (plugin.npm.dependencyCount <= 3) score += 10;
+    else if (plugin.npm.dependencyCount <= 8) score += 7;
+    else if (plugin.npm.dependencyCount <= 15) score += 4;
+
+    // Small package size (max 5)
+    if (plugin.npm.unpackedSize !== null) {
+      if (plugin.npm.unpackedSize < 50 * 1024) score += 5;
+      else if (plugin.npm.unpackedSize < 200 * 1024) score += 3;
+      else if (plugin.npm.unpackedSize < 1024 * 1024) score += 1;
+    }
+  }
+
+  // Official plugin bonus
+  if (plugin.isOfficial) score += 5;
+
+  return Math.min(score, 100);
+}
+
+function enrichPluginsWithHealthScores(plugins: Plugin[]): void {
+  for (const plugin of plugins) {
+    plugin.healthScore = computeHealthScore(plugin);
+  }
+  const scores = plugins.map(p => p.healthScore!);
+  const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  console.log(`Health scores computed: avg=${avg}, min=${Math.min(...scores)}, max=${Math.max(...scores)}`);
+}
+
 async function main() {
   console.log('Starting plugin fetch...\n');
   const startTime = Date.now();
@@ -515,6 +687,10 @@ async function main() {
   });
 
   const allPlugins = [...officialPlugins, ...filteredCommunityPlugins];
+
+  // Enrich with npm data and compute health scores
+  await enrichPluginsWithNpmData(allPlugins);
+  enrichPluginsWithHealthScores(allPlugins);
 
   // Sort by stars descending
   allPlugins.sort((a, b) => b.stars - a.stars);

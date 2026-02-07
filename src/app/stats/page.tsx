@@ -38,6 +38,12 @@ function Bar({
   );
 }
 
+function formatDownloads(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toString();
+}
+
 export default function StatsPage() {
   const stats = getPluginStats();
   const meta = getPluginsMetadata();
@@ -51,12 +57,16 @@ export default function StatsPage() {
   const maxLicense = stats.licenseDistribution[0]?.[1] || 1;
   const maxMonth = Math.max(...stats.months.map((m) => m.count), 1);
 
+  const maxSizeBucket = Math.max(...Object.values(stats.sizeDistribution), 1);
+  const maxHealthBucket = Math.max(...Object.values(stats.healthDistribution), 1);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="mb-8">
           <Link
             href="/"
+            replace
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             &larr; Back to directory
@@ -72,22 +82,53 @@ export default function StatsPage() {
         {/* Quick numbers */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
           {[
-            { label: "Total Plugins", value: stats.total },
-            { label: "Official", value: stats.official },
-            { label: "Community", value: stats.community },
-            { label: "Avg Stars", value: stats.avgStars },
+            { label: "Total Plugins", value: stats.total.toLocaleString() },
+            { label: "Weekly Downloads", value: formatDownloads(stats.totalDownloadsWeekly) },
+            { label: "Monthly Downloads", value: formatDownloads(stats.totalDownloadsMonthly) },
+            { label: "Avg Health Score", value: stats.avgHealth.toString() },
+            { label: "Official", value: stats.official.toLocaleString() },
+            { label: "Community", value: stats.community.toLocaleString() },
+            { label: "On npm", value: stats.pluginsWithNpmCount.toLocaleString() },
+            { label: "Avg Stars", value: stats.avgStars.toLocaleString() },
           ].map((item) => (
             <div
               key={item.label}
               className="bg-card border rounded-lg p-4 text-center"
             >
-              <p className="text-2xl font-bold">{item.value.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{item.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{item.label}</p>
             </div>
           ))}
         </div>
 
         <div className="grid gap-8 md:grid-cols-2">
+          {/* Most downloaded */}
+          {stats.mostDownloaded.length > 0 && (
+            <section className="bg-card border rounded-lg p-5">
+              <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
+                Most Downloaded (Weekly)
+              </h2>
+              <div className="space-y-3">
+                {stats.mostDownloaded.map((plugin, i) => (
+                  <div key={plugin.packageName} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-5 text-right">
+                      {i + 1}.
+                    </span>
+                    <img
+                      src={plugin.avatar}
+                      alt={plugin.owner}
+                      className="w-7 h-7 rounded-full"
+                    />
+                    <span className="text-sm flex-1 truncate capitalize">{plugin.name}</span>
+                    <span className="text-sm font-medium font-mono">
+                      {formatDownloads(plugin.weeklyDownloads)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Version adoption */}
           <section className="bg-card border rounded-lg p-5">
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
@@ -122,6 +163,62 @@ export default function StatsPage() {
                 count={stats.versions.unknown}
                 color="bg-gray-400"
               />
+            </div>
+          </section>
+
+          {/* Health Score Distribution */}
+          <section className="bg-card border rounded-lg p-5">
+            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
+              Health Score Distribution
+            </h2>
+            <div className="space-y-3">
+              <Bar
+                label="Excellent"
+                value={stats.healthDistribution.excellent}
+                max={maxHealthBucket}
+                count={stats.healthDistribution.excellent}
+                color="bg-emerald-500"
+              />
+              <Bar
+                label="Good"
+                value={stats.healthDistribution.good}
+                max={maxHealthBucket}
+                count={stats.healthDistribution.good}
+                color="bg-green-500"
+              />
+              <Bar
+                label="Fair"
+                value={stats.healthDistribution.fair}
+                max={maxHealthBucket}
+                count={stats.healthDistribution.fair}
+                color="bg-yellow-500"
+              />
+              <Bar
+                label="Poor"
+                value={stats.healthDistribution.poor}
+                max={maxHealthBucket}
+                count={stats.healthDistribution.poor}
+                color="bg-orange-500"
+              />
+            </div>
+          </section>
+
+          {/* Package Size Distribution */}
+          <section className="bg-card border rounded-lg p-5">
+            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
+              Package Size Distribution
+            </h2>
+            <div className="space-y-3">
+              {(Object.entries(stats.sizeDistribution) as [string, number][]).map(([bucket, count]) => (
+                <Bar
+                  key={bucket}
+                  label={bucket}
+                  value={count}
+                  max={maxSizeBucket}
+                  count={count}
+                  color="bg-violet-500/70"
+                />
+              ))}
             </div>
           </section>
 
@@ -170,7 +267,7 @@ export default function StatsPage() {
           </section>
 
           {/* Growth over time */}
-          <section className="bg-card border rounded-lg p-5">
+          <section className="bg-card border rounded-lg p-5 md:col-span-2">
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
               New Plugins (Last 12 Months)
             </h2>

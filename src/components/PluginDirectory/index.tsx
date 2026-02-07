@@ -20,6 +20,9 @@ import {
   Sparkles,
   Rss,
   BarChart3,
+  Download,
+  Box,
+  Info,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
@@ -86,16 +89,26 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-function getHealthStatus(plugin: Plugin): { color: string; label: string } {
-  if (plugin.isArchived) return { color: "bg-red-500", label: "Archived" };
+function getHealthDisplay(plugin: Plugin): { color: string; label: string; score: number } {
+  const score = plugin.healthScore ?? 0;
+  if (plugin.isArchived) return { color: "bg-red-500", label: "Archived", score: 0 };
+  if (score >= 75) return { color: "bg-emerald-500", label: "Excellent", score };
+  if (score >= 50) return { color: "bg-green-500", label: "Good", score };
+  if (score >= 25) return { color: "bg-yellow-500", label: "Fair", score };
+  return { color: "bg-orange-500", label: "Poor", score };
+}
 
-  const daysSinceUpdate = Math.floor(
-    (Date.now() - new Date(plugin.lastUpdate).getTime()) / (1000 * 60 * 60 * 24)
-  );
+function formatSize(bytes: number | null | undefined): string {
+  if (bytes == null) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
-  if (daysSinceUpdate < 90) return { color: "bg-green-500", label: "Active" };
-  if (daysSinceUpdate < 365) return { color: "bg-yellow-500", label: "Moderate" };
-  return { color: "bg-orange-500", label: "Stale" };
+function formatDownloads(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toString();
 }
 
 function CopyInstallButton({ packageName }: { packageName: string }) {
@@ -129,7 +142,7 @@ function CopyInstallButton({ packageName }: { packageName: string }) {
 }
 
 function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelected, onToggleSelect }: { plugin: Plugin; onTopicClick?: (topic: string) => void; onOwnerClick?: (owner: string) => void; compareMode?: boolean; isSelected?: boolean; onToggleSelect?: (id: string) => void }) {
-  const health = getHealthStatus(plugin);
+  const health = getHealthDisplay(plugin);
 
   return (
     <Card className={`group h-full flex flex-col hover:shadow-lg transition-all duration-200 ${isSelected ? "ring-2 ring-primary border-primary/40" : "hover:border-primary/20"}`}>
@@ -184,10 +197,29 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
                   Official
                 </Badge>
               )}
-              <span
-                className={`h-2 w-2 rounded-full shrink-0 ${health.color}`}
-                title={health.label}
-              />
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <span
+                    className={`h-2 w-2 rounded-full shrink-0 cursor-default ${health.color}`}
+                    title={health.label}
+                  />
+                </HoverCardTrigger>
+                <HoverCardContent className="w-56">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">Health Score</span>
+                      <span className="text-xs font-bold">{health.score}/100</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${health.color}`}
+                        style={{ width: `${health.score}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{health.label}</p>
+                  </div>
+                </HoverCardContent>
+              </HoverCard>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
               <button
@@ -221,6 +253,17 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
               {v === 0 ? "v?" : `v${v}`}
             </Badge>
           ))}
+          {plugin.npm?.latestVersion && (
+            <Badge variant="outline" className="text-xs font-normal font-mono">
+              v{plugin.npm.latestVersion}
+            </Badge>
+          )}
+          {plugin.npm?.unpackedSize != null && (
+            <Badge variant="outline" className="text-xs font-normal">
+              <Box className="h-3 w-3 mr-1" />
+              {formatSize(plugin.npm.unpackedSize)}
+            </Badge>
+          )}
           {plugin.license && (
             <Badge variant="outline" className="text-xs font-normal">
               <Scale className="h-3 w-3 mr-1" />
@@ -262,6 +305,15 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
               >
                 <AlertCircle className="h-4 w-4" />
                 {plugin.openIssues}
+              </span>
+            )}
+            {plugin.npm?.weeklyDownloads != null && plugin.npm.weeklyDownloads > 0 && (
+              <span
+                className="flex items-center gap-1"
+                title={`${plugin.npm.weeklyDownloads.toLocaleString()} weekly downloads`}
+              >
+                <Download className="h-4 w-4 text-violet-500" />
+                {formatDownloads(plugin.npm.weeklyDownloads)}/wk
               </span>
             )}
           </div>
@@ -413,6 +465,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             return (
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
+          case "downloads":
+            return (b.npm?.weeklyDownloads ?? 0) - (a.npm?.weeklyDownloads ?? 0);
+          case "health":
+            return (b.healthScore ?? 0) - (a.healthScore ?? 0);
           case "name":
             return a.name.localeCompare(b.name);
           default:
@@ -591,6 +647,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               >
                 <BarChart3 className="h-4 w-4" />
               </Link>
+              <Link
+                href="/about"
+                className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
+                aria-label="About"
+              >
+                <Info className="h-4 w-4" />
+              </Link>
               <a
                 href="/feed.xml"
                 className="rounded-full h-9 w-9 bg-background border flex items-center justify-center hover:bg-secondary transition-colors"
@@ -727,6 +790,8 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               <SelectContent>
                 <SelectItem value="featured">Featured</SelectItem>
                 <SelectItem value="stars">Most Stars</SelectItem>
+                <SelectItem value="downloads">Most Downloads</SelectItem>
+                <SelectItem value="health">Health Score</SelectItem>
                 <SelectItem value="forks">Most Forks</SelectItem>
                 <SelectItem value="recent">Recently Updated</SelectItem>
                 <SelectItem value="created">Recently Created</SelectItem>

@@ -11,6 +11,10 @@ import {
   Package,
   Scale,
   Calendar,
+  Download,
+  Tag,
+  Box,
+  Layers,
 } from "lucide-react";
 import { getPlugins, getPluginById } from "@/lib/getPlugins";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,6 +53,26 @@ function formatDate(dateString: string): string {
 function formatNumber(num: number): string {
   if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
   return num.toString();
+}
+
+function formatDownloads(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toString();
+}
+
+function formatSize(bytes: number | null | undefined): string {
+  if (bytes == null) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getHealthDisplay(score: number): { color: string; label: string } {
+  if (score >= 75) return { color: "bg-emerald-500", label: "Excellent" };
+  if (score >= 50) return { color: "bg-green-500", label: "Good" };
+  if (score >= 25) return { color: "bg-yellow-500", label: "Fair" };
+  return { color: "bg-orange-500", label: "Poor" };
 }
 
 export function generateStaticParams() {
@@ -112,7 +136,14 @@ export default async function PluginDetailPage({
     ...(plugin.packageName
       ? { offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } }
       : {}),
+    ...(plugin.npm?.latestVersion ? { softwareVersion: plugin.npm.latestVersion } : {}),
+    ...(plugin.npm?.unpackedSize != null ? { fileSize: formatSize(plugin.npm.unpackedSize) } : {}),
   };
+
+  const healthScore = plugin.healthScore ?? 0;
+  const health = plugin.isArchived
+    ? { color: "bg-red-500", label: "Archived" }
+    : getHealthDisplay(healthScore);
 
   return (
     <>
@@ -125,6 +156,7 @@ export default async function PluginDetailPage({
         {/* Back navigation */}
         <Link
           href="/"
+          replace
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -254,10 +286,85 @@ export default async function PluginDetailPage({
               </div>
             </CardContent>
           </Card>
+          {plugin.npm && (
+            <>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                    <Download className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold">{formatDownloads(plugin.npm.weeklyDownloads)}</p>
+                    <p className="text-xs text-muted-foreground">Weekly Downloads</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
+                    <Tag className="h-4 w-4 text-pink-600 dark:text-pink-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold font-mono">v{plugin.npm.latestVersion}</p>
+                    <p className="text-xs text-muted-foreground">npm Version</p>
+                  </div>
+                </CardContent>
+              </Card>
+              {plugin.npm.unpackedSize != null && (
+                <Card>
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                      <Box className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold">{formatSize(plugin.npm.unpackedSize)}</p>
+                      <p className="text-xs text-muted-foreground">Unpacked Size</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                    <Layers className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold">{plugin.npm.dependencyCount}</p>
+                    <p className="text-xs text-muted-foreground">Dependencies</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
+        {/* Health Score */}
+        {plugin.healthScore != null && (
+          <Card className="mb-8">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-muted-foreground">Health Score</p>
+                <div className="flex items-center gap-2">
+                  <span className={`h-2 w-2 rounded-full ${health.color}`} />
+                  <span className="text-sm font-semibold">{healthScore}/100</span>
+                  <span className="text-xs text-muted-foreground">{health.label}</span>
+                </div>
+              </div>
+              <div className="h-2.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${health.color}`}
+                  style={{ width: `${healthScore}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Composite score based on GitHub activity, stars, npm downloads, publish recency, dependency count, and package size.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Dates */}
-        <div className="flex items-center gap-6 text-sm text-muted-foreground mb-8">
+        <div className="flex items-center gap-6 text-sm text-muted-foreground mb-8 flex-wrap">
           <span className="flex items-center gap-1.5">
             <Calendar className="h-4 w-4" />
             Updated {formatDate(plugin.lastUpdate)}
@@ -266,6 +373,12 @@ export default async function PluginDetailPage({
             <Calendar className="h-4 w-4" />
             Created {formatDate(plugin.createdAt)}
           </span>
+          {plugin.npm?.lastPublish && (
+            <span className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4" />
+              Published {formatDate(plugin.npm.lastPublish)}
+            </span>
+          )}
         </div>
 
         {/* Readme preview */}
@@ -300,16 +413,29 @@ export default async function PluginDetailPage({
           </div>
         )}
 
-        {/* View on GitHub */}
-        <a
-          href={plugin.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-primary text-primary-foreground rounded-lg transition-colors text-sm font-medium hover:bg-primary/90"
-        >
-          View on GitHub
-          <ExternalLink className="h-4 w-4" />
-        </a>
+        {/* Action buttons */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <a
+            href={plugin.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-primary text-primary-foreground rounded-lg transition-colors text-sm font-medium hover:bg-primary/90"
+          >
+            View on GitHub
+            <ExternalLink className="h-4 w-4" />
+          </a>
+          {plugin.packageName && (
+            <a
+              href={`https://www.npmjs.com/package/${plugin.packageName}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-secondary text-secondary-foreground rounded-lg transition-colors text-sm font-medium hover:bg-secondary/80"
+            >
+              View on npm
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          )}
+        </div>
       </div>
     </div>
     </>

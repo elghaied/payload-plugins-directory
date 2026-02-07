@@ -11,6 +11,9 @@ import {
   Calendar,
   Scale,
   Activity,
+  Download,
+  Box,
+  Tag,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,14 +46,26 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-function getHealthStatus(plugin: Plugin): { color: string; label: string } {
-  if (plugin.isArchived) return { color: "bg-red-500", label: "Archived" };
-  const daysSinceUpdate = Math.floor(
-    (Date.now() - new Date(plugin.lastUpdate).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  if (daysSinceUpdate < 90) return { color: "bg-green-500", label: "Active" };
-  if (daysSinceUpdate < 365) return { color: "bg-yellow-500", label: "Moderate" };
-  return { color: "bg-orange-500", label: "Stale" };
+function getHealthDisplay(plugin: Plugin): { color: string; label: string; score: number } {
+  const score = plugin.healthScore ?? 0;
+  if (plugin.isArchived) return { color: "bg-red-500", label: "Archived", score: 0 };
+  if (score >= 75) return { color: "bg-emerald-500", label: "Excellent", score };
+  if (score >= 50) return { color: "bg-green-500", label: "Good", score };
+  if (score >= 25) return { color: "bg-yellow-500", label: "Fair", score };
+  return { color: "bg-orange-500", label: "Poor", score };
+}
+
+function formatDownloads(num: number): string {
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toString();
+}
+
+function formatSize(bytes: number | null | undefined): string {
+  if (bytes == null) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 interface ComparisonViewProps {
@@ -172,18 +187,72 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       getBest: () => new Set<string>(),
     },
     {
-      label: "Health",
+      label: "Weekly Downloads",
+      icon: <Download className="h-3.5 w-3.5 text-violet-500" />,
+      render: (p, best) => (
+        <span className={best ? "text-foreground font-bold" : "text-muted-foreground"}>
+          {p.npm?.weeklyDownloads != null ? formatDownloads(p.npm.weeklyDownloads) : "—"}
+        </span>
+      ),
+      getBest: (ps) => {
+        const withDl = ps.filter((p) => p.npm?.weeklyDownloads != null);
+        if (withDl.length === 0) return new Set<string>();
+        const max = Math.max(...withDl.map((p) => p.npm!.weeklyDownloads));
+        return new Set(withDl.filter((p) => p.npm!.weeklyDownloads === max).map((p) => p.id));
+      },
+    },
+    {
+      label: "npm Version",
+      icon: <Tag className="h-3.5 w-3.5 text-muted-foreground" />,
+      render: (p) => (
+        <span className="text-muted-foreground font-mono text-xs">
+          {p.npm?.latestVersion ? `v${p.npm.latestVersion}` : "—"}
+        </span>
+      ),
+      getBest: () => new Set<string>(),
+    },
+    {
+      label: "Package Size",
+      icon: <Box className="h-3.5 w-3.5 text-muted-foreground" />,
+      render: (p, best) => (
+        <span className={best ? "text-foreground font-bold" : "text-muted-foreground"}>
+          {formatSize(p.npm?.unpackedSize)}
+        </span>
+      ),
+      getBest: (ps) => {
+        const withSize = ps.filter((p) => p.npm?.unpackedSize != null);
+        if (withSize.length === 0) return new Set<string>();
+        const min = Math.min(...withSize.map((p) => p.npm!.unpackedSize!));
+        return new Set(withSize.filter((p) => p.npm!.unpackedSize === min).map((p) => p.id));
+      },
+    },
+    {
+      label: "Health Score",
       icon: <Activity className="h-3.5 w-3.5 text-muted-foreground" />,
-      render: (p) => {
-        const health = getHealthStatus(p);
+      render: (p, best) => {
+        const health = getHealthDisplay(p);
         return (
-          <div className="flex items-center gap-1.5">
-            <span className={`h-2 w-2 rounded-full ${health.color}`} />
-            <span className="text-muted-foreground">{health.label}</span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className={best ? "text-foreground font-bold text-sm" : "text-muted-foreground text-sm"}>
+                {health.score}
+              </span>
+              <span className="text-muted-foreground text-xs">/ 100</span>
+            </div>
+            <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full ${health.color}`}
+                style={{ width: `${health.score}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-muted-foreground">{health.label}</span>
           </div>
         );
       },
-      getBest: () => new Set<string>(),
+      getBest: (ps) => {
+        const max = Math.max(...ps.map((p) => p.healthScore ?? 0));
+        return new Set(ps.filter((p) => (p.healthScore ?? 0) === max).map((p) => p.id));
+      },
     },
   ];
 

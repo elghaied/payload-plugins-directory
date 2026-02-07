@@ -37,6 +37,15 @@ export interface PackageJson {
   peerDependencies?: Record<string, string>;
 }
 
+export interface NpmData {
+  weeklyDownloads: number;
+  monthlyDownloads: number;
+  latestVersion: string;
+  unpackedSize: number | null;
+  lastPublish: string;
+  dependencyCount: number;
+}
+
 export interface Plugin {
   id: string;
   name: string;
@@ -58,6 +67,8 @@ export interface Plugin {
   openIssues: number;
   isArchived: boolean;
   readme?: string;
+  npm?: NpmData;
+  healthScore?: number;
 }
 
 export interface PluginsData {
@@ -66,5 +77,5 @@ export interface PluginsData {
   plugins: Plugin[];
 }
 
-export type SortOption = "featured" | "stars" | "forks" | "recent" | "created" | "name";
+export type SortOption = "featured" | "stars" | "forks" | "recent" | "created" | "name" | "downloads" | "health";
 export type VersionFilter = "all" | "0" | "1" | "2" | "3"; // 0 = unknown version

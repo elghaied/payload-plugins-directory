@@ -94,6 +94,49 @@ export function getPluginStats() {
   const official = plugins.filter((p) => p.isOfficial).length;
   const community = total - official;
 
+  // npm download aggregates
+  const totalDownloadsWeekly = plugins.reduce((s, p) => s + (p.npm?.weeklyDownloads ?? 0), 0);
+  const totalDownloadsMonthly = plugins.reduce((s, p) => s + (p.npm?.monthlyDownloads ?? 0), 0);
+
+  // Most downloaded (top 10 by weekly)
+  const mostDownloaded = [...plugins]
+    .filter((p) => p.npm?.weeklyDownloads)
+    .sort((a, b) => (b.npm?.weeklyDownloads ?? 0) - (a.npm?.weeklyDownloads ?? 0))
+    .slice(0, 10)
+    .map((p) => ({
+      name: p.name,
+      packageName: p.packageName,
+      weeklyDownloads: p.npm!.weeklyDownloads,
+      owner: p.owner,
+      avatar: p.ownerAvatar,
+    }));
+
+  // Size distribution
+  const sizeDistribution = { "<50KB": 0, "50-200KB": 0, "200KB-1MB": 0, "1-5MB": 0, ">5MB": 0 };
+  plugins.forEach((p) => {
+    const size = p.npm?.unpackedSize;
+    if (size == null) return;
+    if (size < 50 * 1024) sizeDistribution["<50KB"]++;
+    else if (size < 200 * 1024) sizeDistribution["50-200KB"]++;
+    else if (size < 1024 * 1024) sizeDistribution["200KB-1MB"]++;
+    else if (size < 5 * 1024 * 1024) sizeDistribution["1-5MB"]++;
+    else sizeDistribution[">5MB"]++;
+  });
+
+  // Health distribution
+  const healthDistribution = { excellent: 0, good: 0, fair: 0, poor: 0 };
+  plugins.forEach((p) => {
+    const h = p.healthScore ?? 0;
+    if (h >= 75) healthDistribution.excellent++;
+    else if (h >= 50) healthDistribution.good++;
+    else if (h >= 25) healthDistribution.fair++;
+    else healthDistribution.poor++;
+  });
+
+  const healthScores = plugins.map((p) => p.healthScore ?? 0);
+  const avgHealth = total > 0 ? Math.round(healthScores.reduce((a, b) => a + b, 0) / total) : 0;
+  const pluginsWithNpmCount = plugins.filter((p) => p.npm).length;
+
   return {
     total,
     versions,
@@ -106,6 +149,13 @@ export function getPluginStats() {
     avgStars,
     official,
     community,
+    totalDownloadsWeekly,
+    totalDownloadsMonthly,
+    mostDownloaded,
+    sizeDistribution,
+    healthDistribution,
+    avgHealth,
+    pluginsWithNpmCount,
   };
 }
 
