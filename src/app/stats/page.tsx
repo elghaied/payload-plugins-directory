@@ -121,6 +121,36 @@ export default function StatsPage() {
             </section>
           )}
 
+          {/* Most downloaded community plugins */}
+          {stats.mostDownloadedCommunity.length > 0 && (
+            <section className="bg-card border rounded-lg p-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
+                Community
+              </div>
+              <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
+                Top Community Plugins (Weekly)
+              </h2>
+              <div className="space-y-3">
+                {stats.mostDownloadedCommunity.map((plugin, i) => (
+                  <div key={plugin.packageName} className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-5 text-right">
+                      {i + 1}.
+                    </span>
+                    <img
+                      src={plugin.avatar}
+                      alt={plugin.owner}
+                      className="w-7 h-7 rounded-full ring-2 ring-emerald-500/20"
+                    />
+                    <span className="text-sm flex-1 truncate capitalize">{plugin.name}</span>
+                    <span className="text-sm font-medium font-mono">
+                      {formatDownloads(plugin.weeklyDownloads)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Version adoption */}
           <section className="bg-card border rounded-lg p-5">
             <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">

@@ -117,6 +117,19 @@ export function getPluginStats() {
       avatar: p.ownerAvatar,
     }));
 
+  // Most downloaded community plugins (top 10 by weekly, excluding official)
+  const mostDownloadedCommunity = [...plugins]
+    .filter((p) => !p.isOfficial && p.npm?.weeklyDownloads)
+    .sort((a, b) => (b.npm?.weeklyDownloads ?? 0) - (a.npm?.weeklyDownloads ?? 0))
+    .slice(0, 10)
+    .map((p) => ({
+      name: p.name,
+      packageName: p.packageName,
+      weeklyDownloads: p.npm!.weeklyDownloads,
+      owner: p.owner,
+      avatar: p.ownerAvatar,
+    }));
+
   // Size distribution
   const sizeDistribution = { "<50KB": 0, "50-200KB": 0, "200KB-1MB": 0, "1-5MB": 0, ">5MB": 0 };
   plugins.forEach((p) => {
@@ -158,6 +171,7 @@ export function getPluginStats() {
     totalDownloadsWeekly,
     totalDownloadsMonthly,
     mostDownloaded,
+    mostDownloadedCommunity,
     sizeDistribution,
     healthDistribution,
     avgHealth,
