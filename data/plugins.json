@@ -1,6 +1,6 @@
 {
-  "lastUpdated": "2026-02-08T06:14:07.140Z",
-  "totalCount": 186,
+  "lastUpdated": "2026-02-08T12:55:56.399Z",
+  "totalCount": 177,
   "plugins": [
     {
       "id": "official-plugin-cloud-storage",
@@ -8,7 +8,7 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -41,7 +41,7 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -74,7 +74,7 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -107,7 +107,7 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -140,7 +140,7 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -173,7 +173,7 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -206,7 +206,7 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -239,7 +239,7 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -272,7 +272,7 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -305,7 +305,7 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -338,7 +338,7 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -371,7 +371,7 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 40447,
+      "stars": 40450,
       "forks": 3343,
       "lastUpdate": "2026-02-06T22:39:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -447,17 +447,18 @@
       "healthScore": 64
     },
     {
-      "id": "684372049-root",
-      "name": "payload enchants",
-      "packageName": "payload-enchants",
-      "description": "Payload 3.0 enchantment packages",
+      "id": "684372049-better-localized-fields",
+      "name": "better localized fields",
+      "packageName": "@payload-enchants/better-localized-fields",
+      "collection": "payload-enchants",
+      "description": "No description available",
       "stars": 320,
       "forks": 33,
       "lastUpdate": "2025-01-04T22:02:15Z",
       "createdAt": "2023-08-29T02:12:23Z",
       "owner": "r1tsuu",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
-      "url": "https://github.com/r1tsuu/payload-enchants",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/better-localized-fields",
       "topics": [
         "nodejs",
         "openai",
@@ -467,15 +468,256 @@
         "translation"
       ],
       "isOfficial": false,
-      "payloadVersion": "3.1.0",
+      "payloadVersion": "^3.0.0-beta.61",
       "payloadVersionMajor": [
         3
       ],
       "license": "MIT",
       "openIssues": 27,
       "isArchived": false,
-      "readme": "# Payload 3.0 enchantment packages\n\n## Packages list:\n\n#### 1. [Plugin Translator](packages/translator/) - automatic content translations / copying from other locales\n\n#### 2. [Type-Safe API client for Payload](packages/sdk/) - API client for Payload with the same syntax as the Local API\n\n#### 3. [Cached Local API](packages/cached-local-api/) - cache and automatically revalidate the Local API operations with support of `depth` using Next.js `unstable_cache`\n\n#### 4.",
-      "healthScore": 25
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.2",
+        "unpackedSize": 64648,
+        "lastPublish": "2024-07-16T22:01:40.857Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 38
+    },
+    {
+      "id": "684372049-better-use-as-title",
+      "name": "better use as title",
+      "packageName": "@payload-enchants/better-use-as-title",
+      "collection": "payload-enchants",
+      "description": "No description available",
+      "stars": 320,
+      "forks": 33,
+      "lastUpdate": "2025-01-04T22:02:15Z",
+      "createdAt": "2023-08-29T02:12:23Z",
+      "owner": "r1tsuu",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/better-use-as-title",
+      "topics": [
+        "nodejs",
+        "openai",
+        "payload-plugin",
+        "payloadcms",
+        "react",
+        "translation"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0-beta.61",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 27,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.2",
+        "unpackedSize": 15811,
+        "lastPublish": "2024-07-16T22:02:02.631Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 40
+    },
+    {
+      "id": "684372049-cached-local-api",
+      "name": "cached local api",
+      "packageName": "@payload-enchants/cached-local-api",
+      "collection": "payload-enchants",
+      "description": "No description available",
+      "stars": 320,
+      "forks": 33,
+      "lastUpdate": "2025-01-04T22:02:15Z",
+      "createdAt": "2023-08-29T02:12:23Z",
+      "owner": "r1tsuu",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/cached-local-api",
+      "topics": [
+        "nodejs",
+        "openai",
+        "payload-plugin",
+        "payloadcms",
+        "react",
+        "translation"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0-beta.61",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 27,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.2",
+        "unpackedSize": 141332,
+        "lastPublish": "2024-07-16T22:02:10.545Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 38
+    },
+    {
+      "id": "684372049-docs-reorder",
+      "name": "docs reorder",
+      "packageName": "@payload-enchants/docs-reorder",
+      "collection": "payload-enchants",
+      "description": "No description available",
+      "stars": 320,
+      "forks": 33,
+      "lastUpdate": "2025-01-04T22:02:15Z",
+      "createdAt": "2023-08-29T02:12:23Z",
+      "owner": "r1tsuu",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/docs-reorder",
+      "topics": [
+        "nodejs",
+        "openai",
+        "payload-plugin",
+        "payloadcms",
+        "react",
+        "translation"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0-beta.61",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 27,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.2",
+        "unpackedSize": 61978,
+        "lastPublish": "2024-07-16T22:01:25.080Z",
+        "dependencyCount": 3
+      },
+      "healthScore": 38
+    },
+    {
+      "id": "684372049-fields-select",
+      "name": "fields select",
+      "packageName": "@payload-enchants/fields-select",
+      "collection": "payload-enchants",
+      "description": "No description available",
+      "stars": 320,
+      "forks": 33,
+      "lastUpdate": "2025-01-04T22:02:15Z",
+      "createdAt": "2023-08-29T02:12:23Z",
+      "owner": "r1tsuu",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/fields-select",
+      "topics": [
+        "nodejs",
+        "openai",
+        "payload-plugin",
+        "payloadcms",
+        "react",
+        "translation"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0-beta.61",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 27,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.2",
+        "unpackedSize": 40081,
+        "lastPublish": "2024-07-16T22:02:17.620Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 40
+    },
+    {
+      "id": "684372049-seo",
+      "name": "seo",
+      "packageName": "@payload-enchants/seo",
+      "collection": "payload-enchants",
+      "description": "No description available",
+      "stars": 320,
+      "forks": 33,
+      "lastUpdate": "2025-01-04T22:02:15Z",
+      "createdAt": "2023-08-29T02:12:23Z",
+      "owner": "r1tsuu",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/seo",
+      "topics": [
+        "nodejs",
+        "openai",
+        "payload-plugin",
+        "payloadcms",
+        "react",
+        "translation"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.1.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 27,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.2",
+        "unpackedSize": 165918,
+        "lastPublish": "2024-07-16T22:01:55.837Z",
+        "dependencyCount": 1
+      },
+      "healthScore": 38
+    },
+    {
+      "id": "684372049-translator",
+      "name": "translator",
+      "packageName": "@payload-enchants/translator",
+      "collection": "payload-enchants",
+      "description": "No description available",
+      "stars": 320,
+      "forks": 33,
+      "lastUpdate": "2025-01-04T22:02:15Z",
+      "createdAt": "2023-08-29T02:12:23Z",
+      "owner": "r1tsuu",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/64744993?v=4",
+      "url": "https://github.com/r1tsuu/payload-enchants/tree/master/packages/translator",
+      "topics": [
+        "nodejs",
+        "openai",
+        "payload-plugin",
+        "payloadcms",
+        "react",
+        "translation"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.1.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 27,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.3.0",
+        "unpackedSize": 161314,
+        "lastPublish": "2024-11-24T11:05:33.345Z",
+        "dependencyCount": 2
+      },
+      "healthScore": 38
     },
     {
       "id": "827352945-root",
@@ -627,37 +869,6 @@
         "dependencyCount": 11
       },
       "healthScore": 55
-    },
-    {
-      "id": "848986894-dev",
-      "name": "dev",
-      "packageName": "dev",
-      "collection": "payload-authjs",
-      "description": "A test app for payload-authjs plugin",
-      "stars": 202,
-      "forks": 10,
-      "lastUpdate": "2026-02-02T21:32:52Z",
-      "createdAt": "2024-08-28T19:10:32Z",
-      "owner": "CrawlerCode",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/41094392?v=4",
-      "url": "https://github.com/CrawlerCode/payload-authjs/tree/main/packages/dev",
-      "topics": [
-        "authjs",
-        "next-auth",
-        "nextjs",
-        "oauth",
-        "oauth2",
-        "oidc",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "catalog:",
-      "payloadVersionMajor": [],
-      "license": "MIT",
-      "openIssues": 3,
-      "isArchived": false,
-      "healthScore": 47
     },
     {
       "id": "848986894-payload-authjs",
@@ -863,42 +1074,6 @@
       "healthScore": 71
     },
     {
-      "id": "888484677-authorization",
-      "name": "authorization",
-      "packageName": "@shefing/authorization",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/authorization",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.13",
-        "unpackedSize": 55358,
-        "lastPublish": "2025-10-05T08:10:56.713Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 64
-    },
-    {
       "id": "888484677-authors-info",
       "name": "authors info",
       "packageName": "@shefing/authors-info",
@@ -935,294 +1110,6 @@
       "healthScore": 73
     },
     {
-      "id": "888484677-color-picker",
-      "name": "color picker",
-      "packageName": "@shefing/color-picker",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/color-picker",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.11",
-        "unpackedSize": 87304,
-        "lastPublish": "2025-12-30T13:06:42.318Z",
-        "dependencyCount": 11
-      },
-      "healthScore": 62
-    },
-    {
-      "id": "888484677-comments",
-      "name": "comments",
-      "packageName": "@shefing/comments",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/comments",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.1",
-        "unpackedSize": 217429,
-        "lastPublish": "2025-01-29T10:11:31.562Z",
-        "dependencyCount": 20
-      },
-      "healthScore": 44
-    },
-    {
-      "id": "888484677-cover-image",
-      "name": "cover image",
-      "packageName": "@shefing/cover-image",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/cover-image",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.3",
-        "unpackedSize": 36074,
-        "lastPublish": "2025-10-05T08:11:29.720Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 66
-    },
-    {
-      "id": "888484677-cross-collection",
-      "name": "cross collection",
-      "packageName": "@shefing/cross-collection",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/cross-collection",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.5",
-        "unpackedSize": 20752,
-        "lastPublish": "2025-10-05T08:11:42.769Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 66
-    },
-    {
-      "id": "888484677-custom-version-view",
-      "name": "custom version view",
-      "packageName": "@shefing/custom-version-view",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/custom-version-view",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.12",
-        "unpackedSize": 111814,
-        "lastPublish": "2026-01-22T06:36:05.058Z",
-        "dependencyCount": 1
-      },
-      "healthScore": 71
-    },
-    {
-      "id": "888484677-field-type-components-override",
-      "name": "field type components override",
-      "packageName": "@shefing/field-type-component-override",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/field-type-components-override",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.8",
-        "unpackedSize": 29099,
-        "lastPublish": "2025-10-05T08:13:25.061Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 66
-    },
-    {
-      "id": "888484677-icon-select",
-      "name": "icon select",
-      "packageName": "@shefing/icon-select",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/icon-select",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.2",
-        "unpackedSize": 63000,
-        "lastPublish": "2025-02-02T12:22:57.925Z",
-        "dependencyCount": 16
-      },
-      "healthScore": 46
-    },
-    {
-      "id": "888484677-quickfilter",
-      "name": "quickfilter",
-      "packageName": "@shefing/quickfilter",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/quickfilter",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.67.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.93",
-        "unpackedSize": 461605,
-        "lastPublish": "2026-01-01T05:36:54.616Z",
-        "dependencyCount": 22
-      },
-      "healthScore": 56
-    },
-    {
       "id": "888484677-reset-list-view",
       "name": "reset list view",
       "packageName": "@shefing/reset-list-view",
@@ -1257,42 +1144,6 @@
         "dependencyCount": 0
       },
       "healthScore": 66
-    },
-    {
-      "id": "888484677-right-panel",
-      "name": "right panel",
-      "packageName": "@shefing/right-panel",
-      "collection": "payload-tools",
-      "description": "No description available",
-      "stars": 149,
-      "forks": 5,
-      "lastUpdate": "2026-01-22T07:46:21Z",
-      "createdAt": "2024-11-14T13:33:22Z",
-      "owner": "shefing",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/4301821?v=4",
-      "url": "https://github.com/shefing/payload-tools/tree/main/packages/right-panel",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "3.56.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "Apache-2.0",
-      "openIssues": 8,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.1",
-        "unpackedSize": 56368,
-        "lastPublish": "2025-01-29T10:16:00.693Z",
-        "dependencyCount": 5
-      },
-      "healthScore": 53
     },
     {
       "id": "611765581-create-api-docs",
@@ -1500,47 +1351,6 @@
       "healthScore": 38
     },
     {
-      "id": "611765581-testbed",
-      "name": "testbed",
-      "packageName": "testbed",
-      "collection": "payload-tools",
-      "description": "Payload Swagger testbed",
-      "stars": 134,
-      "forks": 14,
-      "lastUpdate": "2024-07-17T12:18:10Z",
-      "createdAt": "2023-03-09T13:57:28Z",
-      "owner": "teunmooij",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/1759878?v=4",
-      "url": "https://github.com/teunmooij/payload-tools/tree/main/packages/testbed",
-      "topics": [
-        "access-control",
-        "api-docs",
-        "openapi",
-        "payload-plugin",
-        "query",
-        "rbac",
-        "select",
-        "swagger-ui"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^1.9.0",
-      "payloadVersionMajor": [
-        1
-      ],
-      "license": "MIT",
-      "openIssues": 13,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.1.0",
-        "unpackedSize": null,
-        "lastPublish": "2011-06-25T16:27:06.650Z",
-        "dependencyCount": 14
-      },
-      "healthScore": 27
-    },
-    {
       "id": "821717323-root",
       "name": "payload totp",
       "packageName": "payload-totp",
@@ -1611,7 +1421,7 @@
       "readme": "# Payload OpenAPI Plugin\n\n[![npm version](https://badge.fury.io/js/payload-oapi.svg)](https://www.npmjs.com/package/payload-oapi)\n\nAutogenerate an OpenAPI specification from your Payload CMS instance and use it for documentation or to generate client SDKs.\n\n# Roadmap",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 14449,
+        "monthlyDownloads": 0,
         "latestVersion": "0.2.5",
         "unpackedSize": 72742,
         "lastPublish": "2025-09-11T14:46:38.423Z",
@@ -1766,42 +1576,6 @@
         "latestVersion": "1.6.1",
         "unpackedSize": 78624,
         "lastPublish": "2026-01-25T01:17:30.900Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 81
-    },
-    {
-      "id": "908347705-astro-richtext-renderer",
-      "name": "astro richtext renderer",
-      "packageName": "@payload-bites/astro-richtext-renderer",
-      "collection": "payload-bites",
-      "description": "render Payload CMS Lexical richtext content in Astro",
-      "stars": 94,
-      "forks": 5,
-      "lastUpdate": "2026-02-07T08:36:00Z",
-      "createdAt": "2024-12-25T20:20:04Z",
-      "owner": "rilrom",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/54197972?v=4",
-      "url": "https://github.com/rilrom/payload-bites/tree/main/packages/astro-richtext-renderer",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": null,
-      "payloadVersionMajor": [
-        0
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 16,
-        "monthlyDownloads": 278,
-        "latestVersion": "2.2.0",
-        "unpackedSize": 44309,
-        "lastPublish": "2026-01-25T01:19:27.041Z",
         "dependencyCount": 0
       },
       "healthScore": 81
@@ -1987,34 +1761,6 @@
       "healthScore": 73
     },
     {
-      "id": "908347705-playwright-utilities",
-      "name": "playwright utilities",
-      "packageName": "@payload-bites/playwright-utilities",
-      "collection": "payload-bites",
-      "description": "No description available",
-      "stars": 94,
-      "forks": 5,
-      "lastUpdate": "2026-02-07T08:36:00Z",
-      "createdAt": "2024-12-25T20:20:04Z",
-      "owner": "rilrom",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/54197972?v=4",
-      "url": "https://github.com/rilrom/payload-bites/tree/main/packages/playwright-utilities",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": null,
-      "payloadVersionMajor": [
-        0
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "healthScore": 45
-    },
-    {
       "id": "908347705-soft-delete",
       "name": "soft delete",
       "packageName": "@payload-bites/soft-delete",
@@ -2049,34 +1795,6 @@
         "dependencyCount": 0
       },
       "healthScore": 68
-    },
-    {
-      "id": "908347705-typescript-config",
-      "name": "typescript config",
-      "packageName": "@payload-bites/typescript-config",
-      "collection": "payload-bites",
-      "description": "No description available",
-      "stars": 94,
-      "forks": 5,
-      "lastUpdate": "2026-02-07T08:36:00Z",
-      "createdAt": "2024-12-25T20:20:04Z",
-      "owner": "rilrom",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/54197972?v=4",
-      "url": "https://github.com/rilrom/payload-bites/tree/main/packages/typescript-config",
-      "topics": [
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": null,
-      "payloadVersionMajor": [
-        0
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "healthScore": 45
     },
     {
       "id": "497083627-root",
@@ -3249,7 +2967,7 @@
       "description": "Better Auth adapter and plugins for Payload CMS",
       "stars": 29,
       "forks": 4,
-      "lastUpdate": "2026-02-05T13:45:45Z",
+      "lastUpdate": "2026-02-08T12:35:09Z",
       "createdAt": "2026-01-04T19:27:15Z",
       "owner": "delmaredigital",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
@@ -3269,18 +2987,18 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 1,
+      "openIssues": 0,
       "isArchived": false,
       "readme": "# @delmaredigital/payload-better-auth\n\nBetter Auth adapter and plugins for Payload CMS. Enables seamless integration between Better Auth and Payload.\n\n<p align=\"center\">\n  <a href=\"https://demo.delmaredigital.com\"><img src=\"https://img.shields.io/badge/Live_Demo-Try_It_Now-2ea44f?style=for-the-badge&logo=vercel&logoColor=white\" alt=\"Live Demo - Try It Now\"></a>\n  &nbsp;&nbsp;\n  <a href=\"https://github.com/delmaredigital/dd-starter\"><img src=\"https://img.shields.io/badge/Starter_Template-Use_This",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.3.11",
-        "unpackedSize": 705830,
-        "lastPublish": "2026-02-05T13:47:25.973Z",
+        "weeklyDownloads": 304,
+        "monthlyDownloads": 1800,
+        "latestVersion": "0.3.12",
+        "unpackedSize": 708403,
+        "lastPublish": "2026-02-08T12:36:44.109Z",
         "dependencyCount": 1
       },
-      "healthScore": 68
+      "healthScore": 80
     },
     {
       "id": "855845541-root",
@@ -3308,14 +3026,14 @@
       "isArchived": false,
       "readme": "# Payload Plugin Masquerade\n\n[![npm version](https://badge.fury.io/js/payload-plugin-masquerade.svg)](https://www.npmjs.com/package/payload-plugin-masquerade)\n[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)\n\nThe Masquerade plugin allows administrators to switch users and surf the site as that user (no password required). Administrators can switch back to their own user account at any time.",
       "npm": {
-        "weeklyDownloads": 129,
-        "monthlyDownloads": 322,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.4.3",
         "unpackedSize": 51695,
         "lastPublish": "2025-10-02T11:44:47.166Z",
         "dependencyCount": 1
       },
-      "healthScore": 64
+      "healthScore": 53
     },
     {
       "id": "1012168829-root",
@@ -3646,14 +3364,14 @@
       "isArchived": false,
       "readme": "# Payload Plugin Import / Export\n\nA plugin for [Payload CMS](https://payloadcms.com) to import and export JSON and CSV files.\nYou can use this to change data for many records e.g. translate content... from collections.\n\nAll parsing and transformations are done on the client keeping the load from the server.\n\n## Note\n\nCurrent version is for Payload CMS 3.\nFor Payload 2 please install version 0 of this plugin.\n\n## Installation\n\n```js\nnpm i \"payload-plugin-import-export\"\n```",
       "npm": {
-        "weeklyDownloads": 421,
+        "weeklyDownloads": 0,
         "monthlyDownloads": 0,
         "latestVersion": "3.0.20",
         "unpackedSize": 112759,
         "lastPublish": "2025-09-24T07:27:29.543Z",
         "dependencyCount": 1
       },
-      "healthScore": 66
+      "healthScore": 53
     },
     {
       "id": "767805757-root",
@@ -5339,14 +5057,14 @@
       "isArchived": false,
       "readme": "# Payload Plugin CharCount\n\nA Payload CMS plugin that counts characters in richtext, textarea and text fields, similar to the SEO plugin character counter. Useful for editors to track content length.\n\n## Features",
       "npm": {
-        "weeklyDownloads": 2,
+        "weeklyDownloads": 0,
         "monthlyDownloads": 0,
         "latestVersion": "1.0.1",
         "unpackedSize": 291040,
         "lastPublish": "2025-10-15T06:15:59.543Z",
         "dependencyCount": 1
       },
-      "healthScore": 49
+      "healthScore": 47
     },
     {
       "id": "885749499-root",
@@ -6213,7 +5931,7 @@
       "description": "A collection of reusable Payload CMS fields.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-02-05T23:45:06Z",
+      "lastUpdate": "2026-02-08T12:12:11Z",
       "createdAt": "2026-01-31T12:30:49Z",
       "owner": "x3m-industries",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/116086895?v=4",
@@ -6228,7 +5946,7 @@
       "payloadVersion": "*",
       "payloadVersionMajor": [],
       "license": "MIT",
-      "openIssues": 0,
+      "openIssues": 2,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -6238,7 +5956,7 @@
         "lastPublish": "2026-02-05T23:45:02.913Z",
         "dependencyCount": 9
       },
-      "healthScore": 55
+      "healthScore": 45
     },
     {
       "id": "1146636503-lib-services",
@@ -6248,7 +5966,7 @@
       "description": "Base service architecture for Payload CMS applications.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-02-05T23:45:06Z",
+      "lastUpdate": "2026-02-08T12:12:11Z",
       "createdAt": "2026-01-31T12:30:49Z",
       "owner": "x3m-industries",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/116086895?v=4",
@@ -6263,7 +5981,7 @@
       "payloadVersion": "*",
       "payloadVersionMajor": [],
       "license": "MIT",
-      "openIssues": 0,
+      "openIssues": 2,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -6273,7 +5991,7 @@
         "lastPublish": "2026-02-05T23:45:02.917Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 53
     },
     {
       "id": "1142870023-root",
@@ -6518,7 +6236,7 @@
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 0,
       "forks": 0,
-      "lastUpdate": "2026-02-08T03:53:53Z",
+      "lastUpdate": "2026-02-08T12:29:21Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",

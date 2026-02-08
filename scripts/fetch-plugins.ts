@@ -45,6 +45,8 @@ interface PackageJson {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  workspaces?: string[] | { packages: string[] };
+  private?: boolean;
 }
 
 interface NpmData {
@@ -211,6 +213,30 @@ function getPayloadVersion(packageJson: PackageJson): string | null {
   );
 }
 
+function isMonorepo(packageJson: PackageJson): boolean {
+  if (!packageJson.workspaces) return false;
+  const dirs = Array.isArray(packageJson.workspaces)
+    ? packageJson.workspaces
+    : packageJson.workspaces.packages;
+  return dirs.length > 0;
+}
+
+function getWorkspaceDirs(packageJson: PackageJson): string[] {
+  const raw = Array.isArray(packageJson.workspaces)
+    ? packageJson.workspaces
+    : packageJson.workspaces?.packages ?? [];
+
+  // Extract unique top-level directory names from glob patterns like "packages/*", "plugins/*"
+  const dirs = new Set<string>();
+  for (const pattern of raw) {
+    const topDir = pattern.split('/')[0];
+    if (topDir && topDir !== '*' && topDir !== '**') {
+      dirs.add(topDir);
+    }
+  }
+  return Array.from(dirs);
+}
+
 async function fetchPackageJson(repo: GitHubRepo, subPath = ''): Promise<PackageJson | null> {
   const pathPart = subPath ? `${subPath}/` : '';
   const url = `https://raw.githubusercontent.com/${repo.owner.login}/${repo.name}/${repo.default_branch}/${pathPart}package.json`;
@@ -250,8 +276,33 @@ async function fetchReadmePreview(repo: GitHubRepo): Promise<string | undefined>
   return undefined;
 }
 
-async function fetchPackagesDirectory(repo: GitHubRepo): Promise<{ name: string; path: string; packageJson: PackageJson }[]> {
-  const url = `https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/packages?ref=${repo.default_branch}`;
+const INVALID_PACKAGE_NAMES = new Set([
+  'dev', 'test', 'tests', 'example', 'examples', 'demo', 'sample',
+  'app', 'web', 'client', 'server', 'api', 'core', 'lib', 'utils',
+  'config', 'docs', 'packages', 'src', 'dist', 'build', 'scripts',
+  'undefined', 'null', 'true', 'false',
+  'testbed', 'playground', 'e2e', 'fixtures',
+]);
+
+function isValidPackageName(name: string | undefined): name is string {
+  if (!name) return false;
+  if (INVALID_PACKAGE_NAMES.has(name.toLowerCase())) return false;
+  // npm package names must match this pattern
+  if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name)) return false;
+  return true;
+}
+
+function isLikelyPlugin(dirName: string, packageJson: PackageJson): boolean {
+  if (INVALID_PACKAGE_NAMES.has(dirName.toLowerCase())) return false;
+  if (packageJson.private) return false;
+  // Require payload in peerDependencies or dependencies (not just devDependencies)
+  const hasPeerDep = !!packageJson.peerDependencies?.payload;
+  const hasDep = !!packageJson.dependencies?.payload;
+  return hasPeerDep || hasDep;
+}
+
+async function fetchSubPackages(repo: GitHubRepo, dirName = 'packages'): Promise<{ name: string; path: string; packageJson: PackageJson }[]> {
+  const url = `https://api.github.com/repos/${repo.owner.login}/${repo.name}/contents/${dirName}?ref=${repo.default_branch}`;
 
   try {
     const response = await fetchWithRetry(url);
@@ -268,9 +319,9 @@ async function fetchPackagesDirectory(repo: GitHubRepo): Promise<{ name: string;
       const batch = directories.slice(i, i + batchSize);
       const results = await Promise.all(
         batch.map(async (dir: { name: string }) => {
-          const packageJson = await fetchPackageJson(repo, `packages/${dir.name}`);
+          const packageJson = await fetchPackageJson(repo, `${dirName}/${dir.name}`);
           if (packageJson) {
-            return { name: dir.name, path: `packages/${dir.name}`, packageJson };
+            return { name: dir.name, path: `${dirName}/${dir.name}`, packageJson };
           }
           return null;
         })
@@ -284,127 +335,141 @@ async function fetchPackagesDirectory(repo: GitHubRepo): Promise<{ name: string;
   }
 }
 
-async function processRepository(repo: GitHubRepo): Promise<Plugin[]> {
-  const plugins: Plugin[] = [];
+function createPluginEntry(
+  repo: GitHubRepo,
+  opts: {
+    id: string;
+    name: string;
+    packageName?: string;
+    collection?: string;
+    description: string;
+    url: string;
+    payloadVersion: string | null;
+    readme?: string;
+  },
+): Plugin {
+  return {
+    id: opts.id,
+    name: opts.name,
+    packageName: opts.packageName,
+    collection: opts.collection,
+    description: opts.description,
+    stars: repo.stargazers_count,
+    forks: repo.forks_count,
+    lastUpdate: repo.pushed_at,
+    createdAt: repo.created_at,
+    owner: repo.owner.login,
+    ownerAvatar: repo.owner.avatar_url,
+    url: opts.url,
+    topics: repo.topics || [],
+    isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
+    payloadVersion: opts.payloadVersion,
+    payloadVersionMajor: opts.payloadVersion ? extractMajorVersions(opts.payloadVersion) : [0],
+    license: repo.license?.spdx_id || null,
+    openIssues: repo.open_issues_count,
+    isArchived: repo.archived,
+    readme: opts.readme,
+  };
+}
 
+async function scanDirsForPlugins(
+  repo: GitHubRepo,
+  dirs: string[],
+): Promise<Plugin[]> {
+  const plugins: Plugin[] = [];
+  for (const dir of dirs) {
+    const subPackages = await fetchSubPackages(repo, dir);
+    for (const pkg of subPackages) {
+      if (!isLikelyPlugin(pkg.name, pkg.packageJson)) continue;
+      const pkgPayloadVersion = getPayloadVersion(pkg.packageJson);
+      plugins.push(
+        createPluginEntry(repo, {
+          id: `${repo.id}-${pkg.name}`,
+          name: pkg.name.replace(/-/g, ' '),
+          packageName: pkg.packageJson.name,
+          collection: repo.name,
+          description: pkg.packageJson.description || 'No description available',
+          url: `${repo.html_url}/tree/${repo.default_branch}/${pkg.path}`,
+          payloadVersion: pkgPayloadVersion,
+        }),
+      );
+    }
+  }
+  return plugins;
+}
+
+async function processRepository(repo: GitHubRepo): Promise<Plugin[]> {
   try {
     const rootPackageJson = await fetchPackageJson(repo);
 
-    if (rootPackageJson) {
-      const payloadVersion = getPayloadVersion(rootPackageJson);
+    if (!rootPackageJson) {
+      // No package.json found - include as unknown version
+      const readme = await fetchReadmePreview(repo);
+      return [
+        createPluginEntry(repo, {
+          id: `${repo.id}-root`,
+          name: repo.name.replace(/-/g, ' '),
+          description: repo.description || 'No description available',
+          url: repo.html_url,
+          payloadVersion: null,
+          readme,
+        }),
+      ];
+    }
 
-      if (payloadVersion) {
-        // Single package repo with detected payload version
-        const readme = await fetchReadmePreview(repo);
+    // 1. Check for workspaces (npm/yarn monorepo)
+    if (isMonorepo(rootPackageJson)) {
+      const workspaceDirs = getWorkspaceDirs(rootPackageJson);
+      const plugins = await scanDirsForPlugins(repo, workspaceDirs);
+      if (plugins.length > 0) return plugins;
+      // No valid plugins found in workspace dirs — fall through
+    }
 
-        plugins.push({
+    // 2. Check for private root without workspaces (pnpm monorepo with pnpm-workspace.yaml)
+    if (rootPackageJson.private) {
+      const plugins = await scanDirsForPlugins(repo, ['packages']);
+      if (plugins.length > 0) return plugins;
+      // No valid plugins found — fall through
+    }
+
+    // 3. Single package repo with detected payload version
+    const payloadVersion = getPayloadVersion(rootPackageJson);
+    if (payloadVersion) {
+      const readme = await fetchReadmePreview(repo);
+      return [
+        createPluginEntry(repo, {
           id: `${repo.id}-root`,
           name: repo.name.replace(/-/g, ' '),
           packageName: rootPackageJson.name,
           description: rootPackageJson.description || repo.description || 'No description available',
-          stars: repo.stargazers_count,
-          forks: repo.forks_count,
-          lastUpdate: repo.pushed_at,
-          createdAt: repo.created_at,
-          owner: repo.owner.login,
-          ownerAvatar: repo.owner.avatar_url,
           url: repo.html_url,
-          topics: repo.topics || [],
-          isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
           payloadVersion,
-          payloadVersionMajor: extractMajorVersions(payloadVersion),
-          license: repo.license?.spdx_id || null,
-          openIssues: repo.open_issues_count,
-          isArchived: repo.archived,
           readme,
-        });
-      } else {
-        // Check for monorepo structure
-        const packagePlugins = await fetchPackagesDirectory(repo);
+        }),
+      ];
+    }
 
-        if (packagePlugins.length > 0) {
-          // It's a monorepo
-          for (const pkg of packagePlugins) {
-            const pkgPayloadVersion = getPayloadVersion(pkg.packageJson);
-            plugins.push({
-              id: `${repo.id}-${pkg.name}`,
-              name: pkg.name.replace(/-/g, ' '),
-              packageName: pkg.packageJson.name,
-              collection: repo.name,
-              description: pkg.packageJson.description || 'No description available',
-              stars: repo.stargazers_count,
-              forks: repo.forks_count,
-              lastUpdate: repo.pushed_at,
-              createdAt: repo.created_at,
-              owner: repo.owner.login,
-              ownerAvatar: repo.owner.avatar_url,
-              url: `${repo.html_url}/tree/${repo.default_branch}/${pkg.path}`,
-              topics: repo.topics || [],
-              isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
-              payloadVersion: pkgPayloadVersion,
-              payloadVersionMajor: pkgPayloadVersion ? extractMajorVersions(pkgPayloadVersion) : [0],
-              license: repo.license?.spdx_id || null,
-              openIssues: repo.open_issues_count,
-              isArchived: repo.archived,
-            });
-          }
-        } else {
-          // Single package repo without detected payload version - include as unknown
-          const readme = await fetchReadmePreview(repo);
+    // 4. No payload version detected — check packages/ directory as fallback
+    const fallbackPlugins = await scanDirsForPlugins(repo, ['packages']);
+    if (fallbackPlugins.length > 0) return fallbackPlugins;
 
-          plugins.push({
-            id: `${repo.id}-root`,
-            name: repo.name.replace(/-/g, ' '),
-            packageName: rootPackageJson.name,
-            description: rootPackageJson.description || repo.description || 'No description available',
-            stars: repo.stargazers_count,
-            forks: repo.forks_count,
-            lastUpdate: repo.pushed_at,
-            createdAt: repo.created_at,
-            owner: repo.owner.login,
-            ownerAvatar: repo.owner.avatar_url,
-            url: repo.html_url,
-            topics: repo.topics || [],
-            isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
-            payloadVersion: null,
-            payloadVersionMajor: [0], // 0 represents unknown version
-            license: repo.license?.spdx_id || null,
-            openIssues: repo.open_issues_count,
-            isArchived: repo.archived,
-            readme,
-          });
-        }
-      }
-    } else {
-      // No package.json found - still include the plugin as unknown version
-      const readme = await fetchReadmePreview(repo);
-
-      plugins.push({
+    // 5. Unknown single package
+    const readme = await fetchReadmePreview(repo);
+    return [
+      createPluginEntry(repo, {
         id: `${repo.id}-root`,
         name: repo.name.replace(/-/g, ' '),
-        description: repo.description || 'No description available',
-        stars: repo.stargazers_count,
-        forks: repo.forks_count,
-        lastUpdate: repo.pushed_at,
-        createdAt: repo.created_at,
-        owner: repo.owner.login,
-        ownerAvatar: repo.owner.avatar_url,
+        packageName: rootPackageJson.name,
+        description: rootPackageJson.description || repo.description || 'No description available',
         url: repo.html_url,
-        topics: repo.topics || [],
-        isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
         payloadVersion: null,
-        payloadVersionMajor: [0], // 0 represents unknown version
-        license: repo.license?.spdx_id || null,
-        openIssues: repo.open_issues_count,
-        isArchived: repo.archived,
         readme,
-      });
-    }
+      }),
+    ];
   } catch (error) {
     console.error(`Error processing ${repo.full_name}:`, error);
+    return [];
   }
-
-  return plugins;
 }
 
 async function fetchOfficialPayloadPlugins(): Promise<Plugin[]> {
@@ -485,21 +550,6 @@ async function fetchOfficialPayloadPlugins(): Promise<Plugin[]> {
 }
 
 // npm data fetching
-
-const INVALID_PACKAGE_NAMES = new Set([
-  'dev', 'test', 'tests', 'example', 'examples', 'demo', 'sample',
-  'app', 'web', 'client', 'server', 'api', 'core', 'lib', 'utils',
-  'config', 'docs', 'packages', 'src', 'dist', 'build', 'scripts',
-  'undefined', 'null', 'true', 'false',
-]);
-
-function isValidPackageName(name: string | undefined): name is string {
-  if (!name) return false;
-  if (INVALID_PACKAGE_NAMES.has(name.toLowerCase())) return false;
-  // npm package names must match this pattern
-  if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name)) return false;
-  return true;
-}
 
 async function fetchNpmData(packageName: string): Promise<NpmData | null> {
   try {
