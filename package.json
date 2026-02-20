@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "fetch-plugins": "tsx scripts/fetch-plugins.ts"
+    "fetch-plugins": "tsx --env-file=.env scripts/fetch-plugins.ts"
   },
   "dependencies": {
     "@next/env": "^16.1.6",

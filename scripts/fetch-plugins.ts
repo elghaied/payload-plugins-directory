@@ -10,7 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.FINE_GRAINED_PERSONAL_ACCESS_TOKEN;
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.FINE_GRAINED_PERSONAL_ACCESS_TOKEN  ;
 const OUTPUT_PATH = path.join(process.cwd(), 'data', 'plugins.json');
 
 interface GitHubRepo {
@@ -58,6 +58,11 @@ interface NpmData {
   dependencyCount: number;
 }
 
+interface NpmFetchResult {
+  data: NpmData;
+  repositoryUrl: string | null; // raw url from npm registry, internal use only
+}
+
 interface Plugin {
   id: string;
   name: string;
@@ -95,9 +100,11 @@ const headers: HeadersInit = {
 };
 
 if (GITHUB_TOKEN) {
+
   headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
   console.log('Using authenticated GitHub API requests');
 } else {
+ 
   console.warn('No GITHUB_TOKEN found - using unauthenticated requests (lower rate limits)');
 }
 
@@ -290,6 +297,16 @@ function isValidPackageName(name: string | undefined): name is string {
   // npm package names must match this pattern
   if (!/^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name)) return false;
   return true;
+}
+
+function normalizeGitHubUrl(url: string | undefined): string | null {
+  if (!url) return null;
+  const cleaned = url.replace(/^git\+/, '').replace(/\.git$/, '').trim();
+  const urlMatch = cleaned.match(/github\.com[/:]([\w.-]+\/[\w.-]+)/i);
+  if (urlMatch) return urlMatch[1].toLowerCase();
+  const shortMatch = cleaned.match(/^github:([\w.-]+\/[\w.-]+)/i);
+  if (shortMatch) return shortMatch[1].toLowerCase();
+  return null;
 }
 
 function isLikelyPlugin(dirName: string, packageJson: PackageJson): boolean {
@@ -551,7 +568,7 @@ async function fetchOfficialPayloadPlugins(): Promise<Plugin[]> {
 
 // npm data fetching
 
-async function fetchNpmData(packageName: string): Promise<NpmData | null> {
+async function fetchNpmDataWithRepo(packageName: string): Promise<NpmFetchResult | null> {
   try {
     const [metaRes, weeklyRes, monthlyRes] = await Promise.all([
       fetch(`https://registry.npmjs.org/${encodeURIComponent(packageName)}`),
@@ -571,13 +588,19 @@ async function fetchNpmData(packageName: string): Promise<NpmData | null> {
     const latestMeta = meta.versions?.[latestTag];
     const publishTime = meta.time?.[latestTag];
 
+    const repositoryUrl: string | null =
+      latestMeta?.repository?.url ?? meta?.repository?.url ?? null;
+
     return {
-      weeklyDownloads: weekly?.downloads ?? 0,
-      monthlyDownloads: monthly?.downloads ?? 0,
-      latestVersion: latestTag,
-      unpackedSize: latestMeta?.dist?.unpackedSize ?? null,
-      lastPublish: publishTime ?? '',
-      dependencyCount: Object.keys(latestMeta?.dependencies ?? {}).length,
+      data: {
+        weeklyDownloads: weekly?.downloads ?? 0,
+        monthlyDownloads: monthly?.downloads ?? 0,
+        latestVersion: latestTag,
+        unpackedSize: latestMeta?.dist?.unpackedSize ?? null,
+        lastPublish: publishTime ?? '',
+        dependencyCount: Object.keys(latestMeta?.dependencies ?? {}).length,
+      },
+      repositoryUrl,
     };
   } catch (err) {
     console.warn(`  Warning: Failed to fetch npm data for ${packageName}:`, err);
@@ -587,31 +610,70 @@ async function fetchNpmData(packageName: string): Promise<NpmData | null> {
 
 async function enrichPluginsWithNpmData(plugins: Plugin[]): Promise<void> {
   const pluginsWithPackage = plugins.filter(p => isValidPackageName(p.packageName));
-  console.log(`\nFetching npm data for ${pluginsWithPackage.length} plugins...`);
+
+  // Group plugins by lowercase package name to detect shared package names
+  const byPackageName = new Map<string, Plugin[]>();
+  for (const plugin of pluginsWithPackage) {
+    const key = plugin.packageName!.toLowerCase();
+    const group = byPackageName.get(key) ?? [];
+    group.push(plugin);
+    byPackageName.set(key, group);
+  }
+
+  const uniquePackages = Array.from(byPackageName.keys());
+  console.log(`\nFetching npm data for ${uniquePackages.length} unique packages (${pluginsWithPackage.length} plugins)...`);
 
   const batchSize = 10;
   let fetched = 0;
+  let checked = 0;
 
-  for (let i = 0; i < pluginsWithPackage.length; i += batchSize) {
-    const batch = pluginsWithPackage.slice(i, i + batchSize);
+  for (let i = 0; i < uniquePackages.length; i += batchSize) {
+    const batch = uniquePackages.slice(i, i + batchSize);
     const results = await Promise.all(
-      batch.map(async (plugin) => {
-        const data = await fetchNpmData(plugin.packageName!);
-        return { plugin, data };
+      batch.map(async (pkgName) => {
+        const result = await fetchNpmDataWithRepo(pkgName);
+        return { pkgName, result };
       })
     );
 
-    for (const { plugin, data } of results) {
-      if (data) {
-        plugin.npm = data;
+    for (const { pkgName, result } of results) {
+      checked++;
+      const group = byPackageName.get(pkgName)!;
+
+      if (!result) continue;
+
+      if (group.length === 1) {
+        // No ambiguity — assign unconditionally
+        group[0].npm = result.data;
         fetched++;
+      } else {
+        // Multiple plugins share this package name — use npm registry's repository field to
+        // identify the canonical publisher
+        const npmRepoPath = normalizeGitHubUrl(result.repositoryUrl ?? undefined);
+        if (!npmRepoPath) {
+          // Can't determine canonical publisher safely — skip all
+          console.log(`  Skipping npm data for ${pkgName}: shared by ${group.length} plugins, no repository field`);
+          continue;
+        }
+        let assigned = false;
+        for (const plugin of group) {
+          const pluginRepoPath = normalizeGitHubUrl(plugin.url);
+          if (pluginRepoPath === npmRepoPath) {
+            plugin.npm = result.data;
+            fetched++;
+            assigned = true;
+          }
+        }
+        if (!assigned) {
+          console.log(`  No match for ${pkgName}: npm repo=${npmRepoPath}, plugin repos=${group.map(p => normalizeGitHubUrl(p.url)).join(', ')}`);
+        }
       }
     }
 
-    const progress = Math.min(i + batchSize, pluginsWithPackage.length);
-    console.log(`  npm: ${progress}/${pluginsWithPackage.length} checked (${fetched} found)`);
+    const progress = Math.min(i + batchSize, uniquePackages.length);
+    console.log(`  npm: ${progress}/${uniquePackages.length} checked (${fetched} assigned)`);
 
-    if (i + batchSize < pluginsWithPackage.length) {
+    if (i + batchSize < uniquePackages.length) {
       await sleep(300);
     }
   }

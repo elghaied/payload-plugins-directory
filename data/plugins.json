@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "lastUpdated": "2026-02-19T18:14:47.324Z",
+=======
+  "lastUpdated": "2026-02-20T05:35:49.117Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
   "totalCount": 179,
   "plugins": [
     {
@@ -8,9 +12,15 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -41,9 +51,15 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -74,9 +90,15 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -107,9 +129,15 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -140,9 +168,15 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -173,9 +207,15 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -206,9 +246,15 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -239,9 +285,15 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -272,9 +324,15 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -305,9 +363,15 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -338,9 +402,15 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -371,9 +441,15 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
+<<<<<<< HEAD
       "stars": 40679,
       "forks": 3387,
       "lastUpdate": "2026-02-19T18:01:33Z",
+=======
+      "stars": 40690,
+      "forks": 3391,
+      "lastUpdate": "2026-02-20T01:30:45Z",
+>>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -5677,14 +5753,14 @@
       "isArchived": false,
       "readme": "# PayloadCMS + Dub Plugin\n\nA Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.\nThis plugin synchronizes your Payload collections with Dub.co, ensuring that every published document gets a corresponding shortlink, tag, and color configuration.",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 186,
+        "monthlyDownloads": 851,
         "latestVersion": "1.6.1",
         "unpackedSize": 40219,
         "lastPublish": "2026-02-19T03:36:38.730Z",
         "dependencyCount": 1
       },
-      "healthScore": 67
+      "healthScore": 78
     },
     {
       "id": "1146636503-lib-fields",
@@ -6260,15 +6336,7 @@
       "openIssues": 0,
       "isArchived": false,
       "readme": "# 🎉 payload-dub - Simplifying Your Shortlink Management\n\n## 🚀 Getting Started\n\nWelcome to **payload-dub**, a straightforward tool designed to help you auto-create and manage shortlinks for your published documents. This plugin works seamlessly with Payload CMS to enhance your document-sharing process.\n\n## 📥 Download Now",
-      "npm": {
-        "weeklyDownloads": 186,
-        "monthlyDownloads": 851,
-        "latestVersion": "1.6.1",
-        "unpackedSize": 40219,
-        "lastPublish": "2026-02-19T03:36:38.730Z",
-        "dependencyCount": 1
-      },
-      "healthScore": 76
+      "healthScore": 35
     },
     {
       "id": "1134242888-root",
