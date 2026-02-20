@@ -25,7 +25,7 @@ export async function GET() {
       (p) => `
     <item>
       <title>${escapeXml(p.name)}</title>
-      <link>https://payload-plugins-directory.gshell.fr/plugins/${p.id}</link>
+      <link>https://payloaddirectory.dev/plugins/${p.id}</link>
       <description>${escapeXml(p.description)}</description>
       <pubDate>${new Date(p.createdAt).toUTCString()}</pubDate>
       <guid isPermaLink="false">${p.id}</guid>
@@ -37,10 +37,10 @@ export async function GET() {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Payload CMS Plugin Directory</title>
-    <link>https://payload-plugins-directory.gshell.fr</link>
+    <link>https://payloaddirectory.dev</link>
     <description>New Payload CMS plugins</description>
     <lastBuildDate>${new Date(metadata.lastUpdated).toUTCString()}</lastBuildDate>
-    <atom:link href="https://payload-plugins-directory.gshell.fr/feed.xml" rel="self" type="application/rss+xml" />${items}
+    <atom:link href="https://payloaddirectory.dev/feed.xml" rel="self" type="application/rss+xml" />${items}
   </channel>
 </rss>`;
 

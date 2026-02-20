@@ -15,7 +15,7 @@ export default function Page() {
     "@type": "CollectionPage",
     name: "Payload CMS Plugin Directory",
     description: `Browse and discover ${metadata.totalCount}+ Payload CMS plugins.`,
-    url: "https://payload-plugins-directory.gshell.fr",
+    url: "https://payloaddirectory.dev",
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: metadata.totalCount,
@@ -26,7 +26,7 @@ export default function Page() {
           "@type": "SoftwareApplication",
           name: plugin.name,
           description: plugin.description,
-          url: `https://payload-plugins-directory.gshell.fr/plugins/${plugin.id}`,
+          url: `https://payloaddirectory.dev/plugins/${plugin.id}`,
           applicationCategory: "Plugin",
           operatingSystem: "Node.js",
           author: {

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "Payload CMS Plugin Directory — Discover Community & Official Plugins",
   description:
     "Browse and discover 160+ Payload CMS plugins. Filter by version (v1, v2, v3), sort by stars, forks, or recent updates. Find official and community plugins for your Payload project.",
-  metadataBase: new URL("https://payload-plugins-directory.gshell.fr"),
+  metadataBase: new URL("https://payloaddirectory.dev"),
   alternates: {
     canonical: "/",
     types: { "application/rss+xml": "/feed.xml" },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     title: "Payload CMS Plugin Directory",
     description:
       "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",
-    url: "https://payload-plugins-directory.gshell.fr",
+    url: "https://payloaddirectory.dev",
     siteName: "Payload Plugin Directory",
     type: "website",
     locale: "en_US",

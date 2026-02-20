@@ -124,7 +124,7 @@ export default async function PluginDetailPage({
     "@type": "SoftwareApplication",
     name: plugin.name,
     description: plugin.description,
-    url: `https://payload-plugins-directory.gshell.fr/plugins/${plugin.id}`,
+    url: `https://payloaddirectory.dev/plugins/${plugin.id}`,
     applicationCategory: "Plugin",
     operatingSystem: "Node.js",
     author: {
