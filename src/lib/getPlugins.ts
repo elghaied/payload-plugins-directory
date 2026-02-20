@@ -91,9 +91,18 @@ export function getPluginStats() {
     months.push({ label, count });
   }
 
-  // Quick numbers
-  const totalStars = plugins.reduce((s, p) => s + p.stars, 0);
-  const totalForks = plugins.reduce((s, p) => s + p.forks, 0);
+  // Quick numbers — deduplicate by root repo URL so monorepo plugins don't inflate totals
+  // Each monorepo package has a unique url like .../tree/main/packages/plugin-foo,
+  // so we strip the /tree/... suffix to get the canonical repo key.
+  const repoKey = (p: Plugin) => p.url.split("/tree/")[0];
+
+  const uniqueRepos = new Map<string, Plugin>();
+  plugins.forEach((p) => {
+    const key = repoKey(p);
+    if (!uniqueRepos.has(key)) uniqueRepos.set(key, p);
+  });
+  const totalStars = Array.from(uniqueRepos.values()).reduce((s, p) => s + p.stars, 0);
+  const totalForks = Array.from(uniqueRepos.values()).reduce((s, p) => s + p.forks, 0);
   const starValues = plugins.map((p) => p.stars).sort((a, b) => a - b);
   const medianStars = starValues[Math.floor(starValues.length / 2)] || 0;
   const avgStars = total > 0 ? Math.round(totalStars / total) : 0;
