@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
-  "lastUpdated": "2026-02-19T18:14:47.324Z",
-=======
-  "lastUpdated": "2026-02-20T05:35:49.117Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
+  "lastUpdated": "2026-02-20T05:42:03.610Z",
   "totalCount": 179,
   "plugins": [
     {
@@ -12,15 +8,9 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -51,15 +41,9 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -90,15 +74,9 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -129,15 +107,9 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -168,15 +140,9 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -207,15 +173,9 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -246,15 +206,9 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -285,15 +239,9 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -324,15 +272,9 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -363,15 +305,9 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -402,15 +338,9 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -441,15 +371,9 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-<<<<<<< HEAD
-      "stars": 40679,
-      "forks": 3387,
-      "lastUpdate": "2026-02-19T18:01:33Z",
-=======
       "stars": 40690,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
->>>>>>> 2dc15bd (fix issue with assigning npm packages to the wrong repo)
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -1227,7 +1151,7 @@
       "packageName": "create-payload-api-docs",
       "collection": "payload-tools",
       "description": "Create openapi docs for your payload cms",
-      "stars": 134,
+      "stars": 135,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1268,7 +1192,7 @@
       "packageName": "payload-openapi",
       "collection": "payload-tools",
       "description": "Create openapi documentation for your payload cms",
-      "stars": 134,
+      "stars": 135,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1309,7 +1233,7 @@
       "packageName": "payload-query",
       "collection": "payload-tools",
       "description": "Payload typesafe query utility",
-      "stars": 134,
+      "stars": 135,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1350,7 +1274,7 @@
       "packageName": "payload-rbac",
       "collection": "payload-tools",
       "description": "Simple role based access control for your Payload cms",
-      "stars": 134,
+      "stars": 135,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1376,14 +1300,14 @@
       "openIssues": 13,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 63,
+        "monthlyDownloads": 313,
         "latestVersion": "1.0.3",
         "unpackedSize": 39886,
         "lastPublish": "2023-04-18T22:45:40.934Z",
         "dependencyCount": 0
       },
-      "healthScore": 38
+      "healthScore": 47
     },
     {
       "id": "611765581-swagger",
@@ -1391,7 +1315,7 @@
       "packageName": "payload-swagger",
       "collection": "payload-tools",
       "description": "Swagger plugin for payload cms",
-      "stars": 134,
+      "stars": 135,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1417,14 +1341,14 @@
       "openIssues": 13,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 1685,
+        "monthlyDownloads": 6949,
         "latestVersion": "1.4.0",
         "unpackedSize": 24879,
         "lastPublish": "2023-07-15T23:08:56.785Z",
         "dependencyCount": 2
       },
-      "healthScore": 38
+      "healthScore": 54
     },
     {
       "id": "821717323-root",
@@ -1721,12 +1645,12 @@
       "npm": {
         "weeklyDownloads": 0,
         "monthlyDownloads": 0,
-        "latestVersion": "1.0.0-beta.5",
-        "unpackedSize": 34013,
-        "lastPublish": "2025-11-02T05:30:14.549Z",
+        "latestVersion": "1.0.0-beta.8",
+        "unpackedSize": 141782,
+        "lastPublish": "2026-01-08T21:06:23.534Z",
         "dependencyCount": 2
       },
-      "healthScore": 68
+      "healthScore": 70
     },
     {
       "id": "908347705-content-freeze",
@@ -2582,14 +2506,14 @@
       "isArchived": false,
       "readme": "# Payload CMS Author Fields plugin\n\nPayload CMS plugin to add created & updated by fields\n\n## What?\n\nWill automatically add `createdBy` and `updatedBy` fields to all globals & collections in your app.\n\n## Why?\n\n- Audit trail of who created & modified things\n- Use it as the basis for a publishing approval workflow\n\n## How?\n\n### Installation\n\n```sh\nnpm install @boomworks/payload-plugin-author-fields\n```\n\n### Usage\n\nIn your `payload.config.ts`:",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 63,
+        "monthlyDownloads": 233,
         "latestVersion": "1.1.9",
         "unpackedSize": 26368,
         "lastPublish": "2024-05-14T04:10:50.393Z",
         "dependencyCount": 0
       },
-      "healthScore": 27
+      "healthScore": 36
     },
     {
       "id": "922465872-root",
@@ -2869,7 +2793,7 @@
       "description": "Puck visual page builder plugin for Payload CMS",
       "stars": 35,
       "forks": 2,
-      "lastUpdate": "2026-02-03T22:54:19Z",
+      "lastUpdate": "2026-02-20T04:51:42Z",
       "createdAt": "2026-01-05T01:04:40Z",
       "owner": "delmaredigital",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
@@ -2892,14 +2816,14 @@
       "isArchived": false,
       "readme": "# @delmaredigital/payload-puck\n\nA PayloadCMS plugin for integrating [Puck](https://puckeditor.com) visual page builder. Build pages visually with drag-and-drop components while leveraging Payload's content management capabilities.",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.6.14",
-        "unpackedSize": 1713996,
-        "lastPublish": "2026-01-28T17:18:24.186Z",
+        "weeklyDownloads": 60,
+        "monthlyDownloads": 1548,
+        "latestVersion": "0.6.15",
+        "unpackedSize": 1719851,
+        "lastPublish": "2026-02-20T00:53:51.597Z",
         "dependencyCount": 17
       },
-      "healthScore": 58
+      "healthScore": 67
     },
     {
       "id": "700588599-root",
@@ -2934,7 +2858,7 @@
       "description": "Better Auth adapter and plugins for Payload CMS",
       "stars": 33,
       "forks": 4,
-      "lastUpdate": "2026-02-17T20:08:25Z",
+      "lastUpdate": "2026-02-19T18:26:10Z",
       "createdAt": "2026-01-04T19:27:15Z",
       "owner": "delmaredigital",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
@@ -2954,18 +2878,18 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 1,
+      "openIssues": 0,
       "isArchived": false,
       "readme": "# @delmaredigital/payload-better-auth\n\nBetter Auth adapter and plugins for Payload CMS. Enables seamless integration between Better Auth and Payload.\n\n<p align=\"center\">\n  <a href=\"https://demo.delmaredigital.com\"><img src=\"https://img.shields.io/badge/Live_Demo-Try_It_Now-2ea44f?style=for-the-badge&logo=vercel&logoColor=white\" alt=\"Live Demo - Try It Now\"></a>\n  &nbsp;&nbsp;\n  <a href=\"https://github.com/delmaredigital/dd-starter\"><img src=\"https://img.shields.io/badge/Starter_Template-Use_This",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.2",
-        "unpackedSize": 706891,
-        "lastPublish": "2026-02-17T20:10:05.544Z",
+        "weeklyDownloads": 490,
+        "monthlyDownloads": 2267,
+        "latestVersion": "0.4.3",
+        "unpackedSize": 719190,
+        "lastPublish": "2026-02-19T18:27:47.084Z",
         "dependencyCount": 0
       },
-      "healthScore": 69
+      "healthScore": 82
     },
     {
       "id": "679237214-root",
@@ -3331,7 +3255,7 @@
       "readme": "# Google Maps Autocomplete plugin\n\n> **Note**\n> This plugin is currently under active development and still in an early stage.\n> Check the [roadmap](#roadmap) below in this readme for more details / upcoming features.",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "monthlyDownloads": 36,
         "latestVersion": "1.0.3",
         "unpackedSize": 70004,
         "lastPublish": "2024-05-04T20:50:10.682Z",
@@ -3413,6 +3337,46 @@
       "healthScore": 53
     },
     {
+      "id": "1030244052-root",
+      "name": "payload extended import export plugin",
+      "packageName": "payload-extended-import-export-plugin",
+      "description": "This is an extended version of the Payload CMS import-export plugin, providing additional features and enhancements.",
+      "stars": 23,
+      "forks": 5,
+      "lastUpdate": "2025-08-06T09:14:15Z",
+      "createdAt": "2025-08-01T10:12:25Z",
+      "owner": "saroroce",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/105857203?v=4",
+      "url": "https://github.com/saroroce/payload-extended-import-export-plugin",
+      "topics": [
+        "export",
+        "import",
+        "import-export",
+        "payload-extended",
+        "payload-plugin",
+        "payloadcms",
+        "plugin"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.37.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": null,
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# Payload Extended Import Export Plugin\n\nAn extended import and export plugin for [Payload CMS](https://payloadcms.com) with additional features and enhancements.\n\n## Features\n\n- 📤 **Data Import** - Import data from CSV, JSON and other formats\n- 🔧 **Field Mapping Configuration** - Flexible field mapping during import  \n- 📊 **Data Preview** - Preview data before importing\n- ⚡ **Import Progress** - Track import progress in real-time\n- 🎯 **Selective Import** - Choose specific collections to imp",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.0.11",
+        "unpackedSize": 389147,
+        "lastPublish": "2025-08-06T09:14:21.864Z",
+        "dependencyCount": 3
+      },
+      "healthScore": 37
+    },
+    {
       "id": "1000565815-root",
       "name": "payload plugin ai localization",
       "packageName": "payload-plugin-ai-localization",
@@ -3448,46 +3412,6 @@
         "dependencyCount": 2
       },
       "healthScore": 44
-    },
-    {
-      "id": "1030244052-root",
-      "name": "payload extended import export plugin",
-      "packageName": "payload-extended-import-export-plugin",
-      "description": "This is an extended version of the Payload CMS import-export plugin, providing additional features and enhancements.",
-      "stars": 22,
-      "forks": 5,
-      "lastUpdate": "2025-08-06T09:14:15Z",
-      "createdAt": "2025-08-01T10:12:25Z",
-      "owner": "saroroce",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/105857203?v=4",
-      "url": "https://github.com/saroroce/payload-extended-import-export-plugin",
-      "topics": [
-        "export",
-        "import",
-        "import-export",
-        "payload-extended",
-        "payload-plugin",
-        "payloadcms",
-        "plugin"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.37.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": null,
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# Payload Extended Import Export Plugin\n\nAn extended import and export plugin for [Payload CMS](https://payloadcms.com) with additional features and enhancements.\n\n## Features\n\n- 📤 **Data Import** - Import data from CSV, JSON and other formats\n- 🔧 **Field Mapping Configuration** - Flexible field mapping during import  \n- 📊 **Data Preview** - Preview data before importing\n- ⚡ **Import Progress** - Track import progress in real-time\n- 🎯 **Selective Import** - Choose specific collections to imp",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.11",
-        "unpackedSize": 389147,
-        "lastPublish": "2025-08-06T09:14:21.864Z",
-        "dependencyCount": 3
-      },
-      "healthScore": 37
     },
     {
       "id": "767805757-root",
@@ -3718,14 +3642,14 @@
       "isArchived": false,
       "readme": "# Payload Instagram Plugin\n\nThis plugin allows you to use an instagram connected feed as content to be shown inside payload blog.\n\n🔥 important: starting from 0.0.8 the access token will be stored to db to allow to refresh it automatically. Read the updated setup guide to learn how to configure the plugin.\n\n## How to setup\n1. create a facebook developer app following [this tutorial](https://developers.facebook.com/docs/instagram-basic-display-api/getting-started), up to point 3.",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 20,
         "monthlyDownloads": 0,
         "latestVersion": "0.1.0-beta.2",
         "unpackedSize": 234531,
         "lastPublish": "2024-07-12T17:29:38.719Z",
         "dependencyCount": 0
       },
-      "healthScore": 26
+      "healthScore": 33
     },
     {
       "id": "776235992-root",
@@ -3937,14 +3861,14 @@
       "isArchived": false,
       "readme": "# payload-plugin-algolia\n\nPayloadCMS plugin that syncs collections with Algolia search\n\n![ci status](https://github.com/wkentdag/payload-plugin-algolia/actions/workflows/test.yml/badge.svg)\n\n## Installation\n\n```sh\nnpm i payload-plugin-algolia\n```\n\n## Usage\n\nAt a minimum, the plugin requires Algolia credentials and a list of enabled collections.\n\n```ts\n// payload.config.ts",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 101,
         "monthlyDownloads": 0,
         "latestVersion": "0.1.0",
         "unpackedSize": 77031,
         "lastPublish": "2024-04-15T05:24:03.066Z",
         "dependencyCount": 1
       },
-      "healthScore": 28
+      "healthScore": 38
     },
     {
       "id": "687694848-root",
@@ -4619,14 +4543,14 @@
       "isArchived": false,
       "readme": "# PayloadCMS + useSend Email Adapter\n\nuseSend is an API-first email delivery platform built for transactional and marketing email workflows. It adopts an architectural model comparable to Resend while remaining fully open source and self-hostable. This combination enables teams to standardise email delivery without surrendering control over infrastructure, deployment topology, or data locality.",
       "npm": {
-        "weeklyDownloads": 195,
-        "monthlyDownloads": 872,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.3.1",
         "unpackedSize": 28652,
         "lastPublish": "2026-02-19T03:36:45.297Z",
         "dependencyCount": 0
       },
-      "healthScore": 81
+      "healthScore": 70
     },
     {
       "id": "692223457-root",
@@ -4725,14 +4649,14 @@
       "openIssues": 2,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 265,
-        "monthlyDownloads": 504,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "2.0.0",
         "unpackedSize": 1312886,
         "lastPublish": "2026-02-19T09:29:15.959Z",
         "dependencyCount": 3
       },
-      "healthScore": 66
+      "healthScore": 54
     },
     {
       "id": "969401869-root",
@@ -6262,14 +6186,14 @@
       "isArchived": false,
       "readme": "# PayloadCMS FTP Storage Adapter\n\nFTP adapter for Payload CMS's [plugin-cloud-storage](https://www.npmjs.com/package/@payloadcms/plugin-cloud-storage) plugin\n\nThis adapter uses [basic-ftp](https://www.npmjs.com/package/basic-ftp) to handle the FTP operations.\n\n## Usage\n\nLet's say we have a `Videos` collection (which slug is \"videos\") and we want to store the uploads on a third-party remote storage using FTP.\n\nAt the top of your `payload.config.ts` file, add the following:",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 3,
         "monthlyDownloads": 0,
         "latestVersion": "1.0.2",
         "unpackedSize": 5869,
         "lastPublish": "2024-04-05T21:49:42.839Z",
         "dependencyCount": 2
       },
-      "healthScore": 25
+      "healthScore": 27
     },
     {
       "id": "782753635-root",
@@ -6312,7 +6236,7 @@
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 0,
       "forks": 0,
-      "lastUpdate": "2026-02-19T15:59:55Z",
+      "lastUpdate": "2026-02-20T02:55:04Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",
