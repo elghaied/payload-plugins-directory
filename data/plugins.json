@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-02-20T05:42:03.610Z",
+  "lastUpdated": "2026-02-20T06:15:02.007Z",
   "totalCount": 179,
   "plugins": [
     {
@@ -8,7 +8,7 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -41,7 +41,7 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -74,7 +74,7 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -107,7 +107,7 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -140,7 +140,7 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -173,7 +173,7 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -206,7 +206,7 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -239,7 +239,7 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -272,7 +272,7 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -305,7 +305,7 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -338,7 +338,7 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -371,7 +371,7 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 40690,
+      "stars": 40691,
       "forks": 3391,
       "lastUpdate": "2026-02-20T01:30:45Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -1300,14 +1300,14 @@
       "openIssues": 13,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 63,
-        "monthlyDownloads": 313,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.0.3",
         "unpackedSize": 39886,
         "lastPublish": "2023-04-18T22:45:40.934Z",
         "dependencyCount": 0
       },
-      "healthScore": 47
+      "healthScore": 38
     },
     {
       "id": "611765581-swagger",
@@ -1341,14 +1341,14 @@
       "openIssues": 13,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 1685,
-        "monthlyDownloads": 6949,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.4.0",
         "unpackedSize": 24879,
         "lastPublish": "2023-07-15T23:08:56.785Z",
         "dependencyCount": 2
       },
-      "healthScore": 54
+      "healthScore": 38
     },
     {
       "id": "821717323-root",
@@ -2106,14 +2106,14 @@
       "isArchived": false,
       "readme": "# Upload files to S3 in Payload CMS\n\nThis plugin sends uploaded files to Amazon S3 instead of writing them to the server file system.  \nResized images are properly supported.\n\n## Why should I use this module?\n\nPayload team supports an official cloud storage plugin, different from this one.\n\nThe main difference is that this plugin allows configuring collection logic on the collection itself.",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 183,
         "monthlyDownloads": 0,
         "latestVersion": "2.1.1",
         "unpackedSize": 21563,
         "lastPublish": "2023-05-16T12:01:10.864Z",
         "dependencyCount": 1
       },
-      "healthScore": 36
+      "healthScore": 47
     },
     {
       "id": "907855621-root",
@@ -2506,14 +2506,14 @@
       "isArchived": false,
       "readme": "# Payload CMS Author Fields plugin\n\nPayload CMS plugin to add created & updated by fields\n\n## What?\n\nWill automatically add `createdBy` and `updatedBy` fields to all globals & collections in your app.\n\n## Why?\n\n- Audit trail of who created & modified things\n- Use it as the basis for a publishing approval workflow\n\n## How?\n\n### Installation\n\n```sh\nnpm install @boomworks/payload-plugin-author-fields\n```\n\n### Usage\n\nIn your `payload.config.ts`:",
       "npm": {
-        "weeklyDownloads": 63,
-        "monthlyDownloads": 233,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.1.9",
         "unpackedSize": 26368,
         "lastPublish": "2024-05-14T04:10:50.393Z",
         "dependencyCount": 0
       },
-      "healthScore": 36
+      "healthScore": 27
     },
     {
       "id": "922465872-root",
@@ -3137,14 +3137,14 @@
       "isArchived": false,
       "readme": "# Payload Zapier Plugin\n\nThis plugin can be added to a Payload project to make it simple to send Zaps to a zapier webhook address when collection data changes. It is designed to be flexible and generic to allow for all use-cases to manage zaps.\n\n### How it works\nWhen a collection is created/updated/deleted, the plugin will send a Zap to the webhook address. The Zap will contain the collection name, the operation (create/update/delete), and the data related to the document.",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 22,
         "monthlyDownloads": 0,
         "latestVersion": "0.0.9",
         "unpackedSize": 18824,
         "lastPublish": "2022-10-14T21:22:05.164Z",
         "dependencyCount": 0
       },
-      "healthScore": 42
+      "healthScore": 49
     },
     {
       "id": "1111197152-root",
@@ -3255,7 +3255,7 @@
       "readme": "# Google Maps Autocomplete plugin\n\n> **Note**\n> This plugin is currently under active development and still in an early stage.\n> Check the [roadmap](#roadmap) below in this readme for more details / upcoming features.",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 36,
+        "monthlyDownloads": 0,
         "latestVersion": "1.0.3",
         "unpackedSize": 70004,
         "lastPublish": "2024-05-04T20:50:10.682Z",
@@ -3642,14 +3642,14 @@
       "isArchived": false,
       "readme": "# Payload Instagram Plugin\n\nThis plugin allows you to use an instagram connected feed as content to be shown inside payload blog.\n\n🔥 important: starting from 0.0.8 the access token will be stored to db to allow to refresh it automatically. Read the updated setup guide to learn how to configure the plugin.\n\n## How to setup\n1. create a facebook developer app following [this tutorial](https://developers.facebook.com/docs/instagram-basic-display-api/getting-started), up to point 3.",
       "npm": {
-        "weeklyDownloads": 20,
+        "weeklyDownloads": 0,
         "monthlyDownloads": 0,
         "latestVersion": "0.1.0-beta.2",
         "unpackedSize": 234531,
         "lastPublish": "2024-07-12T17:29:38.719Z",
         "dependencyCount": 0
       },
-      "healthScore": 33
+      "healthScore": 26
     },
     {
       "id": "776235992-root",
@@ -3714,14 +3714,14 @@
       "isArchived": false,
       "readme": "# A Collections / Globals Backed Payload RBAC Plugin\n\n- Easily customizable `user` and `role` collection generation.\n- Fine-grained access control configuration. All are editable in the `role` editing page!\n- Fully customizable `access` functions and access control handler functions (*for endpoints*).\n- Automatically populated `root` role with all access privileges. And a `root` user with this role as well!\n\n## 📖 Table of Contents <a name=\"table-of-contents\"></a>",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 12,
         "monthlyDownloads": 0,
         "latestVersion": "0.1.10",
         "unpackedSize": 130411,
         "lastPublish": "2023-11-14T07:09:59.261Z",
         "dependencyCount": 0
       },
-      "healthScore": 34
+      "healthScore": 39
     },
     {
       "id": "846425506-root",
@@ -3861,14 +3861,14 @@
       "isArchived": false,
       "readme": "# payload-plugin-algolia\n\nPayloadCMS plugin that syncs collections with Algolia search\n\n![ci status](https://github.com/wkentdag/payload-plugin-algolia/actions/workflows/test.yml/badge.svg)\n\n## Installation\n\n```sh\nnpm i payload-plugin-algolia\n```\n\n## Usage\n\nAt a minimum, the plugin requires Algolia credentials and a list of enabled collections.\n\n```ts\n// payload.config.ts",
       "npm": {
-        "weeklyDownloads": 101,
+        "weeklyDownloads": 0,
         "monthlyDownloads": 0,
         "latestVersion": "0.1.0",
         "unpackedSize": 77031,
         "lastPublish": "2024-04-15T05:24:03.066Z",
         "dependencyCount": 1
       },
-      "healthScore": 38
+      "healthScore": 28
     },
     {
       "id": "687694848-root",
@@ -3897,14 +3897,14 @@
       "isArchived": false,
       "readme": "# 🚀 AI Chat Payload Plugin\n\nThe AI Chat Payload Plugin is a plugin for Payload CMS that adds ChatGPT-like functionality to your collection. It enables seamless interaction with ChatGPT models within Payload and provides out-of-the-box chat completion and admin chat completion endpoints. This README file provides instructions on how to install and use the plugin.\n\n⚠️ **Please note that this plugin is still in development and may contain bugs or incomplete features.",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 9,
+        "monthlyDownloads": 47,
         "latestVersion": "0.1.0-beta.3",
         "unpackedSize": 53799,
         "lastPublish": "2023-09-07T06:49:18.018Z",
         "dependencyCount": 2
       },
-      "healthScore": 31
+      "healthScore": 36
     },
     {
       "id": "571626986-root",
@@ -4354,14 +4354,14 @@
       "isArchived": false,
       "readme": "# Payload Code Block Feature\r\n\r\n![image](https://github.com/GeorgeHulpoi/payload-code-block-feature/assets/7074307/5793c056-49be-401e-aecb-2c652e2c262d)\r\n\r\nThis package embeds `@lexical/code` in the editor in PayloadCMS and is not intended to produce long-term functionality for PayloadCMS.",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 4,
+        "monthlyDownloads": 11,
         "latestVersion": "0.0.0-alpha.0",
         "unpackedSize": 41111,
         "lastPublish": "2023-12-10T22:37:24.264Z",
         "dependencyCount": 1
       },
-      "healthScore": 35
+      "healthScore": 38
     },
     {
       "id": "887320325-root",
@@ -4428,7 +4428,7 @@
       "readme": "# Payload CMS BlurHash Plugin by Zapal\n\n[![](/github-banner.jpg)](https://www.zapal.tech)\n\nTurbocharge your website performance by creating ultralight image placeholders, resulting in a smoother user experience.\n\n### 📋 Requirements\n\n- Payload version `1.7.2` or higher is required (version `2.0.0` or higher is recommended)\n\n## 🚀 Getting started\n\nInstal the package with `yarn add @zapal/payload-blurhash-plugin` or `npm install @zapal/payload-blurhash-plugin`",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "monthlyDownloads": 65,
         "latestVersion": "1.0.7",
         "unpackedSize": 44007,
         "lastPublish": "2023-10-22T22:11:04.948Z",
@@ -4463,14 +4463,14 @@
       "isArchived": false,
       "readme": "# Payload Default Roles\n\nAdd default roles for access control on all collections.\n\n## Options\n\n- ### `ignoredSlugs: string[]` _Optional_\n\n  An array of the slugs from the collections this plugin should leave untouched.\n\n- ### `roles: string[]` _Optional_\n  An array of the roles this plugin should default access to.<br>\n  _Default: `[\"admin\", \"executive\"]`_\n\n## Example",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 8,
         "monthlyDownloads": 0,
         "latestVersion": "0.0.6",
         "unpackedSize": 8323,
         "lastPublish": "2022-12-01T18:37:45.880Z",
         "dependencyCount": 0
       },
-      "healthScore": 20
+      "healthScore": 25
     },
     {
       "id": "625223272-root",
@@ -4581,14 +4581,14 @@
       "isArchived": false,
       "readme": "# Payload Plugin AI Completions\n\nA [Payload CMS](https://payloadcms.com) AI Completions plugin that utilizes OpenAI's API to generate content for fields. It provides an interface for generating content.\n\n## ⚠️ Warning: Work in Progress ⚠️\n\nThis plugin is currently a work in progress and may not have all features implemented or may contain bugs. Use at your own risk.\n\n## Installation",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 11,
+        "monthlyDownloads": 77,
         "latestVersion": "0.0.1",
         "unpackedSize": 97885,
         "lastPublish": "2023-09-20T20:35:20.917Z",
         "dependencyCount": 2
       },
-      "healthScore": 23
+      "healthScore": 28
     },
     {
       "id": "1070225561-localized-slugs",
@@ -4875,14 +4875,14 @@
       "isArchived": false,
       "readme": "# Resolve alias webpack helper for Payload CMS\n\n<a href=\"LICENSE\">\n  <img src=\"https://img.shields.io/badge/license-MIT-brightgreen.svg\" alt=\"Software License\" />\n</a>\n<a href=\"https://github.com/thgh/payload-plugin-resolve-alias/issues\">\n  <img src=\"https://img.shields.io/github/issues/thgh/payload-plugin-resolve-alias.svg\" alt=\"Issues\" />\n</a>\n<a href=\"https://npmjs.org/package/payload-plugin-resolve-alias\">\n  <img src=\"https://img.shields.io/npm/v/payload-plugin-resolve-alias.svg?style=flat-s",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 1359,
+        "monthlyDownloads": 6461,
         "latestVersion": "0.1.0",
         "unpackedSize": 7571,
         "lastPublish": "2022-11-05T12:52:47.627Z",
         "dependencyCount": 0
       },
-      "healthScore": 34
+      "healthScore": 50
     },
     {
       "id": "1142833666-root",
@@ -6186,14 +6186,14 @@
       "isArchived": false,
       "readme": "# PayloadCMS FTP Storage Adapter\n\nFTP adapter for Payload CMS's [plugin-cloud-storage](https://www.npmjs.com/package/@payloadcms/plugin-cloud-storage) plugin\n\nThis adapter uses [basic-ftp](https://www.npmjs.com/package/basic-ftp) to handle the FTP operations.\n\n## Usage\n\nLet's say we have a `Videos` collection (which slug is \"videos\") and we want to store the uploads on a third-party remote storage using FTP.\n\nAt the top of your `payload.config.ts` file, add the following:",
       "npm": {
-        "weeklyDownloads": 3,
+        "weeklyDownloads": 0,
         "monthlyDownloads": 0,
         "latestVersion": "1.0.2",
         "unpackedSize": 5869,
         "lastPublish": "2024-04-05T21:49:42.839Z",
         "dependencyCount": 2
       },
-      "healthScore": 27
+      "healthScore": 25
     },
     {
       "id": "782753635-root",
@@ -6236,7 +6236,7 @@
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 0,
       "forks": 0,
-      "lastUpdate": "2026-02-20T02:55:04Z",
+      "lastUpdate": "2026-02-20T05:43:40Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",
