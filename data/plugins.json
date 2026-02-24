@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-02-23T18:18:03.946Z",
+  "lastUpdated": "2026-02-24T06:17:51.066Z",
   "totalCount": 181,
   "plugins": [
     {
@@ -8,9 +8,9 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -26,8 +26,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 139703,
-        "monthlyDownloads": 662765,
+        "weeklyDownloads": 132028,
+        "monthlyDownloads": 626542,
         "latestVersion": "3.77.0",
         "unpackedSize": 121136,
         "lastPublish": "2026-02-18T19:30:43.920Z",
@@ -41,9 +41,9 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -59,8 +59,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 3758,
-        "monthlyDownloads": 15191,
+        "weeklyDownloads": 3357,
+        "monthlyDownloads": 14853,
         "latestVersion": "3.77.0",
         "unpackedSize": 1511414,
         "lastPublish": "2026-02-18T19:30:47.772Z",
@@ -74,9 +74,9 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -92,8 +92,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 44786,
-        "monthlyDownloads": 191641,
+        "weeklyDownloads": 42777,
+        "monthlyDownloads": 186996,
         "latestVersion": "3.77.0",
         "unpackedSize": 185993,
         "lastPublish": "2026-02-18T19:30:50.266Z",
@@ -107,9 +107,9 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -125,8 +125,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 10553,
-        "monthlyDownloads": 45586,
+        "weeklyDownloads": 10260,
+        "monthlyDownloads": 44629,
         "latestVersion": "3.77.0",
         "unpackedSize": 1273586,
         "lastPublish": "2026-02-18T19:30:53.658Z",
@@ -140,9 +140,9 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -158,8 +158,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 6079,
-        "monthlyDownloads": 25175,
+        "weeklyDownloads": 7141,
+        "monthlyDownloads": 25993,
         "latestVersion": "3.77.0",
         "unpackedSize": 911723,
         "lastPublish": "2026-02-18T19:30:56.312Z",
@@ -173,9 +173,9 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -191,8 +191,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 20339,
-        "monthlyDownloads": 86798,
+        "weeklyDownloads": 19099,
+        "monthlyDownloads": 83777,
         "latestVersion": "3.77.0",
         "unpackedSize": 393204,
         "lastPublish": "2026-02-18T19:30:59.575Z",
@@ -206,9 +206,9 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -224,8 +224,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 42452,
-        "monthlyDownloads": 202421,
+        "weeklyDownloads": 42147,
+        "monthlyDownloads": 192608,
         "latestVersion": "3.77.0",
         "unpackedSize": 52515,
         "lastPublish": "2026-02-18T19:31:02.816Z",
@@ -239,9 +239,9 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -257,8 +257,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 46047,
-        "monthlyDownloads": 186624,
+        "weeklyDownloads": 44304,
+        "monthlyDownloads": 183387,
         "latestVersion": "3.77.0",
         "unpackedSize": 35960,
         "lastPublish": "2026-02-18T19:31:05.596Z",
@@ -272,9 +272,9 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -290,8 +290,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 41254,
-        "monthlyDownloads": 187621,
+        "weeklyDownloads": 39941,
+        "monthlyDownloads": 179940,
         "latestVersion": "3.77.0",
         "unpackedSize": 112066,
         "lastPublish": "2026-02-18T19:31:08.624Z",
@@ -305,9 +305,9 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -323,8 +323,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 17342,
-        "monthlyDownloads": 76454,
+        "weeklyDownloads": 14552,
+        "monthlyDownloads": 71007,
         "latestVersion": "3.77.0",
         "unpackedSize": 17067,
         "lastPublish": "2026-02-18T19:31:11.063Z",
@@ -338,9 +338,9 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -356,8 +356,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 76772,
-        "monthlyDownloads": 336154,
+        "weeklyDownloads": 74026,
+        "monthlyDownloads": 321832,
         "latestVersion": "3.77.0",
         "unpackedSize": 313258,
         "lastPublish": "2026-02-18T19:31:15.078Z",
@@ -371,9 +371,9 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 40748,
-      "forks": 3396,
-      "lastUpdate": "2026-02-23T17:21:08Z",
+      "stars": 40755,
+      "forks": 3397,
+      "lastUpdate": "2026-02-24T05:33:59Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -389,21 +389,21 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 5421,
-        "monthlyDownloads": 22383,
+        "weeklyDownloads": 3681,
+        "monthlyDownloads": 19787,
         "latestVersion": "3.77.0",
         "unpackedSize": 113210,
         "lastPublish": "2026-02-18T19:31:18.052Z",
         "dependencyCount": 5
       },
-      "healthScore": 99
+      "healthScore": 98
     },
     {
       "id": "829724738-root",
       "name": "payload ai",
       "packageName": "@ai-stack/payloadcms",
       "description": "AI Plugin is a powerful extension for the Payload CMS, integrating advanced AI capabilities to enhance content creation and management.",
-      "stars": 432,
+      "stars": 434,
       "forks": 56,
       "lastUpdate": "2026-02-21T17:29:06Z",
       "createdAt": "2024-07-17T00:26:53Z",
@@ -1153,7 +1153,7 @@
       "packageName": "create-payload-api-docs",
       "collection": "payload-tools",
       "description": "Create openapi docs for your payload cms",
-      "stars": 135,
+      "stars": 136,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1194,7 +1194,7 @@
       "packageName": "payload-openapi",
       "collection": "payload-tools",
       "description": "Create openapi documentation for your payload cms",
-      "stars": 135,
+      "stars": 136,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1220,14 +1220,14 @@
       "openIssues": 13,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 1822,
-        "monthlyDownloads": 7695,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.4.0",
         "unpackedSize": 111700,
         "lastPublish": "2023-07-15T23:06:46.308Z",
         "dependencyCount": 3
       },
-      "healthScore": 52
+      "healthScore": 36
     },
     {
       "id": "611765581-query",
@@ -1235,7 +1235,7 @@
       "packageName": "payload-query",
       "collection": "payload-tools",
       "description": "Payload typesafe query utility",
-      "stars": 135,
+      "stars": 136,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1276,7 +1276,7 @@
       "packageName": "payload-rbac",
       "collection": "payload-tools",
       "description": "Simple role based access control for your Payload cms",
-      "stars": 135,
+      "stars": 136,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1302,14 +1302,14 @@
       "openIssues": 13,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 63,
-        "monthlyDownloads": 313,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.0.3",
         "unpackedSize": 39886,
         "lastPublish": "2023-04-18T22:45:40.934Z",
         "dependencyCount": 0
       },
-      "healthScore": 47
+      "healthScore": 38
     },
     {
       "id": "611765581-swagger",
@@ -1317,7 +1317,7 @@
       "packageName": "payload-swagger",
       "collection": "payload-tools",
       "description": "Swagger plugin for payload cms",
-      "stars": 135,
+      "stars": 136,
       "forks": 14,
       "lastUpdate": "2024-07-17T12:18:10Z",
       "createdAt": "2023-03-09T13:57:28Z",
@@ -1344,7 +1344,7 @@
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 6949,
+        "monthlyDownloads": 0,
         "latestVersion": "1.4.0",
         "unpackedSize": 24879,
         "lastPublish": "2023-07-15T23:08:56.785Z",
@@ -1359,7 +1359,7 @@
       "description": "Add an extra security layer to PayloadCMS using a Time-based One-time Password (TOTP).",
       "stars": 127,
       "forks": 15,
-      "lastUpdate": "2026-01-05T17:12:10Z",
+      "lastUpdate": "2026-02-23T21:40:59Z",
       "createdAt": "2024-06-29T08:30:46Z",
       "owner": "GeorgeHulpoi",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/7074307?v=4",
@@ -1379,18 +1379,18 @@
         3
       ],
       "license": null,
-      "openIssues": 4,
+      "openIssues": 3,
       "isArchived": false,
       "readme": "# Payload TOTP (Time-based One-Time Password)\n[![NPM](https://img.shields.io/npm/v/payload-totp)](https://www.npmjs.com/package/payload-totp)\n[![Downloads](http://img.shields.io/npm/dm/payload-totp.svg)](https://www.npmjs.com/package/payload-totp)\n![banner](https://github.com/user-attachments/assets/631dd9bf-8425-439e-9988-d25b6d5d3f6e)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 1673,
+        "monthlyDownloads": 5361,
         "latestVersion": "3.0.0",
         "unpackedSize": 320827,
         "lastPublish": "2026-01-05T17:16:22.215Z",
         "dependencyCount": 3
       },
-      "healthScore": 59
+      "healthScore": 80
     },
     {
       "id": "618796772-root",
@@ -1573,14 +1573,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 42,
-        "monthlyDownloads": 283,
+        "weeklyDownloads": 24,
+        "monthlyDownloads": 288,
         "latestVersion": "1.6.1",
         "unpackedSize": 78624,
         "lastPublish": "2026-01-25T01:17:30.900Z",
         "dependencyCount": 0
       },
-      "healthScore": 81
+      "healthScore": 77
     },
     {
       "id": "908347705-audit-fields",
@@ -1609,14 +1609,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 494,
-        "monthlyDownloads": 2234,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.5.0",
         "unpackedSize": 29923,
         "lastPublish": "2026-01-08T21:04:38.159Z",
         "dependencyCount": 0
       },
-      "healthScore": 85
+      "healthScore": 72
     },
     {
       "id": "908347705-broken-link-checker",
@@ -1645,14 +1645,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 17,
-        "monthlyDownloads": 28,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.0.0-beta.8",
         "unpackedSize": 141782,
         "lastPublish": "2026-01-08T21:06:23.534Z",
         "dependencyCount": 2
       },
-      "healthScore": 76
+      "healthScore": 70
     },
     {
       "id": "908347705-content-freeze",
@@ -2508,14 +2508,14 @@
       "isArchived": false,
       "readme": "# Payload CMS Author Fields plugin\n\nPayload CMS plugin to add created & updated by fields\n\n## What?\n\nWill automatically add `createdBy` and `updatedBy` fields to all globals & collections in your app.\n\n## Why?\n\n- Audit trail of who created & modified things\n- Use it as the basis for a publishing approval workflow\n\n## How?\n\n### Installation\n\n```sh\nnpm install @boomworks/payload-plugin-author-fields\n```\n\n### Usage\n\nIn your `payload.config.ts`:",
       "npm": {
-        "weeklyDownloads": 63,
-        "monthlyDownloads": 233,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.1.9",
         "unpackedSize": 26368,
         "lastPublish": "2024-05-14T04:10:50.393Z",
         "dependencyCount": 0
       },
-      "healthScore": 36
+      "healthScore": 27
     },
     {
       "id": "922465872-root",
@@ -2558,7 +2558,7 @@
         "lastPublish": "2025-10-05T10:24:00.268Z",
         "dependencyCount": 3
       },
-      "healthScore": 54
+      "healthScore": 49
     },
     {
       "id": "1033487453-root",
@@ -3003,6 +3003,44 @@
       "healthScore": 37
     },
     {
+      "id": "1012168829-root",
+      "name": "payload email template",
+      "packageName": "payload-email-template",
+      "description": "A plugin for Payload CMS to create email templates based on React Email",
+      "stars": 28,
+      "forks": 2,
+      "lastUpdate": "2025-11-24T19:03:14Z",
+      "createdAt": "2025-07-01T23:38:39Z",
+      "owner": "escwxyz",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/124119483?v=4",
+      "url": "https://github.com/escwxyz/payload-email-template",
+      "topics": [
+        "email-template",
+        "payload",
+        "payload-plugin",
+        "payloadcms",
+        "react-email"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.37.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 9,
+      "isArchived": false,
+      "readme": "# Payload Email Template Plugin 🚀\n\n[![npm version](https://img.shields.io/npm/v/payload-email-template.svg?style=flat-square)](https://www.npmjs.com/package/payload-email-template)\n[![npm downloads](https://img.shields.io/npm/dm/payload-email-template.svg?style=flat-square)](https://www.npmjs.com/package/payload-email-template)\n[![MIT License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)\n\n---",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.2.1",
+        "unpackedSize": 337882,
+        "lastPublish": "2025-08-29T00:47:43.920Z",
+        "dependencyCount": 2
+      },
+      "healthScore": 41
+    },
+    {
       "id": "855845541-root",
       "name": "payload plugin masquerade",
       "packageName": "payload-plugin-masquerade",
@@ -3036,44 +3074,6 @@
         "dependencyCount": 1
       },
       "healthScore": 53
-    },
-    {
-      "id": "1012168829-root",
-      "name": "payload email template",
-      "packageName": "payload-email-template",
-      "description": "A plugin for Payload CMS to create email templates based on React Email",
-      "stars": 27,
-      "forks": 2,
-      "lastUpdate": "2025-11-24T19:03:14Z",
-      "createdAt": "2025-07-01T23:38:39Z",
-      "owner": "escwxyz",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/124119483?v=4",
-      "url": "https://github.com/escwxyz/payload-email-template",
-      "topics": [
-        "email-template",
-        "payload",
-        "payload-plugin",
-        "payloadcms",
-        "react-email"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.37.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 9,
-      "isArchived": false,
-      "readme": "# Payload Email Template Plugin 🚀\n\n[![npm version](https://img.shields.io/npm/v/payload-email-template.svg?style=flat-square)](https://www.npmjs.com/package/payload-email-template)\n[![npm downloads](https://img.shields.io/npm/dm/payload-email-template.svg?style=flat-square)](https://www.npmjs.com/package/payload-email-template)\n[![MIT License](https://img.shields.io/badge/license-MIT-green.svg?style=flat-square)](LICENSE)\n\n---",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.2.1",
-        "unpackedSize": 337882,
-        "lastPublish": "2025-08-29T00:47:43.920Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 41
     },
     {
       "id": "786786869-root",
@@ -3644,14 +3644,14 @@
       "isArchived": false,
       "readme": "# Payload Instagram Plugin\n\nThis plugin allows you to use an instagram connected feed as content to be shown inside payload blog.\n\n🔥 important: starting from 0.0.8 the access token will be stored to db to allow to refresh it automatically. Read the updated setup guide to learn how to configure the plugin.\n\n## How to setup\n1. create a facebook developer app following [this tutorial](https://developers.facebook.com/docs/instagram-basic-display-api/getting-started), up to point 3.",
       "npm": {
-        "weeklyDownloads": 20,
-        "monthlyDownloads": 54,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.1.0-beta.2",
         "unpackedSize": 234531,
         "lastPublish": "2024-07-12T17:29:38.719Z",
         "dependencyCount": 0
       },
-      "healthScore": 33
+      "healthScore": 26
     },
     {
       "id": "776235992-root",
@@ -3864,7 +3864,7 @@
       "readme": "# payload-plugin-algolia\n\nPayloadCMS plugin that syncs collections with Algolia search\n\n![ci status](https://github.com/wkentdag/payload-plugin-algolia/actions/workflows/test.yml/badge.svg)\n\n## Installation\n\n```sh\nnpm i payload-plugin-algolia\n```\n\n## Usage\n\nAt a minimum, the plugin requires Algolia credentials and a list of enabled collections.\n\n```ts\n// payload.config.ts",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 202,
+        "monthlyDownloads": 0,
         "latestVersion": "0.1.0",
         "unpackedSize": 77031,
         "lastPublish": "2024-04-15T05:24:03.066Z",
@@ -4913,14 +4913,14 @@
       "isArchived": false,
       "readme": "# Payload Storage Cloudinary Plugin\n\nA powerful Cloudinary storage adapter for Payload CMS v3 that replaces local file storage with Cloudinary's cloud-based solution, providing automatic image optimization, transformations, and global CDN delivery.\n\n## Features",
       "npm": {
-        "weeklyDownloads": 29,
-        "monthlyDownloads": 118,
+        "weeklyDownloads": 185,
+        "monthlyDownloads": 270,
         "latestVersion": "1.2.0",
         "unpackedSize": 188437,
         "lastPublish": "2026-02-22T22:43:47.032Z",
         "dependencyCount": 2
       },
-      "healthScore": 74
+      "healthScore": 78
     },
     {
       "id": "1142833666-root",
@@ -5018,14 +5018,14 @@
       "isArchived": false,
       "readme": "# Payload plugin switch env\n\n## Demo\n\n[demo.webm](https://github.com/user-attachments/assets/37e889c0-e0e9-472c-bdce-fc7f76166100)\n\n## Install\n\n```\npnpm i @elliott-w/payload-plugin-switch-env\n```\n\n## Example Config\n\n⚠️ Warning: The switchEnv plugin must come last in the plugins array. Your cloud storage plugin must be second last.",
       "npm": {
-        "weeklyDownloads": 243,
-        "monthlyDownloads": 333,
+        "weeklyDownloads": 47,
+        "monthlyDownloads": 346,
         "latestVersion": "2.0.0",
         "unpackedSize": 234638,
         "lastPublish": "2026-02-23T00:42:27.656Z",
         "dependencyCount": 0
       },
-      "healthScore": 76
+      "healthScore": 72
     },
     {
       "id": "1097851106-root",
@@ -5366,6 +5366,76 @@
       "healthScore": 65
     },
     {
+      "id": "1146636503-lib-fields",
+      "name": "lib fields",
+      "packageName": "@x3m-industries/lib-fields",
+      "collection": "x3m-payload",
+      "description": "A collection of reusable Payload CMS fields.",
+      "stars": 3,
+      "forks": 0,
+      "lastUpdate": "2026-02-10T12:00:49Z",
+      "createdAt": "2026-01-31T12:30:49Z",
+      "owner": "x3m-industries",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/116086895?v=4",
+      "url": "https://github.com/x3m-industries/x3m-payload/tree/main/packages/lib-fields",
+      "topics": [
+        "fields",
+        "payload",
+        "payload-plugin",
+        "payloadcms"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "*",
+      "payloadVersionMajor": [],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "2.1.3",
+        "unpackedSize": 263230,
+        "lastPublish": "2026-02-05T23:45:02.913Z",
+        "dependencyCount": 9
+      },
+      "healthScore": 57
+    },
+    {
+      "id": "1146636503-lib-services",
+      "name": "lib services",
+      "packageName": "@x3m-industries/lib-services",
+      "collection": "x3m-payload",
+      "description": "Base service architecture for Payload CMS applications.",
+      "stars": 3,
+      "forks": 0,
+      "lastUpdate": "2026-02-10T12:00:49Z",
+      "createdAt": "2026-01-31T12:30:49Z",
+      "owner": "x3m-industries",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/116086895?v=4",
+      "url": "https://github.com/x3m-industries/x3m-payload/tree/main/packages/lib-services",
+      "topics": [
+        "fields",
+        "payload",
+        "payload-plugin",
+        "payloadcms"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "*",
+      "payloadVersionMajor": [],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "2.2.0",
+        "unpackedSize": 120316,
+        "lastPublish": "2026-02-10T12:00:48.667Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 65
+    },
+    {
       "id": "954992946-root",
       "name": "payload default value gen",
       "packageName": "payload-default-value-gen",
@@ -5646,6 +5716,40 @@
       "healthScore": 20
     },
     {
+      "id": "1107996084-root",
+      "name": "payload auth cookie",
+      "packageName": "payload-auth-cookie",
+      "description": "Payload CMS authentication plugin for Cookies from external SSO",
+      "stars": 2,
+      "forks": 0,
+      "lastUpdate": "2026-02-23T23:04:56Z",
+      "createdAt": "2025-12-01T22:13:08Z",
+      "owner": "MarkKropf",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/1703729?v=4",
+      "url": "https://github.com/MarkKropf/payload-auth-cookie",
+      "topics": [
+        "payload-plugin"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.70.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# payload-auth-cookie\n\nA Payload CMS authentication plugin for external SSO cookie-based authentication.\n\nThis plugin allows you to authenticate users based on cookies set by an external SSO system. It validates sessions via a configurable session endpoint and maps users to Payload CMS collections.\n\n## Features",
+      "npm": {
+        "weeklyDownloads": 81,
+        "monthlyDownloads": 271,
+        "latestVersion": "0.0.13",
+        "unpackedSize": 118702,
+        "lastPublish": "2026-02-23T23:04:48.004Z",
+        "dependencyCount": 1
+      },
+      "healthScore": 75
+    },
+    {
       "id": "1163515462-root",
       "name": "payload nav studio",
       "packageName": "@consilioweb/admin-nav",
@@ -5685,14 +5789,14 @@
       "isArchived": false,
       "readme": "<!-- Header Banner -->\n<div align=\"center\">\n\n  <a href=\"https://git.io/typing-svg\">\n    <img src=\"https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1000&color=3B82F6&center=true&vCenter=true&width=700&lines=%40consilioweb%2Fadmin-nav;Payload+CMS+Sidebar+Plugin;Drag+%26+Drop+%7C+Per-User+Prefs;70%2B+Icons+%7C+i18n+Ready;Zero-Config+%7C+Instant+Render\" alt=\"Typing SVG\" />\n  </a>\n\n  <br><br>",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 1012,
+        "monthlyDownloads": 1012,
         "latestVersion": "0.4.5",
         "unpackedSize": 538143,
         "lastPublish": "2026-02-22T20:05:03.952Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 78
     },
     {
       "id": "1078131883-root",
@@ -5728,84 +5832,14 @@
       "isArchived": false,
       "readme": "# PayloadCMS + Dub Plugin\n\nA Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.\nThis plugin synchronizes your Payload collections with Dub.co, ensuring that every published document gets a corresponding shortlink, tag, and color configuration.",
       "npm": {
-        "weeklyDownloads": 186,
-        "monthlyDownloads": 851,
+        "weeklyDownloads": 141,
+        "monthlyDownloads": 843,
         "latestVersion": "1.6.1",
         "unpackedSize": 40219,
         "lastPublish": "2026-02-19T03:36:38.730Z",
         "dependencyCount": 1
       },
       "healthScore": 78
-    },
-    {
-      "id": "1146636503-lib-fields",
-      "name": "lib fields",
-      "packageName": "@x3m-industries/lib-fields",
-      "collection": "x3m-payload",
-      "description": "A collection of reusable Payload CMS fields.",
-      "stars": 2,
-      "forks": 0,
-      "lastUpdate": "2026-02-10T12:00:49Z",
-      "createdAt": "2026-01-31T12:30:49Z",
-      "owner": "x3m-industries",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/116086895?v=4",
-      "url": "https://github.com/x3m-industries/x3m-payload/tree/main/packages/lib-fields",
-      "topics": [
-        "fields",
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "*",
-      "payloadVersionMajor": [],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "2.1.3",
-        "unpackedSize": 263230,
-        "lastPublish": "2026-02-05T23:45:02.913Z",
-        "dependencyCount": 9
-      },
-      "healthScore": 57
-    },
-    {
-      "id": "1146636503-lib-services",
-      "name": "lib services",
-      "packageName": "@x3m-industries/lib-services",
-      "collection": "x3m-payload",
-      "description": "Base service architecture for Payload CMS applications.",
-      "stars": 2,
-      "forks": 0,
-      "lastUpdate": "2026-02-10T12:00:49Z",
-      "createdAt": "2026-01-31T12:30:49Z",
-      "owner": "x3m-industries",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/116086895?v=4",
-      "url": "https://github.com/x3m-industries/x3m-payload/tree/main/packages/lib-services",
-      "topics": [
-        "fields",
-        "payload",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "*",
-      "payloadVersionMajor": [],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "2.2.0",
-        "unpackedSize": 120316,
-        "lastPublish": "2026-02-10T12:00:48.667Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 65
     },
     {
       "id": "1142870023-root",
@@ -5836,40 +5870,6 @@
       "isArchived": false,
       "readme": "# Payload LMS Plugin\n\nA comprehensive Learning Management System (LMS) plugin for Payload CMS featuring course management, video progress tracking, enrollment management, and payment integration.\n\n> **Status:** Active Development | **Payload Compatibility:** ^3.71.1\n\n## Features",
       "healthScore": 37
-    },
-    {
-      "id": "1107996084-root",
-      "name": "payload auth cookie",
-      "packageName": "payload-auth-cookie",
-      "description": "Payload CMS authentication plugin for Cookies from external SSO",
-      "stars": 2,
-      "forks": 0,
-      "lastUpdate": "2026-01-08T19:54:05Z",
-      "createdAt": "2025-12-01T22:13:08Z",
-      "owner": "MarkKropf",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/1703729?v=4",
-      "url": "https://github.com/MarkKropf/payload-auth-cookie",
-      "topics": [
-        "payload-plugin"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.70.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# payload-auth-cookie\n\nA Payload CMS authentication plugin for external SSO cookie-based authentication.\n\nThis plugin allows you to authenticate users based on cookies set by an external SSO system. It validates sessions via a configurable session endpoint and maps users to Payload CMS collections.\n\n## Features",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.0.12",
-        "unpackedSize": 118157,
-        "lastPublish": "2026-01-08T19:39:36.838Z",
-        "dependencyCount": 1
-      },
-      "healthScore": 57
     },
     {
       "id": "1074214439-root",
@@ -6338,7 +6338,7 @@
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 0,
       "forks": 0,
-      "lastUpdate": "2026-02-23T16:53:00Z",
+      "lastUpdate": "2026-02-24T03:27:49Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",
@@ -6389,14 +6389,14 @@
       "isArchived": false,
       "readme": "# Payload Subscribers Plugin\n\nA plugin to manage subscribers and the \"channels\" they can subscribe to.\n\nThis includes ways to allow your subscribers to:\n\n- Sign up or sign in by requesting a magic link email\n- Verify the magic link to authenticate\n- Opt in or out of \"opt-in channels\"\n\nYou manage the opt-in channels via the Payload admin.\n\nThe plugin relies on your email adapter configured in your payload config to send emails.\n\nThat is all this plugin does currently.",
       "npm": {
-        "weeklyDownloads": 273,
-        "monthlyDownloads": 859,
+        "weeklyDownloads": 337,
+        "monthlyDownloads": 1181,
         "latestVersion": "0.0.14",
         "unpackedSize": 354567,
         "lastPublish": "2026-02-22T21:49:13.096Z",
         "dependencyCount": 0
       },
-      "healthScore": 73
+      "healthScore": 74
     },
     {
       "id": "1157211530-root",
