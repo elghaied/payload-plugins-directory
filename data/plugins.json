@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-02-28T06:04:01.226Z",
+  "lastUpdated": "2026-02-28T18:02:07.185Z",
   "totalCount": 183,
   "plugins": [
     {
@@ -8,9 +8,9 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -26,8 +26,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 143809,
-        "monthlyDownloads": 653279,
+        "weeklyDownloads": 145624,
+        "monthlyDownloads": 642280,
         "latestVersion": "3.78.0",
         "unpackedSize": 121136,
         "lastPublish": "2026-02-27T20:05:26.604Z",
@@ -41,9 +41,9 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -59,8 +59,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 3792,
-        "monthlyDownloads": 15584,
+        "weeklyDownloads": 3819,
+        "monthlyDownloads": 15751,
         "latestVersion": "3.78.0",
         "unpackedSize": 1511696,
         "lastPublish": "2026-02-27T20:05:29.974Z",
@@ -74,9 +74,9 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -92,8 +92,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 46991,
-        "monthlyDownloads": 196028,
+        "weeklyDownloads": 46665,
+        "monthlyDownloads": 194674,
         "latestVersion": "3.78.0",
         "unpackedSize": 185993,
         "lastPublish": "2026-02-27T20:05:32.160Z",
@@ -107,9 +107,9 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -125,8 +125,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 12061,
-        "monthlyDownloads": 48702,
+        "weeklyDownloads": 12400,
+        "monthlyDownloads": 48606,
         "latestVersion": "3.78.0",
         "unpackedSize": 1297930,
         "lastPublish": "2026-02-27T20:05:35.642Z",
@@ -140,9 +140,9 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -158,8 +158,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 8858,
-        "monthlyDownloads": 28985,
+        "weeklyDownloads": 9035,
+        "monthlyDownloads": 29460,
         "latestVersion": "3.78.0",
         "unpackedSize": 899444,
         "lastPublish": "2026-02-27T20:05:38.565Z",
@@ -173,9 +173,9 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -191,8 +191,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 19904,
-        "monthlyDownloads": 88375,
+        "weeklyDownloads": 19678,
+        "monthlyDownloads": 87229,
         "latestVersion": "3.78.0",
         "unpackedSize": 395065,
         "lastPublish": "2026-02-27T20:05:41.134Z",
@@ -206,9 +206,9 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -224,8 +224,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 46135,
-        "monthlyDownloads": 198850,
+        "weeklyDownloads": 46355,
+        "monthlyDownloads": 196660,
         "latestVersion": "3.78.0",
         "unpackedSize": 52515,
         "lastPublish": "2026-02-27T20:05:43.526Z",
@@ -239,9 +239,9 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -257,8 +257,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 49430,
-        "monthlyDownloads": 195964,
+        "weeklyDownloads": 49499,
+        "monthlyDownloads": 195988,
         "latestVersion": "3.78.0",
         "unpackedSize": 35960,
         "lastPublish": "2026-02-27T20:05:45.968Z",
@@ -272,9 +272,9 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -290,8 +290,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 43176,
-        "monthlyDownloads": 186251,
+        "weeklyDownloads": 42987,
+        "monthlyDownloads": 183188,
         "latestVersion": "3.78.0",
         "unpackedSize": 112066,
         "lastPublish": "2026-02-27T20:05:48.793Z",
@@ -305,9 +305,9 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -323,8 +323,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 15988,
-        "monthlyDownloads": 72909,
+        "weeklyDownloads": 16582,
+        "monthlyDownloads": 71787,
         "latestVersion": "3.78.0",
         "unpackedSize": 17067,
         "lastPublish": "2026-02-27T20:05:51.198Z",
@@ -338,9 +338,9 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -356,8 +356,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 79968,
-        "monthlyDownloads": 339608,
+        "weeklyDownloads": 79773,
+        "monthlyDownloads": 336007,
         "latestVersion": "3.78.0",
         "unpackedSize": 313258,
         "lastPublish": "2026-02-27T20:05:54.022Z",
@@ -371,9 +371,9 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 40837,
-      "forks": 3414,
-      "lastUpdate": "2026-02-28T01:06:18Z",
+      "stars": 40851,
+      "forks": 3417,
+      "lastUpdate": "2026-02-28T15:52:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -389,8 +389,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 3809,
-        "monthlyDownloads": 18631,
+        "weeklyDownloads": 3938,
+        "monthlyDownloads": 18754,
         "latestVersion": "3.78.0",
         "unpackedSize": 113210,
         "lastPublish": "2026-02-27T20:05:56.565Z",
@@ -403,7 +403,7 @@
       "name": "payload ai",
       "packageName": "@ai-stack/payloadcms",
       "description": "AI Plugin is a powerful extension for the Payload CMS, integrating advanced AI capabilities to enhance content creation and management.",
-      "stars": 435,
+      "stars": 437,
       "forks": 56,
       "lastUpdate": "2026-02-27T01:13:16Z",
       "createdAt": "2024-07-17T00:26:53Z",
@@ -437,8 +437,8 @@
       "isArchived": false,
       "readme": "# Payload AI Plugin\n\n<p align=\"center\">\n  <img alt=\"Payload AI Plugin\" src=\"assets/payload-ai-intro.gif\" width=\"100%\" />\n</p>\n\n<p align=\"center\">\n  <strong>Transform content creation with intelligent automation — your models, your way</strong>\n</p>\n\n<p align=\"center\">\n  <img alt=\"Supported AI Providers\" src=\"assets/providers.png\" width=\"100%\" />\n</p>\n\n---\n\n## 🚀 What is this?\n\nThe Payload AI Plugin is your secret weapon for turbocharged content creation.",
       "npm": {
-        "weeklyDownloads": 1433,
-        "monthlyDownloads": 4599,
+        "weeklyDownloads": 1512,
+        "monthlyDownloads": 4717,
         "latestVersion": "3.2.26",
         "unpackedSize": 632561,
         "lastPublish": "2026-01-23T18:00:26.453Z",
@@ -827,14 +827,14 @@
       "isArchived": false,
       "readme": "# Better fields plugin\n\nThis plugin aims to provide you with very specific and improved fields for the admin panel.  \nWe've tried to keep styling as consistent as possible with the existing admin UI, however if there are any issues please report them!\n\nEvery field will come with its own usage instructions and structure. These are subject to change!",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 3033,
+        "monthlyDownloads": 13582,
         "latestVersion": "2.0.2",
         "unpackedSize": 181189,
         "lastPublish": "2025-04-12T22:07:04.643Z",
         "dependencyCount": 0
       },
-      "healthScore": 43
+      "healthScore": 60
     },
     {
       "id": "944322391-payload-auth",
@@ -842,7 +842,7 @@
       "packageName": "payload-auth",
       "collection": "payload-auth",
       "description": "The most powerful authentication solution for Payload CMS",
-      "stars": 270,
+      "stars": 272,
       "forks": 46,
       "lastUpdate": "2026-02-26T05:11:25Z",
       "createdAt": "2025-03-07T06:33:03Z",
@@ -863,8 +863,8 @@
       "openIssues": 17,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 2510,
-        "monthlyDownloads": 8213,
+        "weeklyDownloads": 2492,
+        "monthlyDownloads": 8376,
         "latestVersion": "1.8.4",
         "unpackedSize": 1590292,
         "lastPublish": "2026-01-07T04:27:02.183Z",
@@ -1066,14 +1066,14 @@
       "isArchived": false,
       "readme": "# Payload Dashboard Analytics Plugin\n\nA plugin for [Payload CMS](https://github.com/payloadcms/payload) to connect analytics data to your Payload dashboard.\n\nFeatures:\n\n- Chart widgets on collections, globals and dashboard\n- Live users indicator in sidebar\n- Aggregate data widgets on collections and globals\n- Basic report widgets on dashboard\n- Support for Plausible and Google Analytics\n\n## Installation",
       "npm": {
-        "weeklyDownloads": 30,
-        "monthlyDownloads": 139,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.3.0",
         "unpackedSize": 271153,
         "lastPublish": "2023-05-25T13:20:48.528Z",
         "dependencyCount": 2
       },
-      "healthScore": 38
+      "healthScore": 31
     },
     {
       "id": "888484677-authors-info",
@@ -1357,7 +1357,7 @@
       "name": "payload totp",
       "packageName": "payload-totp",
       "description": "Add an extra security layer to PayloadCMS using a Time-based One-time Password (TOTP).",
-      "stars": 128,
+      "stars": 130,
       "forks": 15,
       "lastUpdate": "2026-02-23T21:40:59Z",
       "createdAt": "2024-06-29T08:30:46Z",
@@ -1896,14 +1896,14 @@
       "isArchived": false,
       "readme": "# payload-webp\n\n[![NPM Version][npm-image]][npm-url]\n[![Download Count][download-url]][npm-url]\n\n[npm-image]: https://img.shields.io/npm/v/payload-webp.svg?style=flat-square\n[npm-url]: https://npmjs.org/package/payload-webp\n[download-url]: https://img.shields.io/npm/dt/payload-webp.svg?style=flat-square\n\n**payloadcms/payload** plugin for automatic image conversion to **webp** format.\n\n## Getting started\n\n1. Add `sharp` to `resolutions` field in `package.json` to prevent versions mismatch\\*:",
       "npm": {
-        "weeklyDownloads": 27,
-        "monthlyDownloads": 323,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.1.6",
         "unpackedSize": 101479,
         "lastPublish": "2023-06-27T08:57:04.581Z",
         "dependencyCount": 3
       },
-      "healthScore": 45
+      "healthScore": 38
     },
     {
       "id": "557861535-root",
@@ -1947,7 +1947,7 @@
       "name": "payload plugins",
       "packageName": "payload-plugins",
       "description": "Powerful plugins designed to enhance Payload CMS",
-      "stars": 74,
+      "stars": 75,
       "forks": 3,
       "lastUpdate": "2026-02-27T09:54:02Z",
       "createdAt": "2024-11-30T10:43:28Z",
@@ -2108,14 +2108,14 @@
       "isArchived": false,
       "readme": "# Upload files to S3 in Payload CMS\n\nThis plugin sends uploaded files to Amazon S3 instead of writing them to the server file system.  \nResized images are properly supported.\n\n## Why should I use this module?\n\nPayload team supports an official cloud storage plugin, different from this one.\n\nThe main difference is that this plugin allows configuring collection logic on the collection itself.",
       "npm": {
-        "weeklyDownloads": 263,
-        "monthlyDownloads": 1070,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "2.1.1",
         "unpackedSize": 21563,
         "lastPublish": "2023-05-16T12:01:10.864Z",
         "dependencyCount": 1
       },
-      "healthScore": 48
+      "healthScore": 36
     },
     {
       "id": "907855621-root",
@@ -2646,7 +2646,7 @@
       "description": "Provide ability to export collections as CSV or JSON",
       "stars": 39,
       "forks": 3,
-      "lastUpdate": "2026-02-16T08:43:12Z",
+      "lastUpdate": "2026-02-28T09:12:14Z",
       "createdAt": "2023-12-15T13:51:20Z",
       "owner": "Newesissrl",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/82472474?v=4",
@@ -2706,14 +2706,14 @@
       "isArchived": false,
       "readme": "# Payload kanban plugin\n\n> **Note**\n> This plugin is currently under active development and still in an early stage.\n> Check the [roadmap](#roadmap) below in this readme for more details / upcoming features.\n\n<picture>\n  <source media=\"(prefers-color-scheme: dark)\" src=\"./preview-dark.png\" />\n  <source media=\"(prefers-color-scheme: light)\" src=\"./preview-light.png\" />\n  <img alt=\"Shows an image illustrating the payload-kanban-board plugin\" src=\"./preview-dark.png\">\n</picture>\n\n## Installation",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 38,
         "monthlyDownloads": 0,
         "latestVersion": "3.0.24",
         "unpackedSize": 150646,
         "lastPublish": "2025-03-23T18:43:48.810Z",
         "dependencyCount": 4
       },
-      "healthScore": 34
+      "healthScore": 42
     },
     {
       "id": "666027944-root",
@@ -2779,14 +2779,14 @@
       "isArchived": false,
       "readme": "# Payload Meilisearch Plugin (ALPHA)\n\n**Expect breaking changes.**\n\nA plugin for [Payload CMS](https://github.com/payloadcms/payload) to connect [Meilisearch](https://meilisearch.com) and Payload.\n\nRoadmap to stable release:",
       "npm": {
-        "weeklyDownloads": 23,
-        "monthlyDownloads": 129,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.1.3",
         "unpackedSize": 29615,
         "lastPublish": "2023-02-26T06:17:07.575Z",
         "dependencyCount": 1
       },
-      "healthScore": 39
+      "healthScore": 32
     },
     {
       "id": "1127884946-root",
@@ -2819,8 +2819,8 @@
       "isArchived": false,
       "readme": "# @delmaredigital/payload-better-auth\n\nBetter Auth adapter and plugins for Payload CMS. Enables seamless integration between Better Auth and Payload.\n\n<p align=\"center\">\n  <a href=\"https://demo.delmaredigital.com\"><img src=\"https://img.shields.io/badge/Live_Demo-Try_It_Now-2ea44f?style=for-the-badge&logo=vercel&logoColor=white\" alt=\"Live Demo - Try It Now\"></a>\n  &nbsp;&nbsp;\n  <a href=\"https://github.com/delmaredigital/dd-starter\"><img src=\"https://img.shields.io/badge/Starter_Template-Use_This",
       "npm": {
-        "weeklyDownloads": 230,
-        "monthlyDownloads": 1938,
+        "weeklyDownloads": 264,
+        "monthlyDownloads": 1761,
         "latestVersion": "0.4.4",
         "unpackedSize": 661745,
         "lastPublish": "2026-02-25T15:21:01.201Z",
@@ -2833,7 +2833,7 @@
       "name": "payload puck",
       "packageName": "@delmaredigital/payload-puck",
       "description": "Puck visual page builder plugin for Payload CMS",
-      "stars": 36,
+      "stars": 37,
       "forks": 3,
       "lastUpdate": "2026-02-21T04:36:59Z",
       "createdAt": "2026-01-05T01:04:40Z",
@@ -2993,14 +2993,14 @@
       "isArchived": false,
       "readme": "# Payload Password Protection Plugin\n\n[![NPM](https://img.shields.io/npm/v/payload-plugin-password-protection)](https://www.npmjs.com/package/payload-plugin-password-protection)\n\nA plugin for [Payload](https://github.com/payloadcms/payload) to easily allow for documents to be secured behind a layer of password protection.\n\n## Installation\n\n```bash\n  yarn add payload-plugin-password-protection\n  # OR\n  npm i payload-plugin-password-protection\n```\n\n## Basic Usage",
       "npm": {
-        "weeklyDownloads": 3,
-        "monthlyDownloads": 35,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.0.2",
         "unpackedSize": 38800,
         "lastPublish": "2022-05-04T15:10:49.912Z",
         "dependencyCount": 0
       },
-      "healthScore": 39
+      "healthScore": 37
     },
     {
       "id": "1012168829-root",
@@ -3139,14 +3139,14 @@
       "isArchived": false,
       "readme": "# Payload Zapier Plugin\n\nThis plugin can be added to a Payload project to make it simple to send Zaps to a zapier webhook address when collection data changes. It is designed to be flexible and generic to allow for all use-cases to manage zaps.\n\n### How it works\nWhen a collection is created/updated/deleted, the plugin will send a Zap to the webhook address. The Zap will contain the collection name, the operation (create/update/delete), and the data related to the document.",
       "npm": {
-        "weeklyDownloads": 8,
-        "monthlyDownloads": 67,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.0.9",
         "unpackedSize": 18824,
         "lastPublish": "2022-10-14T21:22:05.164Z",
         "dependencyCount": 0
       },
-      "healthScore": 47
+      "healthScore": 42
     },
     {
       "id": "1111197152-root",
@@ -3824,14 +3824,14 @@
       "isArchived": false,
       "readme": "# payload-blurhash-plugin\n\nPayload CMS plugin for automatic base64 encoding of images.\n\n## Getting started\n\n1. Install the package with `npm i payload-base64-plugin` or `yarn add payload-base64-plugin`.\n2. Add the plugin to your `payload.config.ts`:\n\n```ts\nimport generateBase64 from 'payload-blurhash-plugin';\n\nexport default buildConfig({\n  /* ... */\n  plugins: [generateBase64()],\n});\n```\n\n## Plugin options\n\nOptionally, you can pass the following options to tweak the behavior of the plugin:",
       "npm": {
-        "weeklyDownloads": 29,
-        "monthlyDownloads": 132,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.2.0",
         "unpackedSize": 13478,
         "lastPublish": "2022-11-27T16:44:17.799Z",
         "dependencyCount": 1
       },
-      "healthScore": 37
+      "healthScore": 30
     },
     {
       "id": "846425506-root",
@@ -3934,7 +3934,7 @@
       "readme": "# 🚀 AI Chat Payload Plugin\n\nThe AI Chat Payload Plugin is a plugin for Payload CMS that adds ChatGPT-like functionality to your collection. It enables seamless interaction with ChatGPT models within Payload and provides out-of-the-box chat completion and admin chat completion endpoints. This README file provides instructions on how to install and use the plugin.\n\n⚠️ **Please note that this plugin is still in development and may contain bugs or incomplete features.",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 35,
+        "monthlyDownloads": 0,
         "latestVersion": "0.1.0-beta.3",
         "unpackedSize": 53799,
         "lastPublish": "2023-09-07T06:49:18.018Z",
@@ -3971,7 +3971,7 @@
       "readme": "# Payload AI plugin\n\n[![npm version](https://badge.fury.io/js/payload-plugin-ai.svg)](https://badge.fury.io/js/payload-plugin-ai)\n\nATTENTION: This plugin currently requires a custom fork of payload to work (replace `payload` with `yarn add alessiogr/payload#production-with-custom`). This is because this plugins depends on two PRs which haven't been merged into payload yet:",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 50,
+        "monthlyDownloads": 0,
         "latestVersion": "1.1.0",
         "unpackedSize": 410866,
         "lastPublish": "2023-04-18T14:34:46.839Z",
@@ -4054,6 +4054,42 @@
       "healthScore": 52
     },
     {
+      "id": "1139180096-root",
+      "name": "payload enhanced sidebar",
+      "packageName": "@veiag/payload-enhanced-sidebar",
+      "description": "An enhanced sidebar plugin for Payload CMS with tabbed navigation to organize collections and globals.",
+      "stars": 12,
+      "forks": 0,
+      "lastUpdate": "2026-02-24T23:15:50Z",
+      "createdAt": "2026-01-21T16:17:11Z",
+      "owner": "VeiaG",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/41997946?v=4",
+      "url": "https://github.com/VeiaG/payload-enhanced-sidebar",
+      "topics": [
+        "payload-plugin",
+        "payloadcms",
+        "payloadcms-v3"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.60.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": null,
+      "openIssues": 2,
+      "isArchived": false,
+      "readme": "# Payload Enhanced Sidebar\n\nAn enhanced sidebar plugin for [Payload CMS](https://payloadcms.com) that adds a tabbed navigation system to organize collections and globals into logical groups.\n\n> **Note:** This plugin is in early development and has not been extensively tested. Use with caution in production environments.\n\n## Features",
+      "npm": {
+        "weeklyDownloads": 164,
+        "monthlyDownloads": 343,
+        "latestVersion": "0.2.1",
+        "unpackedSize": 151167,
+        "lastPublish": "2026-02-24T23:16:27.827Z",
+        "dependencyCount": 2
+      },
+      "healthScore": 68
+    },
+    {
       "id": "909766798-root",
       "name": "payload phone number plugin",
       "packageName": "payload-phone-number-plugin",
@@ -4084,6 +4120,46 @@
         "unpackedSize": 236767,
         "lastPublish": "2026-02-04T14:59:54.792Z",
         "dependencyCount": 3
+      },
+      "healthScore": 63
+    },
+    {
+      "id": "1131676452-root",
+      "name": "payload page tree",
+      "packageName": "@delmaredigital/payload-page-tree",
+      "description": "Payload CMS plugin for folder-based hierarchical URL slugs with visual tree management",
+      "stars": 12,
+      "forks": 1,
+      "lastUpdate": "2026-02-21T02:07:07Z",
+      "createdAt": "2026-01-10T13:37:56Z",
+      "owner": "delmaredigital",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
+      "url": "https://github.com/delmaredigital/payload-page-tree",
+      "topics": [
+        "folders",
+        "hierarchical-urls",
+        "page-tree",
+        "payload-plugin",
+        "payloadcms",
+        "slugs",
+        "typescript"
+      ],
+      "isOfficial": false,
+      "payloadVersion": ">=3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# @delmaredigital/payload-page-tree\n\nA Payload CMS plugin that extends the built-in folders feature to auto-generate hierarchical URL slugs. Folders define URL structure, pages pick a folder, and slugs are auto-generated.",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "0.3.8",
+        "unpackedSize": 282739,
+        "lastPublish": "2026-01-28T17:12:43.323Z",
+        "dependencyCount": 2
       },
       "healthScore": 63
     },
@@ -4216,82 +4292,6 @@
         "dependencyCount": 1
       },
       "healthScore": 16
-    },
-    {
-      "id": "1139180096-root",
-      "name": "payload enhanced sidebar",
-      "packageName": "@veiag/payload-enhanced-sidebar",
-      "description": "An enhanced sidebar plugin for Payload CMS with tabbed navigation to organize collections and globals.",
-      "stars": 11,
-      "forks": 0,
-      "lastUpdate": "2026-02-24T23:15:50Z",
-      "createdAt": "2026-01-21T16:17:11Z",
-      "owner": "VeiaG",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/41997946?v=4",
-      "url": "https://github.com/VeiaG/payload-enhanced-sidebar",
-      "topics": [
-        "payload-plugin",
-        "payloadcms",
-        "payloadcms-v3"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.60.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": null,
-      "openIssues": 2,
-      "isArchived": false,
-      "readme": "# Payload Enhanced Sidebar\n\nAn enhanced sidebar plugin for [Payload CMS](https://payloadcms.com) that adds a tabbed navigation system to organize collections and globals into logical groups.\n\n> **Note:** This plugin is in early development and has not been extensively tested. Use with caution in production environments.\n\n## Features",
-      "npm": {
-        "weeklyDownloads": 155,
-        "monthlyDownloads": 344,
-        "latestVersion": "0.2.1",
-        "unpackedSize": 151167,
-        "lastPublish": "2026-02-24T23:16:27.827Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 68
-    },
-    {
-      "id": "1131676452-root",
-      "name": "payload page tree",
-      "packageName": "@delmaredigital/payload-page-tree",
-      "description": "Payload CMS plugin for folder-based hierarchical URL slugs with visual tree management",
-      "stars": 11,
-      "forks": 1,
-      "lastUpdate": "2026-02-21T02:07:07Z",
-      "createdAt": "2026-01-10T13:37:56Z",
-      "owner": "delmaredigital",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
-      "url": "https://github.com/delmaredigital/payload-page-tree",
-      "topics": [
-        "folders",
-        "hierarchical-urls",
-        "page-tree",
-        "payload-plugin",
-        "payloadcms",
-        "slugs",
-        "typescript"
-      ],
-      "isOfficial": false,
-      "payloadVersion": ">=3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# @delmaredigital/payload-page-tree\n\nA Payload CMS plugin that extends the built-in folders feature to auto-generate hierarchical URL slugs. Folders define URL structure, pages pick a folder, and slugs are auto-generated.",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.3.8",
-        "unpackedSize": 282739,
-        "lastPublish": "2026-01-28T17:12:43.323Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 63
     },
     {
       "id": "1036080672-root",
@@ -4537,7 +4537,7 @@
       "readme": "# Shaggle Core Payload CMS Plugin\n\nA plugin for [Payload CMS](https://github.com/payloadcms/payload) to help speed up the development of websites for agencies with the goal of allowing installation within Vercel/Payload CMS Cloud hosting along with upcoming block library to keep all sites in sync with newest features and uniformity across agency sites.",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 20,
+        "monthlyDownloads": 0,
         "latestVersion": "1.4.0",
         "unpackedSize": 139317,
         "lastPublish": "2023-04-25T17:48:39.626Z",
@@ -4884,7 +4884,7 @@
         "lastPublish": "2025-09-20T17:36:32.660Z",
         "dependencyCount": 16
       },
-      "healthScore": 28
+      "healthScore": 23
     },
     {
       "id": "562124033-root",
@@ -5890,6 +5890,57 @@
       "healthScore": 65
     },
     {
+      "id": "1162846209-root",
+      "name": "payload seo analyzer",
+      "packageName": "@consilioweb/seo-analyzer",
+      "description": "Payload CMS SEO plugin — 50+ checks, dashboard, Lexical JSON support, Flesch FR/EN readability, i18n",
+      "stars": 2,
+      "forks": 0,
+      "lastUpdate": "2026-02-21T14:02:16Z",
+      "createdAt": "2026-02-20T19:12:08Z",
+      "owner": "pOwn3d",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/46645541?v=4",
+      "url": "https://github.com/pOwn3d/payload-seo-analyzer",
+      "topics": [
+        "content-analysis",
+        "french",
+        "i18n",
+        "lexical",
+        "meta-tags",
+        "nextjs",
+        "payload-cms",
+        "payload-plugin",
+        "plugin",
+        "readability",
+        "redirects",
+        "seo",
+        "seo-analyzer",
+        "seo-audit",
+        "seo-plugin",
+        "sitemap",
+        "structured-data",
+        "typescript"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "<!-- Header Banner -->\n<div align=\"center\">\n\n  <a href=\"https://git.io/typing-svg\">\n    <img src=\"https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1000&color=3B82F6&center=true&vCenter=true&width=700&lines=%40consilioweb%2Fseo-analyzer;Payload+CMS+SEO+Plugin;50%2B+Checks+%7C+39+Languages;Admin+Dashboard+Suite+%7C+FR+%26+EN\" alt=\"Typing SVG\" />\n  </a>\n\n  <br><br>",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.4.2",
+        "unpackedSize": 4224209,
+        "lastPublish": "2026-02-21T13:51:10.085Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 62
+    },
+    {
       "id": "1078131883-root",
       "name": "payload dub",
       "packageName": "@rubixstudios/payload-dub",
@@ -5923,14 +5974,14 @@
       "isArchived": false,
       "readme": "# PayloadCMS + Dub Plugin\n\nA Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.\nThis plugin synchronizes your Payload collections with Dub.co, ensuring that every published document gets a corresponding shortlink, tag, and color configuration.",
       "npm": {
-        "weeklyDownloads": 17,
-        "monthlyDownloads": 673,
+        "weeklyDownloads": 20,
+        "monthlyDownloads": 632,
         "latestVersion": "1.6.1",
         "unpackedSize": 40219,
         "lastPublish": "2026-02-19T03:36:38.730Z",
         "dependencyCount": 1
       },
-      "healthScore": 73
+      "healthScore": 74
     },
     {
       "id": "1074214439-root",
@@ -6137,65 +6188,14 @@
       "isArchived": false,
       "readme": "# payload-better-preview\n\nBetter live preview for [Payload CMS](https://payloadcms.com) — hover highlighting with block identification, bi-directional admin/preview sync, and smooth transitions.\n\n## Features\n\n### Hover Highlighting\n\nBlue overlay marks the block under the cursor with a label badge showing block type, index, and name. Nested blocks get a dashed parent overlay with breadcrumb labels.\n\n![Hover Highlighting](./assets/hover-highlighting.gif)\n\n### Admin → Preview Sync",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 287,
+        "monthlyDownloads": 287,
         "latestVersion": "1.0.1",
         "unpackedSize": 49051,
         "lastPublish": "2026-02-27T16:27:15.594Z",
         "dependencyCount": 0
       },
-      "healthScore": 55
-    },
-    {
-      "id": "1162846209-root",
-      "name": "payload seo analyzer",
-      "packageName": "@consilioweb/seo-analyzer",
-      "description": "Payload CMS SEO plugin — 50+ checks, dashboard, Lexical JSON support, Flesch FR/EN readability, i18n",
-      "stars": 1,
-      "forks": 0,
-      "lastUpdate": "2026-02-21T14:02:16Z",
-      "createdAt": "2026-02-20T19:12:08Z",
-      "owner": "pOwn3d",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/46645541?v=4",
-      "url": "https://github.com/pOwn3d/payload-seo-analyzer",
-      "topics": [
-        "content-analysis",
-        "french",
-        "i18n",
-        "lexical",
-        "meta-tags",
-        "nextjs",
-        "payload-cms",
-        "payload-plugin",
-        "plugin",
-        "readability",
-        "redirects",
-        "seo",
-        "seo-analyzer",
-        "seo-audit",
-        "seo-plugin",
-        "sitemap",
-        "structured-data",
-        "typescript"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "<!-- Header Banner -->\n<div align=\"center\">\n\n  <a href=\"https://git.io/typing-svg\">\n    <img src=\"https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1000&color=3B82F6&center=true&vCenter=true&width=700&lines=%40consilioweb%2Fseo-analyzer;Payload+CMS+SEO+Plugin;50%2B+Checks+%7C+39+Languages;Admin+Dashboard+Suite+%7C+FR+%26+EN\" alt=\"Typing SVG\" />\n  </a>\n\n  <br><br>",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.4.2",
-        "unpackedSize": 4224209,
-        "lastPublish": "2026-02-21T13:51:10.085Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 60
+      "healthScore": 67
     },
     {
       "id": "1115436658-root",
@@ -6335,7 +6335,7 @@
       "readme": "# Payload CMS Ahasend Email Adapter\n\nA custom email adapter for Payload CMS that integrates with the Ahasend email service API.\n\n## Features\n\n- Easy integration with Payload CMS\n- Support for HTML and plain text emails\n- File attachments support\n- Custom headers\n- Reply-to functionality\n- Comprehensive error handling\n- TypeScript support\n- Compatible with Next.js 14+ and Payload CMS 3+\n\n## Requirements",
       "npm": {
         "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "monthlyDownloads": 23,
         "latestVersion": "1.0.6",
         "unpackedSize": 37136,
         "lastPublish": "2025-04-02T08:04:46.446Z",
@@ -6404,50 +6404,13 @@
       "healthScore": 25
     },
     {
-      "id": "1167287088-root",
-      "name": "Payloadcms Dynamic Value Richtext Plugin",
-      "packageName": "@od-labs/payloadcms-dynamic-value-richtext",
-      "description": "Dynamic Value Rich Text Plugin for PayloadCMS",
-      "stars": 0,
-      "forks": 0,
-      "lastUpdate": "2026-02-28T05:08:02Z",
-      "createdAt": "2026-02-26T06:08:45Z",
-      "owner": "ZNAXNOR",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/121810601?v=4",
-      "url": "https://github.com/ZNAXNOR/Payloadcms-Dynamic-Value-Richtext-Plugin",
-      "topics": [
-        "dynamic-values",
-        "payload-plugin",
-        "payloadcms-3",
-        "richtext"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.37.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 1,
-      "isArchived": false,
-      "readme": "# Payload Dynamic Value Rich Text Plugin\n\nA powerful [Payload CMS](https://payloadcms.com) plugin for the Lexical editor that allows you to designate field values as dynamic variables. These variables can be reused throughout your rich text content and are visually represented as interactive badges.\n\n## Features",
-      "npm": {
-        "weeklyDownloads": 181,
-        "monthlyDownloads": 181,
-        "latestVersion": "1.0.2",
-        "unpackedSize": 59379,
-        "lastPublish": "2026-02-26T14:56:13.930Z",
-        "dependencyCount": 1
-      },
-      "healthScore": 64
-    },
-    {
       "id": "1087622792-root",
       "name": "payload dub",
       "packageName": "@rubixstudios/payload-dub",
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 0,
       "forks": 0,
-      "lastUpdate": "2026-02-28T02:15:39Z",
+      "lastUpdate": "2026-02-28T16:09:35Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",
@@ -6472,6 +6435,43 @@
       "isArchived": false,
       "readme": "# 🎉 payload-dub - Simplifying Your Shortlink Management\n\n## 🚀 Getting Started\n\nWelcome to **payload-dub**, a straightforward tool designed to help you auto-create and manage shortlinks for your published documents. This plugin works seamlessly with Payload CMS to enhance your document-sharing process.\n\n## 📥 Download Now",
       "healthScore": 35
+    },
+    {
+      "id": "1167287088-root",
+      "name": "Payloadcms Dynamic Value Richtext Plugin",
+      "packageName": "@od-labs/payloadcms-dynamic-value-richtext",
+      "description": "Dynamic Value Rich Text Plugin for PayloadCMS",
+      "stars": 0,
+      "forks": 0,
+      "lastUpdate": "2026-02-28T15:38:21Z",
+      "createdAt": "2026-02-26T06:08:45Z",
+      "owner": "ZNAXNOR",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/121810601?v=4",
+      "url": "https://github.com/ZNAXNOR/Payloadcms-Dynamic-Value-Richtext-Plugin",
+      "topics": [
+        "dynamic-values",
+        "payload-plugin",
+        "payloadcms-3",
+        "richtext"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.37.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 1,
+      "isArchived": false,
+      "readme": "# Payload Dynamic Value Rich Text Plugin\n\nA powerful [Payload CMS](https://payloadcms.com) plugin for the Lexical editor that allows you to designate field values as dynamic variables. These variables can be reused throughout your rich text content and are visually represented as interactive badges.\n\n## Features",
+      "npm": {
+        "weeklyDownloads": 189,
+        "monthlyDownloads": 189,
+        "latestVersion": "1.0.3",
+        "unpackedSize": 93799,
+        "lastPublish": "2026-02-28T07:37:59.116Z",
+        "dependencyCount": 1
+      },
+      "healthScore": 64
     },
     {
       "id": "1134242888-root",
