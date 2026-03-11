@@ -224,7 +224,7 @@ function isMonorepo(packageJson: PackageJson): boolean {
   if (!packageJson.workspaces) return false;
   const dirs = Array.isArray(packageJson.workspaces)
     ? packageJson.workspaces
-    : packageJson.workspaces.packages;
+    : packageJson.workspaces.packages ?? [];
   return dirs.length > 0;
 }
 
