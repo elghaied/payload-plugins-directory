@@ -45,7 +45,7 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
-      <Suspense>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading plugins...</p></div>}>
         <PluginDirectory plugins={plugins} metadata={metadata} />
       </Suspense>
     </>
