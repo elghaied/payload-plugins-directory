@@ -25,7 +25,7 @@ export async function GET() {
       (p) => `
     <item>
       <title>${escapeXml(p.name)}</title>
-      <link>https://payloaddirectory.dev/plugins/${p.id}</link>
+      <link>${escapeXml(`https://payloaddirectory.dev/plugins/${p.id}`)}</link>
       <description>${escapeXml(p.description)}</description>
       <pubDate>${new Date(p.createdAt).toUTCString()}</pubDate>
       <guid isPermaLink="false">${p.id}</guid>
