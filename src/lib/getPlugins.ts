@@ -105,7 +105,7 @@ export function getPluginStats() {
   const totalForks = Array.from(uniqueRepos.values()).reduce((s, p) => s + p.forks, 0);
   const starValues = plugins.map((p) => p.stars).sort((a, b) => a - b);
   const medianStars = starValues[Math.floor(starValues.length / 2)] || 0;
-  const avgStars = total > 0 ? Math.round(totalStars / total) : 0;
+  const avgStars = uniqueRepos.size > 0 ? Math.round(totalStars / uniqueRepos.size) : 0;
   const official = plugins.filter((p) => p.isOfficial).length;
   const community = total - official;
 
