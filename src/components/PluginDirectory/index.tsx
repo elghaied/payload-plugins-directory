@@ -651,7 +651,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-4 mt-6 flex-wrap" role="group" aria-label="Quick filters">
+          <div className="hidden sm:flex items-center gap-4 mt-6 flex-wrap" role="group" aria-label="Quick filters">
             <div className="flex items-center gap-2 text-sm">
               <button
                 onClick={() => handleVersionChange(versionFilter === "3" ? "all" : "3")}
@@ -940,7 +940,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                     key={virtualRow.key}
                     data-index={virtualRow.index}
                     ref={virtualizer.measureElement}
-                    className="absolute left-0 w-full grid gap-6"
+                    className="absolute left-0 w-full grid gap-4 sm:gap-6"
                     style={{
                       transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
                       gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
