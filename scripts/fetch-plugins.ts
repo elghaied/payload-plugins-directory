@@ -381,7 +381,11 @@ function createPluginEntry(
     topics: repo.topics || [],
     isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
     payloadVersion: opts.payloadVersion,
-    payloadVersionMajor: opts.payloadVersion ? extractMajorVersions(opts.payloadVersion) : [0],
+    payloadVersionMajor: opts.payloadVersion
+      ? (extractMajorVersions(opts.payloadVersion).length > 0
+          ? extractMajorVersions(opts.payloadVersion)
+          : [0])
+      : [0],
     license: repo.license?.spdx_id || null,
     openIssues: repo.open_issues_count,
     isArchived: repo.archived,
