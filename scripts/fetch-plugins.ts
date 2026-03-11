@@ -753,6 +753,10 @@ function computeHealthScore(plugin: Plugin): number {
 }
 
 function enrichPluginsWithHealthScores(plugins: Plugin[]): void {
+  if (plugins.length === 0) {
+    console.log('Health scores computed: no plugins to score');
+    return;
+  }
   for (const plugin of plugins) {
     plugin.healthScore = computeHealthScore(plugin);
   }
