@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
   GitFork,
@@ -457,9 +457,27 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
       });
   }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
 
+  // Recently added plugins (last 90 days), shown only on unfiltered view
+  const recentlyAdded = useMemo(() => {
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    return [...plugins]
+      .filter((p) => new Date(p.createdAt).getTime() > cutoff)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 4);
+  }, [plugins]);
+
+  const showRecentlyAdded =
+    recentlyAdded.length > 0 &&
+    !searchTerm &&
+    versionFilter === "all" &&
+    sourceFilter === "all" &&
+    licenseFilter === "all" &&
+    sortBy === "featured";
+
   // Responsive column count
   const [columnCount, setColumnCount] = useState(3);
-  const parentRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [scrollMargin, setScrollMargin] = useState(0);
 
   useEffect(() => {
     const update = () => {
@@ -471,18 +489,42 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+
+    const measure = () => setScrollMargin(el.offsetTop);
+    measure();
+
+    // Watch the parent container for size changes (Recently Added section toggling, etc.)
+    const parent = el.parentElement;
+    if (!parent) return;
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(parent);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [showRecentlyAdded]);
+
   const rowCount = Math.ceil(filteredAndSortedPlugins.length / columnCount);
 
-  const virtualizer = useVirtualizer({
+  const virtualizer = useWindowVirtualizer({
     count: rowCount,
-    getScrollElement: () => parentRef.current,
     estimateSize: () => ROW_HEIGHT_ESTIMATE,
     overscan: 3,
+    scrollMargin,
   });
 
   // Scroll to top when filters change
   useEffect(() => {
-    parentRef.current?.scrollTo({ top: 0 });
+    const el = gridRef.current;
+    if (!el) return;
+    const stickyBarHeight = 72; // approx height of sticky filter bar (py-4 + content)
+    window.scrollTo({ top: Math.max(0, el.offsetTop - stickyBarHeight) });
   }, [searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
 
   const handleSearchChange = useCallback(
@@ -570,23 +612,6 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     });
     return result;
   }, [plugins]);
-
-  // Recently added plugins (last 90 days), shown only on unfiltered view
-  const recentlyAdded = useMemo(() => {
-    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
-    return [...plugins]
-      .filter((p) => new Date(p.createdAt).getTime() > cutoff)
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 4);
-  }, [plugins]);
-
-  const showRecentlyAdded =
-    recentlyAdded.length > 0 &&
-    !searchTerm &&
-    versionFilter === "all" &&
-    sourceFilter === "all" &&
-    licenseFilter === "all" &&
-    sortBy === "featured";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
@@ -819,15 +844,11 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Button>
           </div>
         ) : (
-          <div
-            ref={parentRef}
-            className="overflow-auto"
-            style={{ height: "calc(100vh - 200px)" }}
+          <main
+            ref={gridRef}
+            className="relative w-full"
+            style={{ height: virtualizer.getTotalSize() }}
           >
-            <main
-              className="relative w-full"
-              style={{ height: virtualizer.getTotalSize() }}
-            >
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const startIndex = virtualRow.index * columnCount;
                 const rowPlugins = filteredAndSortedPlugins.slice(
@@ -841,7 +862,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                     ref={virtualizer.measureElement}
                     className="absolute left-0 w-full grid gap-6"
                     style={{
-                      transform: `translateY(${virtualRow.start}px)`,
+                      transform: `translateY(${virtualRow.start - virtualizer.options.scrollMargin}px)`,
                       gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`,
                     }}
                   >
@@ -860,7 +881,6 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 );
               })}
             </main>
-          </div>
         )}
 
         {/* Footer */}
