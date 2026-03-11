@@ -36,6 +36,15 @@ import { Button } from "@/components/ui/button";
 import { Plugin, SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ComparisonView } from "../ComparisonView";
+import {
+  versionColors,
+  formatRelativeTime,
+  formatDate,
+  formatNumber,
+  formatDownloads,
+  formatSize,
+  getHealthDisplay,
+} from "@/lib/formatters";
 
 const ROW_HEIGHT_ESTIMATE = 420;
 
@@ -47,65 +56,7 @@ interface PluginDirectoryProps {
   };
 }
 
-const versionColors: Record<number, string> = {
-  0: "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300", // Unknown version
-  1: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  2: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-  3: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
-};
-
 type SourceFilter = "all" | "official" | "community";
-
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-  return `${Math.floor(diffDays / 365)} years ago`;
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1000) {
-    return `${(num / 1000).toFixed(1)}k`;
-  }
-  return num.toString();
-}
-
-function getHealthDisplay(plugin: Plugin): { color: string; label: string; score: number } {
-  const score = plugin.healthScore ?? 0;
-  if (plugin.isArchived) return { color: "bg-red-500", label: "Archived", score: 0 };
-  if (score >= 75) return { color: "bg-emerald-500", label: "Excellent", score };
-  if (score >= 50) return { color: "bg-green-500", label: "Good", score };
-  if (score >= 25) return { color: "bg-yellow-500", label: "Fair", score };
-  return { color: "bg-orange-500", label: "Poor", score };
-}
-
-function formatSize(bytes: number | null | undefined): string {
-  if (bytes == null) return "";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-function formatDownloads(num: number): string {
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-  return num.toString();
-}
 
 function CopyInstallButton({ packageName }: { packageName: string }) {
   const [copied, setCopied] = useState(false);
