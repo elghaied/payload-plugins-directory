@@ -20,6 +20,8 @@ import {
   Download,
   Box,
   Flag,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { HoverCard, HoverCardTrigger, HoverCardContent } from "@/components/ui/hover-card";
@@ -33,6 +35,13 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Plugin, SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ComparisonView } from "../ComparisonView";
@@ -567,6 +576,16 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   const [compareMode, setCompareMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (versionFilter !== "all") count++;
+    if (sourceFilter !== "all") count++;
+    if (licenseFilter !== "all") count++;
+    return count;
+  }, [versionFilter, sourceFilter, licenseFilter]);
+
   const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -698,6 +717,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         {/* Filters */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 -mx-4 px-4 border-b mb-6">
           <div className="flex flex-col gap-4 sm:flex-row">
+            {/* Search — always visible */}
             <div className="relative flex-1">
               <label htmlFor="plugin-search" className="sr-only">Search plugins</label>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -710,8 +730,35 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               />
             </div>
 
+            {/* Mobile: filter button + compare */}
+            <div className="flex gap-2 sm:hidden">
+              <Button
+                variant="outline"
+                size="default"
+                onClick={() => setFilterDrawerOpen(true)}
+                className="flex-1 cursor-pointer relative"
+              >
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant={compareMode ? "default" : "outline"}
+                size="default"
+                onClick={handleToggleCompareMode}
+                className="cursor-pointer"
+              >
+                {compareMode ? "Exit Compare" : "Compare"}
+              </Button>
+            </div>
+
+            {/* Desktop: inline filters */}
             <Select value={versionFilter} onValueChange={handleVersionChange}>
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by version">
+              <SelectTrigger className="hidden sm:flex w-40" aria-label="Filter by version">
                 <SelectValue placeholder="Version" />
               </SelectTrigger>
               <SelectContent>
@@ -724,7 +771,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
 
             <Select value={sourceFilter} onValueChange={handleSourceChange}>
-              <SelectTrigger className="w-full sm:w-40" aria-label="Filter by source">
+              <SelectTrigger className="hidden sm:flex w-40" aria-label="Filter by source">
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
               <SelectContent>
@@ -735,7 +782,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
 
             <Select value={licenseFilter} onValueChange={handleLicenseChange}>
-              <SelectTrigger className="w-full sm:w-36" aria-label="Filter by license">
+              <SelectTrigger className="hidden sm:flex w-36" aria-label="Filter by license">
                 <SelectValue placeholder="License" />
               </SelectTrigger>
               <SelectContent>
@@ -749,7 +796,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Select>
 
             <Select value={sortBy} onValueChange={handleSortChange}>
-              <SelectTrigger className="w-full sm:w-44" aria-label="Sort plugins">
+              <SelectTrigger className="hidden sm:flex w-44" aria-label="Sort plugins">
                 <SortAsc className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -769,11 +816,44 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               variant={compareMode ? "default" : "outline"}
               size="default"
               onClick={handleToggleCompareMode}
-              className="w-full sm:w-auto cursor-pointer"
+              className="hidden sm:flex cursor-pointer"
             >
               {compareMode ? "Exit Compare" : "Compare"}
             </Button>
           </div>
+
+          {/* Mobile: active filter chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2 sm:hidden">
+              {versionFilter !== "all" && (
+                <button
+                  onClick={() => handleVersionChange("all" as VersionFilter)}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  {versionFilter === "0" ? "v?" : `v${versionFilter}`}
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {sourceFilter !== "all" && (
+                <button
+                  onClick={() => handleSourceChange("all" as SourceFilter)}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  {sourceFilter === "official" ? "Official" : "Community"}
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {licenseFilter !== "all" && (
+                <button
+                  onClick={() => handleLicenseChange("all")}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  {licenseFilter}
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Recently Added */}
@@ -897,6 +977,98 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           </p>
         </footer>
       </div>
+
+      {/* Mobile filter drawer */}
+      <Drawer open={filterDrawerOpen} onOpenChange={setFilterDrawerOpen}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Filters</DrawerTitle>
+          </DrawerHeader>
+          <div className="px-4 pb-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Version</label>
+              <Select value={versionFilter} onValueChange={(v) => { handleVersionChange(v as VersionFilter); }}>
+                <SelectTrigger aria-label="Filter by version">
+                  <SelectValue placeholder="All Versions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Versions</SelectItem>
+                  <SelectItem value="3">Payload v3</SelectItem>
+                  <SelectItem value="2">Payload v2</SelectItem>
+                  <SelectItem value="1">Payload v1</SelectItem>
+                  <SelectItem value="0">Unknown (v?)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Source</label>
+              <Select value={sourceFilter} onValueChange={(v) => { handleSourceChange(v as SourceFilter); }}>
+                <SelectTrigger aria-label="Filter by source">
+                  <SelectValue placeholder="All Sources" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="official">Official</SelectItem>
+                  <SelectItem value="community">Community</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">License</label>
+              <Select value={licenseFilter} onValueChange={handleLicenseChange}>
+                <SelectTrigger aria-label="Filter by license">
+                  <SelectValue placeholder="All Licenses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Licenses</SelectItem>
+                  {licenses.map((lic) => (
+                    <SelectItem key={lic} value={lic}>
+                      {lic}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Sort</label>
+              <Select value={sortBy} onValueChange={handleSortChange}>
+                <SelectTrigger aria-label="Sort plugins">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="featured">Featured</SelectItem>
+                  <SelectItem value="stars">Most Stars</SelectItem>
+                  <SelectItem value="downloads">Most Downloads</SelectItem>
+                  <SelectItem value="health">Health Score</SelectItem>
+                  <SelectItem value="forks">Most Forks</SelectItem>
+                  <SelectItem value="recent">Recently Updated</SelectItem>
+                  <SelectItem value="created">Recently Created</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {activeFilterCount > 0 && (
+              <Button
+                variant="outline"
+                className="w-full cursor-pointer"
+                onClick={() => {
+                  updateParams({ version: null, source: null, license: null });
+                }}
+              >
+                Reset Filters
+              </Button>
+            )}
+
+            <DrawerClose asChild>
+              <Button className="w-full cursor-pointer">Done</Button>
+            </DrawerClose>
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       {/* Floating compare hint — shown only when 1 plugin selected (auto-opens at 2+) */}
       {compareMode && selectedIds.size > 0 && selectedIds.size < 2 && (
