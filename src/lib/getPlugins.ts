@@ -26,7 +26,7 @@ export function getPluginsMetadata(): { lastUpdated: string; totalCount: number 
   const data = pluginsData as PluginsData;
   return {
     lastUpdated: data.lastUpdated,
-    totalCount: data.totalCount - blocklist.size,
+    totalCount: getPlugins().length,
   };
 }
 
