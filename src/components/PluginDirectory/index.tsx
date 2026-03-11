@@ -62,10 +62,14 @@ function CopyInstallButton({ packageName }: { packageName: string }) {
   const [copied, setCopied] = useState(false);
   const command = `npm i ${packageName}`;
 
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(command);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(command);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API not available or permission denied
+    }
   }, [command]);
 
   return (
@@ -335,6 +339,22 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
   const licenseFilter = searchParams.get("license") || "all";
 
+  // Debounced search: local state for immediate display, URL updates after 300ms
+  const [localSearch, setLocalSearch] = useState(searchTerm);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync localSearch when URL changes externally (e.g., topic click, browser nav)
+  useEffect(() => {
+    setLocalSearch(searchTerm);
+  }, [searchTerm]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, []);
+
   const licenses = useMemo(() => {
     const set = new Set(plugins.map((p) => p.license).filter(Boolean) as string[]);
     return Array.from(set).sort();
@@ -467,7 +487,12 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      updateParams({ q: e.target.value });
+      const value = e.target.value;
+      setLocalSearch(value);
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+      searchTimerRef.current = setTimeout(() => {
+        updateParams({ q: value });
+      }, 300);
     },
     [updateParams]
   );
@@ -655,7 +680,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 id="plugin-search"
                 placeholder="Search plugins by name, description, topic, or author..."
                 className="pl-10"
-                value={searchTerm}
+                value={localSearch}
                 onChange={handleSearchChange}
               />
             </div>
@@ -853,20 +878,12 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         </footer>
       </div>
 
-      {/* Floating compare bar */}
-      {compareMode && selectedIds.size > 0 && (
+      {/* Floating compare hint — shown only when 1 plugin selected (auto-opens at 2+) */}
+      {compareMode && selectedIds.size > 0 && selectedIds.size < 2 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-background border shadow-lg rounded-full px-5 py-2.5 flex items-center gap-3">
           <span className="text-sm font-medium">
-            {selectedIds.size} selected
+            {selectedIds.size} selected — pick {2 - selectedIds.size} more to compare
           </span>
-          <Button
-            size="sm"
-            disabled={selectedIds.size < 2}
-            className="cursor-pointer rounded-full"
-            onClick={() => {/* ComparisonView will show */}}
-          >
-            Compare
-          </Button>
         </div>
       )}
 
