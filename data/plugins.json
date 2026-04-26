@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-04-26T06:32:55.813Z",
+  "lastUpdated": "2026-04-26T18:10:37.270Z",
   "totalCount": 211,
   "plugins": [
     {
@@ -8,7 +8,7 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -41,7 +41,7 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -74,7 +74,7 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -107,7 +107,7 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -140,7 +140,7 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -173,7 +173,7 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -206,7 +206,7 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -239,7 +239,7 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -272,7 +272,7 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -305,7 +305,7 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -338,7 +338,7 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -371,7 +371,7 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 42034,
+      "stars": 42038,
       "forks": 3631,
       "lastUpdate": "2026-04-24T20:55:42Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -1039,7 +1039,7 @@
       "name": "payload dashboard analytics",
       "packageName": "@nouance/payload-dashboard-analytics",
       "description": "Dashboard analytics integration plugin for Payload CMS",
-      "stars": 174,
+      "stars": 175,
       "forks": 6,
       "lastUpdate": "2023-08-28T14:07:14Z",
       "createdAt": "2023-03-26T09:17:48Z",
@@ -1912,7 +1912,7 @@
       "description": "Powerful plugins designed to enhance Payload CMS",
       "stars": 83,
       "forks": 5,
-      "lastUpdate": "2026-04-25T23:00:20Z",
+      "lastUpdate": "2026-04-26T16:58:26Z",
       "createdAt": "2024-11-30T10:43:28Z",
       "owner": "jhb-software",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/131646571?v=4",
@@ -1929,10 +1929,10 @@
         0
       ],
       "license": null,
-      "openIssues": 11,
+      "openIssues": 5,
       "isArchived": false,
       "readme": "# JHB Software - Payload CMS Plugins\n\nThis repository contains a collection of powerful plugins designed to enhance [Payload CMS](https://payloadcms.com/), a headless content management system.\n\n> ⚠️ **Warning**: This repository is actively evolving and may undergo significant changes. While the plugins are functional, please thoroughly test before using in production environments.\n\n## Plugins\n\n### Admin Search Plugin",
-      "healthScore": 34
+      "healthScore": 37
     },
     {
       "id": "932147916-blur-data-urls",
@@ -4060,7 +4060,7 @@
       "packageName": "payload-reserve",
       "description": "A Payload CMS 3.x plugin for reservation and booking management with conflict detection, status workflows, and calendar UI",
       "stars": 15,
-      "forks": 0,
+      "forks": 1,
       "lastUpdate": "2026-03-14T05:52:46Z",
       "createdAt": "2026-02-13T15:04:06Z",
       "owner": "elghaied",
@@ -4619,6 +4619,44 @@
       "healthScore": 28
     },
     {
+      "id": "1215445841-root",
+      "name": "payload nested docs page tree",
+      "packageName": "payload-nested-docs-page-tree",
+      "description": "Page tree plugin for Payload nested docs collections",
+      "stars": 8,
+      "forks": 0,
+      "lastUpdate": "2026-04-26T12:35:04Z",
+      "createdAt": "2026-04-19T23:17:11Z",
+      "owner": "WLF-Studios",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/158069688?v=4",
+      "url": "https://github.com/WLF-Studios/payload-nested-docs-page-tree",
+      "topics": [
+        "nested-docs",
+        "page-tree",
+        "payload-plugin",
+        "payloadcms",
+        "tree-view"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.84.1",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# Payload Nested Docs Page Tree\n\nCompanion admin plugin for [`@payloadcms/plugin-nested-docs`](https://payloadcms.com/docs/plugins/nested-docs).\n\n<p align=\"center\">\n  <img alt=\"Page tree demo\" src=\"assets/page-tree.gif\" width=\"100%\" />\n</p>\n\nAdds a nested tree list view for nested docs collections in Payload admin, with drag-and-drop parent changes and status badges for published / changed / draft documents.\n\nIt works alongside `@payloadcms/plugin-nested-docs`.",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.1.0",
+        "unpackedSize": 305729,
+        "lastPublish": "2026-04-26T12:44:07.309Z",
+        "dependencyCount": 1
+      },
+      "healthScore": 66
+    },
+    {
       "id": "1164837193-root",
       "name": "payload better preview",
       "packageName": "payload-better-preview",
@@ -4659,14 +4697,14 @@
       "isArchived": false,
       "readme": "# payload-better-preview\n\nBetter live preview for [Payload CMS](https://payloadcms.com) — hover highlighting with block identification, bi-directional admin/preview sync, and smooth transitions.\n\n> **Found a bug?** Please [open an issue](https://github.com/scorpio-99/payload-better-preview/issues/new) with steps to reproduce, your Payload version, and a minimal example. PRs welcome too.\n\n## Features\n\n### Hover Highlighting",
       "npm": {
-        "weeklyDownloads": 147,
-        "monthlyDownloads": 232,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "2.1.0",
         "unpackedSize": 99290,
         "lastPublish": "2026-04-23T14:50:38.397Z",
         "dependencyCount": 0
       },
-      "healthScore": 79
+      "healthScore": 68
     },
     {
       "id": "1053175524-root",
@@ -4712,44 +4750,6 @@
         "dependencyCount": 0
       },
       "healthScore": 70
-    },
-    {
-      "id": "1215445841-root",
-      "name": "payload nested docs page tree",
-      "packageName": "plugin-nested-docs-page-tree",
-      "description": "Page tree plugin for Payload nested docs collections",
-      "stars": 8,
-      "forks": 0,
-      "lastUpdate": "2026-04-19T23:58:12Z",
-      "createdAt": "2026-04-19T23:17:11Z",
-      "owner": "WLF-Studios",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/158069688?v=4",
-      "url": "https://github.com/WLF-Studios/payload-nested-docs-page-tree",
-      "topics": [
-        "nested-docs",
-        "page-tree",
-        "payload-plugin",
-        "payloadcms",
-        "tree-view"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.81.0 || ^3.82.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# plugin-nested-docs-page-tree\n\nCompanion admin plugin for [`@payloadcms/plugin-nested-docs`](https://payloadcms.com/docs/plugins/nested-docs).\n\n<p align=\"center\">\n  <img alt=\"Page tree demo\" src=\"assets/page-tree.gif\" width=\"100%\" />\n</p>\n\nAdds a nested tree list view for nested docs collections in Payload admin, with drag-and-drop parent changes and status badges for published / changed / draft documents.\n\nIt works alongside `@payloadcms/plugin-nested-docs`.",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.0",
-        "unpackedSize": 240473,
-        "lastPublish": "2026-04-19T23:44:24.703Z",
-        "dependencyCount": 1
-      },
-      "healthScore": 66
     },
     {
       "id": "1070225561-localized-slugs",
@@ -6623,7 +6623,7 @@
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-04-26T05:17:09Z",
+      "lastUpdate": "2026-04-26T15:26:31Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",
