@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-06-06T06:58:24.452Z",
+  "lastUpdated": "2026-06-06T18:22:25.201Z",
   "totalCount": 233,
   "plugins": [
     {
@@ -8,8 +8,8 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -41,8 +41,8 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -74,8 +74,8 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -107,8 +107,8 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -140,8 +140,8 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -173,8 +173,8 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -206,8 +206,8 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -239,8 +239,8 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -272,8 +272,8 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -305,8 +305,8 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -338,8 +338,8 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -371,8 +371,8 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 42823,
-      "forks": 3778,
+      "stars": 42830,
+      "forks": 3779,
       "lastUpdate": "2026-06-06T02:09:57Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -958,7 +958,7 @@
       "name": "payload oauth2",
       "packageName": "payload-oauth2",
       "description": "OAuth2 plugin for Payload CMS",
-      "stars": 189,
+      "stars": 190,
       "forks": 23,
       "lastUpdate": "2026-05-12T13:15:23Z",
       "createdAt": "2024-04-28T22:08:38Z",
@@ -1181,7 +1181,7 @@
         "lastPublish": "2026-05-07T14:06:16.040Z",
         "dependencyCount": 1
       },
-      "healthScore": 62
+      "healthScore": 59
     },
     {
       "id": "888484677-reset-list-view",
@@ -1946,7 +1946,7 @@
       "name": "payload plugins",
       "packageName": "payload-plugins",
       "description": "Powerful plugins designed to enhance Payload CMS",
-      "stars": 86,
+      "stars": 87,
       "forks": 6,
       "lastUpdate": "2026-06-02T14:20:57Z",
       "createdAt": "2024-11-30T10:43:28Z",
@@ -2531,7 +2531,7 @@
       "description": "Better Auth adapter and plugins for Payload CMS",
       "stars": 55,
       "forks": 5,
-      "lastUpdate": "2026-06-04T01:19:07Z",
+      "lastUpdate": "2026-06-06T17:31:35Z",
       "createdAt": "2026-01-04T19:27:15Z",
       "owner": "delmaredigital",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
@@ -2555,14 +2555,14 @@
       "isArchived": false,
       "readme": "# @delmaredigital/payload-better-auth\n\nBetter Auth adapter and plugins for Payload CMS. Enables seamless integration between Better Auth and Payload.\n\n<p align=\"center\">\n  <a href=\"https://demo.delmaredigital.com\"><img src=\"https://img.shields.io/badge/Live_Demo-Try_It_Now-2ea44f?style=for-the-badge&logo=vercel&logoColor=white\" alt=\"Live Demo - Try It Now\"></a>\n  &nbsp;&nbsp;\n  <a href=\"https://github.com/delmaredigital/dd-starter\"><img src=\"https://img.shields.io/badge/Starter_Template-Use_This",
       "npm": {
-        "weeklyDownloads": 0,
+        "weeklyDownloads": 555,
         "monthlyDownloads": 2779,
         "latestVersion": "0.7.4",
         "unpackedSize": 429453,
         "lastPublish": "2026-06-04T00:35:35.097Z",
         "dependencyCount": 0
       },
-      "healthScore": 70
+      "healthScore": 84
     },
     {
       "id": "885406090-root",
@@ -2716,47 +2716,11 @@
       "healthScore": 40
     },
     {
-      "id": "619287976-root",
-      "name": "payload plugin author fields",
-      "packageName": "@boomworks/payload-plugin-author-fields",
-      "description": "Payload CMS plugin to add created & updated by fields",
-      "stars": 44,
-      "forks": 4,
-      "lastUpdate": "2024-05-22T15:50:57Z",
-      "createdAt": "2023-03-26T19:56:55Z",
-      "owner": "boomworks",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/229157?v=4",
-      "url": "https://github.com/boomworks/payload-plugin-author-fields",
-      "topics": [
-        "payload-plugin"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^0.18.5 || ^1.0.0 || ^2.0.0",
-      "payloadVersionMajor": [
-        0,
-        1,
-        2
-      ],
-      "license": null,
-      "openIssues": 7,
-      "isArchived": false,
-      "readme": "# Payload CMS Author Fields plugin\n\nPayload CMS plugin to add created & updated by fields\n\n## What?\n\nWill automatically add `createdBy` and `updatedBy` fields to all globals & collections in your app.\n\n## Why?\n\n- Audit trail of who created & modified things\n- Use it as the basis for a publishing approval workflow\n\n## How?\n\n### Installation\n\n```sh\nnpm install @boomworks/payload-plugin-author-fields\n```\n\n### Usage\n\nIn your `payload.config.ts`:",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.1.9",
-        "unpackedSize": 26368,
-        "lastPublish": "2024-05-14T04:10:50.393Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 27
-    },
-    {
       "id": "1219456689-root",
       "name": "payload better editor",
       "packageName": "payload-better-editor",
       "description": "Block editor plugin for Payload CMS that adds a side-by-side live-preview iframe and sidebar to the edit view.",
-      "stars": 42,
+      "stars": 44,
       "forks": 1,
       "lastUpdate": "2026-06-05T14:41:33Z",
       "createdAt": "2026-04-23T22:34:39Z",
@@ -2795,6 +2759,42 @@
         "dependencyCount": 0
       },
       "healthScore": 78
+    },
+    {
+      "id": "619287976-root",
+      "name": "payload plugin author fields",
+      "packageName": "@boomworks/payload-plugin-author-fields",
+      "description": "Payload CMS plugin to add created & updated by fields",
+      "stars": 44,
+      "forks": 4,
+      "lastUpdate": "2024-05-22T15:50:57Z",
+      "createdAt": "2023-03-26T19:56:55Z",
+      "owner": "boomworks",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/229157?v=4",
+      "url": "https://github.com/boomworks/payload-plugin-author-fields",
+      "topics": [
+        "payload-plugin"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^0.18.5 || ^1.0.0 || ^2.0.0",
+      "payloadVersionMajor": [
+        0,
+        1,
+        2
+      ],
+      "license": null,
+      "openIssues": 7,
+      "isArchived": false,
+      "readme": "# Payload CMS Author Fields plugin\n\nPayload CMS plugin to add created & updated by fields\n\n## What?\n\nWill automatically add `createdBy` and `updatedBy` fields to all globals & collections in your app.\n\n## Why?\n\n- Audit trail of who created & modified things\n- Use it as the basis for a publishing approval workflow\n\n## How?\n\n### Installation\n\n```sh\nnpm install @boomworks/payload-plugin-author-fields\n```\n\n### Usage\n\nIn your `payload.config.ts`:",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.1.9",
+        "unpackedSize": 26368,
+        "lastPublish": "2024-05-14T04:10:50.393Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 27
     },
     {
       "id": "616924057-root",
@@ -2868,7 +2868,7 @@
         "lastPublish": "2025-12-08T11:17:27.301Z",
         "dependencyCount": 1
       },
-      "healthScore": 51
+      "healthScore": 47
     },
     {
       "id": "732042021-root",
@@ -3540,6 +3540,41 @@
       "healthScore": 83
     },
     {
+      "id": "1157211530-root",
+      "name": "payload reserve",
+      "packageName": "payload-reserve",
+      "description": "A Payload CMS 3.x plugin for reservation and booking management with conflict detection, status workflows, and calendar UI",
+      "stars": 24,
+      "forks": 5,
+      "lastUpdate": "2026-06-02T22:07:17Z",
+      "createdAt": "2026-02-13T15:04:06Z",
+      "owner": "elghaied",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/23630662?v=4",
+      "url": "https://github.com/elghaied/payload-reserve",
+      "topics": [
+        "payload-plugin",
+        "payloadcms"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.79.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# payload-reserve\n\n[![npm version](https://img.shields.io/npm/v/payload-reserve.svg)](https://www.npmjs.com/package/payload-reserve)\n[![npm downloads](https://img.shields.io/npm/dm/payload-reserve.svg)](https://www.npmjs.com/package/payload-reserve)\n[![license](https://img.shields.io/npm/l/payload-reserve.svg)](./LICENSE)\n\nA full-featured reservation and booking plugin for Payload CMS 3.x.",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.5.0",
+        "unpackedSize": 735671,
+        "lastPublish": "2026-06-02T21:58:09.657Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 68
+    },
+    {
       "id": "1039600071-root",
       "name": "payload gatekeeper",
       "packageName": "payload-gatekeeper",
@@ -3655,41 +3690,6 @@
         "dependencyCount": 0
       },
       "healthScore": 37
-    },
-    {
-      "id": "1157211530-root",
-      "name": "payload reserve",
-      "packageName": "payload-reserve",
-      "description": "A Payload CMS 3.x plugin for reservation and booking management with conflict detection, status workflows, and calendar UI",
-      "stars": 23,
-      "forks": 5,
-      "lastUpdate": "2026-06-02T22:07:17Z",
-      "createdAt": "2026-02-13T15:04:06Z",
-      "owner": "elghaied",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/23630662?v=4",
-      "url": "https://github.com/elghaied/payload-reserve",
-      "topics": [
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.79.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# payload-reserve\n\n[![npm version](https://img.shields.io/npm/v/payload-reserve.svg)](https://www.npmjs.com/package/payload-reserve)\n[![npm downloads](https://img.shields.io/npm/dm/payload-reserve.svg)](https://www.npmjs.com/package/payload-reserve)\n[![license](https://img.shields.io/npm/l/payload-reserve.svg)](./LICENSE)\n\nA full-featured reservation and booking plugin for Payload CMS 3.x.",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.5.0",
-        "unpackedSize": 735671,
-        "lastPublish": "2026-06-02T21:58:09.657Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 68
     },
     {
       "id": "768040561-root",
@@ -3914,6 +3914,46 @@
       "healthScore": 63
     },
     {
+      "id": "1131676452-root",
+      "name": "payload page tree",
+      "packageName": "@delmaredigital/payload-page-tree",
+      "description": "Payload CMS plugin for folder-based hierarchical URL slugs with visual tree management",
+      "stars": 17,
+      "forks": 1,
+      "lastUpdate": "2026-06-06T17:34:02Z",
+      "createdAt": "2026-01-10T13:37:56Z",
+      "owner": "delmaredigital",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
+      "url": "https://github.com/delmaredigital/payload-page-tree",
+      "topics": [
+        "folders",
+        "hierarchical-urls",
+        "page-tree",
+        "payload-plugin",
+        "payloadcms",
+        "slugs",
+        "typescript"
+      ],
+      "isOfficial": false,
+      "payloadVersion": ">=3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# @delmaredigital/payload-page-tree\n\nA Payload CMS plugin that extends the built-in folders feature to auto-generate hierarchical URL slugs. Folders define URL structure, pages pick a folder, and slugs are auto-generated.",
+      "npm": {
+        "weeklyDownloads": 473,
+        "monthlyDownloads": 2924,
+        "latestVersion": "0.3.16",
+        "unpackedSize": 312359,
+        "lastPublish": "2026-06-06T17:35:32.896Z",
+        "dependencyCount": 2
+      },
+      "healthScore": 80
+    },
+    {
       "id": "786237326-root",
       "name": "payload plugin algolia",
       "packageName": "payload-plugin-algolia",
@@ -3949,46 +3989,6 @@
         "dependencyCount": 1
       },
       "healthScore": 65
-    },
-    {
-      "id": "1131676452-root",
-      "name": "payload page tree",
-      "packageName": "@delmaredigital/payload-page-tree",
-      "description": "Payload CMS plugin for folder-based hierarchical URL slugs with visual tree management",
-      "stars": 17,
-      "forks": 1,
-      "lastUpdate": "2026-04-17T02:23:25Z",
-      "createdAt": "2026-01-10T13:37:56Z",
-      "owner": "delmaredigital",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/253367851?v=4",
-      "url": "https://github.com/delmaredigital/payload-page-tree",
-      "topics": [
-        "folders",
-        "hierarchical-urls",
-        "page-tree",
-        "payload-plugin",
-        "payloadcms",
-        "slugs",
-        "typescript"
-      ],
-      "isOfficial": false,
-      "payloadVersion": ">=3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 1,
-      "isArchived": false,
-      "readme": "# @delmaredigital/payload-page-tree\n\nA Payload CMS plugin that extends the built-in folders feature to auto-generate hierarchical URL slugs. Folders define URL structure, pages pick a folder, and slugs are auto-generated.",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.3.14",
-        "unpackedSize": 311564,
-        "lastPublish": "2026-04-17T02:24:55.693Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 56
     },
     {
       "id": "955418910-root",
@@ -4420,6 +4420,44 @@
       "healthScore": 31
     },
     {
+      "id": "1215445841-root",
+      "name": "payload nested docs page tree",
+      "packageName": "payload-nested-docs-page-tree",
+      "description": "Page tree plugin for Payload nested docs collections",
+      "stars": 12,
+      "forks": 0,
+      "lastUpdate": "2026-06-04T20:48:19Z",
+      "createdAt": "2026-04-19T23:17:11Z",
+      "owner": "WLF-Studios",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/158069688?v=4",
+      "url": "https://github.com/WLF-Studios/payload-nested-docs-page-tree",
+      "topics": [
+        "nested-docs",
+        "page-tree",
+        "payload-plugin",
+        "payloadcms",
+        "tree-view"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.81.0 || ^3.82.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 1,
+      "isArchived": false,
+      "readme": "# payload-nested-docs-page-tree\n\nCompanion admin plugin for [`@payloadcms/plugin-nested-docs`](https://payloadcms.com/docs/plugins/nested-docs).\n\n<p align=\"center\">\n  <img alt=\"Page tree admin overview\" src=\"assets/page-tree-admin-overview.png\" width=\"100%\" />\n</p>",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.4.0",
+        "unpackedSize": 478203,
+        "lastPublish": "2026-06-04T13:14:24.297Z",
+        "dependencyCount": 2
+      },
+      "healthScore": 63
+    },
+    {
       "id": "909766798-root",
       "name": "payload phone number plugin",
       "packageName": "payload-phone-number-plugin",
@@ -4646,44 +4684,6 @@
       "healthScore": 35
     },
     {
-      "id": "1215445841-root",
-      "name": "payload nested docs page tree",
-      "packageName": "payload-nested-docs-page-tree",
-      "description": "Page tree plugin for Payload nested docs collections",
-      "stars": 10,
-      "forks": 0,
-      "lastUpdate": "2026-06-04T20:48:19Z",
-      "createdAt": "2026-04-19T23:17:11Z",
-      "owner": "WLF-Studios",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/158069688?v=4",
-      "url": "https://github.com/WLF-Studios/payload-nested-docs-page-tree",
-      "topics": [
-        "nested-docs",
-        "page-tree",
-        "payload-plugin",
-        "payloadcms",
-        "tree-view"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.81.0 || ^3.82.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 1,
-      "isArchived": false,
-      "readme": "# payload-nested-docs-page-tree\n\nCompanion admin plugin for [`@payloadcms/plugin-nested-docs`](https://payloadcms.com/docs/plugins/nested-docs).\n\n<p align=\"center\">\n  <img alt=\"Page tree admin overview\" src=\"assets/page-tree-admin-overview.png\" width=\"100%\" />\n</p>",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.4.0",
-        "unpackedSize": 478203,
-        "lastPublish": "2026-06-04T13:14:24.297Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 60
-    },
-    {
       "id": "1070225561-localized-slugs",
       "name": "localized slugs",
       "packageName": "@kilivi/payloadcms-localized-slugs",
@@ -4708,14 +4708,14 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 107,
-        "monthlyDownloads": 361,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.1.7",
         "unpackedSize": 109361,
         "lastPublish": "2026-03-19T06:06:31.430Z",
         "dependencyCount": 0
       },
-      "healthScore": 69
+      "healthScore": 59
     },
     {
       "id": "1070225561-theme-management",
@@ -4742,14 +4742,14 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 40,
-        "monthlyDownloads": 1199,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.4.0",
         "unpackedSize": 1760779,
         "lastPublish": "2026-06-05T05:59:38.755Z",
         "dependencyCount": 3
       },
-      "healthScore": 67
+      "healthScore": 59
     },
     {
       "id": "1162846209-root",
@@ -7038,13 +7038,55 @@
       "healthScore": 27
     },
     {
+      "id": "1251636102-plugin",
+      "name": "plugin",
+      "packageName": "@brainwebuk/payload-plugin-mcp-oauth",
+      "collection": "payload-mcp-oauth",
+      "description": "No description available",
+      "stars": 1,
+      "forks": 0,
+      "lastUpdate": "2026-06-06T16:32:14Z",
+      "createdAt": "2026-05-27T19:17:57Z",
+      "owner": "ricbwood",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/6824511?v=4",
+      "url": "https://github.com/ricbwood/payload-mcp-oauth/tree/main/packages/plugin",
+      "topics": [
+        "claude",
+        "mcp",
+        "model-context-protocol",
+        "oauth",
+        "oauth2",
+        "payload",
+        "payload-cms",
+        "payload-plugin",
+        "payloadcms"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 6,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 74,
+        "monthlyDownloads": 74,
+        "latestVersion": "0.3.3",
+        "unpackedSize": 533429,
+        "lastPublish": "2026-06-06T11:02:30.578Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 60
+    },
+    {
       "id": "1087622792-root",
       "name": "payload dub",
       "packageName": "@rubixstudios/payload-dub",
       "description": "A Payload CMS plugin that integrates with Dub to automatically create and manage shortlinks for your content.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-06-06T03:23:32Z",
+      "lastUpdate": "2026-06-06T14:16:03Z",
       "createdAt": "2025-11-01T09:47:33Z",
       "owner": "nik3097",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/198616859?v=4",
@@ -7069,48 +7111,6 @@
       "isArchived": false,
       "readme": "# 🎉 payload-dub - Simplifying Your Shortlink Management\n\n## 🚀 Getting Started\n\nWelcome to **payload-dub**, a straightforward tool designed to help you auto-create and manage shortlinks for your published documents. This plugin works seamlessly with Payload CMS to enhance your document-sharing process.\n\n## 📥 Download Now",
       "healthScore": 35
-    },
-    {
-      "id": "1251636102-plugin",
-      "name": "plugin",
-      "packageName": "@brainwebuk/payload-plugin-mcp-oauth",
-      "collection": "payload-mcp-oauth",
-      "description": "No description available",
-      "stars": 1,
-      "forks": 0,
-      "lastUpdate": "2026-06-05T20:53:08Z",
-      "createdAt": "2026-05-27T19:17:57Z",
-      "owner": "ricbwood",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/6824511?v=4",
-      "url": "https://github.com/ricbwood/payload-mcp-oauth/tree/main/packages/plugin",
-      "topics": [
-        "claude",
-        "mcp",
-        "model-context-protocol",
-        "oauth",
-        "oauth2",
-        "payload",
-        "payload-cms",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 1,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 74,
-        "monthlyDownloads": 74,
-        "latestVersion": "0.3.1",
-        "unpackedSize": 517248,
-        "lastPublish": "2026-06-05T19:53:51.767Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 60
     },
     {
       "id": "1258571172-root",
@@ -7433,7 +7433,7 @@
       "openIssues": 0,
       "isArchived": false,
       "readme": "# Payload CMS Footer and Menu Builder\n\n![Payload 3](https://img.shields.io/badge/Payload-3.x-0f1726?style=flat-square)\n![Next.js](https://img.shields.io/badge/Next.js-App%20Router-111827?style=flat-square)\n![TypeScript](https://img.shields.io/badge/TypeScript-Ready-0b5fff?style=flat-square)\n![Admin UI](https://img.shields.io/badge/Admin-Globals%20Based-d8ff61?style=flat-square)\n\nReusable `Footer Builder` and `Menu Builder` bundle for Payload CMS 3 and Next.js.",
-      "healthScore": 25
+      "healthScore": 20
     },
     {
       "id": "944525693-root",
@@ -7972,7 +7972,7 @@
         "lastPublish": "2026-03-08T17:08:09.693Z",
         "dependencyCount": 0
       },
-      "healthScore": 62
+      "healthScore": 58
     },
     {
       "id": "1243726777-root",
@@ -8448,7 +8448,7 @@
         "lastPublish": "2026-03-08T08:11:02.965Z",
         "dependencyCount": 0
       },
-      "healthScore": 57
+      "healthScore": 48
     },
     {
       "id": "1080412127-root",
