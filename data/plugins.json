@@ -1,6 +1,6 @@
 {
-  "lastUpdated": "2026-06-24T18:31:00.279Z",
-  "totalCount": 251,
+  "lastUpdated": "2026-06-25T07:04:13.997Z",
+  "totalCount": 252,
   "plugins": [
     {
       "id": "official-plugin-cloud-storage",
@@ -8,9 +8,9 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -41,9 +41,9 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -74,9 +74,9 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -107,9 +107,9 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -140,9 +140,9 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -173,9 +173,9 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -206,9 +206,9 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -239,9 +239,9 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -272,9 +272,9 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -305,9 +305,9 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -338,9 +338,9 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -371,9 +371,9 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 43200,
+      "stars": 43217,
       "forks": 3843,
-      "lastUpdate": "2026-06-24T13:47:49Z",
+      "lastUpdate": "2026-06-25T00:25:15Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -1469,7 +1469,7 @@
       "name": "payload oapi",
       "packageName": "payload-oapi",
       "description": "An OpenAPI plugin for Payload CMS",
-      "stars": 120,
+      "stars": 119,
       "forks": 27,
       "lastUpdate": "2026-02-18T11:29:21Z",
       "createdAt": "2023-03-25T11:34:02Z",
@@ -1566,14 +1566,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 205,
+        "monthlyDownloads": 799,
         "latestVersion": "1.6.1",
         "unpackedSize": 78624,
         "lastPublish": "2026-01-25T01:17:30.900Z",
         "dependencyCount": 0
       },
-      "healthScore": 61
+      "healthScore": 73
     },
     {
       "id": "908347705-audit-fields",
@@ -1602,14 +1602,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 435,
+        "monthlyDownloads": 2335,
         "latestVersion": "1.6.0",
         "unpackedSize": 43275,
         "lastPublish": "2026-04-02T10:03:57.839Z",
         "dependencyCount": 0
       },
-      "healthScore": 67
+      "healthScore": 80
     },
     {
       "id": "908347705-broken-link-checker",
@@ -1638,14 +1638,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 122,
+        "monthlyDownloads": 389,
         "latestVersion": "1.0.0-beta.8",
         "unpackedSize": 141782,
         "lastPublish": "2026-01-08T21:06:23.534Z",
         "dependencyCount": 2
       },
-      "healthScore": 61
+      "healthScore": 71
     },
     {
       "id": "908347705-content-freeze",
@@ -1674,14 +1674,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 6,
+        "monthlyDownloads": 80,
         "latestVersion": "1.2.0",
         "unpackedSize": 132858,
         "lastPublish": "2026-01-08T21:07:48.734Z",
         "dependencyCount": 0
       },
-      "healthScore": 61
+      "healthScore": 65
     },
     {
       "id": "908347705-fullscreen-editor",
@@ -1710,14 +1710,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 430,
+        "monthlyDownloads": 1408,
         "latestVersion": "1.7.2",
         "unpackedSize": 21654,
         "lastPublish": "2026-02-07T08:25:58.291Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 76
     },
     {
       "id": "908347705-image-search",
@@ -1746,14 +1746,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 535,
+        "monthlyDownloads": 1162,
         "latestVersion": "3.4.2",
         "unpackedSize": 138357,
         "lastPublish": "2026-02-07T08:36:23.574Z",
         "dependencyCount": 1
       },
-      "healthScore": 61
+      "healthScore": 75
     },
     {
       "id": "908347705-soft-delete",
@@ -1782,14 +1782,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 31,
+        "monthlyDownloads": 309,
         "latestVersion": "3.3.0",
         "unpackedSize": 259494,
         "lastPublish": "2026-01-08T21:14:26.749Z",
         "dependencyCount": 0
       },
-      "healthScore": 59
+      "healthScore": 66
     },
     {
       "id": "938188280-root",
@@ -1948,7 +1948,7 @@
       "description": "Powerful plugins designed to enhance Payload CMS",
       "stars": 91,
       "forks": 6,
-      "lastUpdate": "2026-06-21T11:47:29Z",
+      "lastUpdate": "2026-06-25T05:32:02Z",
       "createdAt": "2024-11-30T10:43:28Z",
       "owner": "jhb-software",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/131646571?v=4",
@@ -2454,7 +2454,7 @@
       "name": "payload better editor",
       "packageName": "payload-better-editor",
       "description": "Block editor plugin for Payload CMS that adds a side-by-side live-preview iframe and sidebar to the edit view.",
-      "stars": 59,
+      "stars": 60,
       "forks": 1,
       "lastUpdate": "2026-06-05T14:41:33Z",
       "createdAt": "2026-04-23T22:34:39Z",
@@ -2525,14 +2525,14 @@
       "isArchived": false,
       "readme": "# @delmaredigital/payload-better-auth\n\nBetter Auth adapter and plugins for Payload CMS. Enables seamless integration between Better Auth and Payload.\n\n<p align=\"center\">\n  <a href=\"https://demo.delmaredigital.com\"><img src=\"https://img.shields.io/badge/Live_Demo-Try_It_Now-2ea44f?style=for-the-badge&logo=vercel&logoColor=white\" alt=\"Live Demo - Try It Now\"></a>\n  &nbsp;&nbsp;\n  <a href=\"https://github.com/delmaredigital/dd-starter\"><img src=\"https://img.shields.io/badge/Starter_Template-Use_This",
       "npm": {
-        "weeklyDownloads": 778,
-        "monthlyDownloads": 3634,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.7.7",
         "unpackedSize": 454170,
         "lastPublish": "2026-06-23T17:32:01.093Z",
         "dependencyCount": 0
       },
-      "healthScore": 84
+      "healthScore": 70
     },
     {
       "id": "720197221-root",
@@ -3470,7 +3470,7 @@
       "description": "Atomic Payload runtime: action blocks, beforeChange hook + CSS/UnoCSS processor, form processing pipeline, and child blocks plugin. Replaces the older ap-actions + ap-atomic-hook + ap-forms + children packages.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3503,14 +3503,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "weeklyDownloads": 278,
+        "monthlyDownloads": 1657,
+        "latestVersion": "0.4.2",
         "unpackedSize": 932497,
-        "lastPublish": "2026-06-19T00:13:55.676Z",
+        "lastPublish": "2026-06-25T01:07:39.564Z",
         "dependencyCount": 7
       },
-      "healthScore": 65
+      "healthScore": 77
     },
     {
       "id": "1128550352-fonts",
@@ -3520,7 +3520,7 @@
       "description": "Atomic Payload fonts package. Provides the Font upload collection and a CLI script for downloading fonts from the active design set to disk for use with next/font/local.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3553,14 +3553,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "weeklyDownloads": 226,
+        "monthlyDownloads": 1287,
+        "latestVersion": "0.4.2",
         "unpackedSize": 262469,
-        "lastPublish": "2026-06-19T00:14:17.050Z",
+        "lastPublish": "2026-06-25T01:08:01.427Z",
         "dependencyCount": 4
       },
-      "healthScore": 65
+      "healthScore": 77
     },
     {
       "id": "1128550352-icons",
@@ -3570,7 +3570,7 @@
       "description": "Atomic Payload icons package. Provides Icon and IconSet Payload collections, an SVG-optimizing formatSVG hook, SVG extraction helpers, and the AtomicIcon component.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3603,14 +3603,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "weeklyDownloads": 318,
+        "monthlyDownloads": 1635,
+        "latestVersion": "0.4.2",
         "unpackedSize": 293128,
-        "lastPublish": "2026-06-19T00:14:25.398Z",
+        "lastPublish": "2026-06-25T01:08:09.052Z",
         "dependencyCount": 4
       },
-      "healthScore": 65
+      "healthScore": 78
     },
     {
       "id": "1128550352-images",
@@ -3620,7 +3620,7 @@
       "description": "Atomic Payload images package. Provides Images + Favicons Payload upload collections, on-demand Sharp transforms with built-in LQIP blur placeholders, a FaviconField helper, an ImageChild block factory, and a plugin factory.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3653,14 +3653,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
-        "unpackedSize": 290622,
-        "lastPublish": "2026-06-19T00:14:33.573Z",
+        "weeklyDownloads": 316,
+        "monthlyDownloads": 1709,
+        "latestVersion": "0.4.2",
+        "unpackedSize": 292351,
+        "lastPublish": "2026-06-25T01:08:17.012Z",
         "dependencyCount": 1
       },
-      "healthScore": 68
+      "healthScore": 80
     },
     {
       "id": "1128550352-mux-video",
@@ -3670,7 +3670,7 @@
       "description": "Atomic Payload mux-video plugin. Thin wrapper around @oversightstudio/mux-video that adds a local MuxVideo extension collection with Atomic Payload defaults.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3703,14 +3703,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "weeklyDownloads": 275,
+        "monthlyDownloads": 1593,
+        "latestVersion": "0.4.2",
         "unpackedSize": 29792,
-        "lastPublish": "2026-06-19T00:14:41.029Z",
+        "lastPublish": "2026-06-25T01:08:24.383Z",
         "dependencyCount": 3
       },
-      "healthScore": 72
+      "healthScore": 84
     },
     {
       "id": "1128550352-richtext",
@@ -3720,7 +3720,7 @@
       "description": "Atomic Payload rich-text package. Provides the RichTextChild block, a default Lexical editor preset, and a JSX renderer for serialized Lexical content.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3753,14 +3753,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "weeklyDownloads": 284,
+        "monthlyDownloads": 1229,
+        "latestVersion": "0.4.2",
         "unpackedSize": 28417,
-        "lastPublish": "2026-06-19T00:14:49.271Z",
+        "lastPublish": "2026-06-25T01:08:32.047Z",
         "dependencyCount": 1
       },
-      "healthScore": 72
+      "healthScore": 84
     },
     {
       "id": "1128550352-seed",
@@ -3770,7 +3770,7 @@
       "description": "Atomic Payload seed integration. Provides a Payload plugin that wires up a `POST /api/seed` endpoint and a `BeforeDashboard` admin banner with a SEED DATABASE button. Ships an opinionated default seed for atomic-payload templates; consumers may override by passing `seed: …`.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3805,9 +3805,9 @@
       "npm": {
         "weeklyDownloads": 0,
         "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "latestVersion": "0.4.2",
         "unpackedSize": 903216,
-        "lastPublish": "2026-06-19T00:14:57.960Z",
+        "lastPublish": "2026-06-25T01:08:39.784Z",
         "dependencyCount": 1
       },
       "healthScore": 68
@@ -3820,7 +3820,7 @@
       "description": "Opinionated site shape for Atomic Payload — Pages, Header, Footer collections + SiteMetaData and Settings globals, paired with a single `sitePlugin()` that registers them all.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3855,9 +3855,9 @@
       "npm": {
         "weeklyDownloads": 0,
         "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "latestVersion": "0.4.2",
         "unpackedSize": 96432,
-        "lastPublish": "2026-06-19T00:15:07.431Z",
+        "lastPublish": "2026-06-25T01:08:48.341Z",
         "dependencyCount": 1
       },
       "healthScore": 70
@@ -3870,7 +3870,7 @@
       "description": "Atomic Payload styles: designSet + shortcutSet collections, token fields, CSS preflight pipeline, UnoCSS processor and processDesignSet pipeline. The single package responsible for all CSS handling (frontend + Payload admin/runtime).",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3905,9 +3905,9 @@
       "npm": {
         "weeklyDownloads": 0,
         "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "latestVersion": "0.4.2",
         "unpackedSize": 244742,
-        "lastPublish": "2026-06-19T00:15:16.090Z",
+        "lastPublish": "2026-06-25T01:08:56.842Z",
         "dependencyCount": 2
       },
       "healthScore": 68
@@ -3920,7 +3920,7 @@
       "description": "Atomic Payload tracking integration. Home for all tracking-related functionality (Tracking global, PostHog autocapture provider, Google Tag Manager tab + provider, Vercel Analytics provider, composite TrackingProvider) plugged into atomic-payload.",
       "stars": 25,
       "forks": 0,
-      "lastUpdate": "2026-06-19T00:13:07Z",
+      "lastUpdate": "2026-06-25T01:06:49Z",
       "createdAt": "2026-01-05T20:04:47Z",
       "owner": "pro-laico",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/240997601?v=4",
@@ -3955,9 +3955,9 @@
       "npm": {
         "weeklyDownloads": 0,
         "monthlyDownloads": 0,
-        "latestVersion": "0.4.1",
+        "latestVersion": "0.4.2",
         "unpackedSize": 43755,
-        "lastPublish": "2026-06-19T00:15:24.193Z",
+        "lastPublish": "2026-06-25T01:09:03.973Z",
         "dependencyCount": 4
       },
       "healthScore": 69
@@ -5253,14 +5253,14 @@
       "isArchived": false,
       "readme": "<!-- Header Banner -->\n<div align=\"center\">\n\n  <a href=\"https://git.io/typing-svg\">\n    <img src=\"https://readme-typing-svg.demolab.com?font=Fira+Code&weight=700&size=32&duration=3000&pause=1000&color=3B82F6&center=true&vCenter=true&width=700&lines=%40consilioweb%2Fseo-analyzer;Payload+CMS+SEO+Plugin;50%2B+Checks+%7C+39+Languages;Admin+Dashboard+Suite+%7C+FR+%26+EN\" alt=\"Typing SVG\" />\n  </a>\n\n  <br><br>",
       "npm": {
-        "weeklyDownloads": 695,
-        "monthlyDownloads": 767,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.18.2",
         "unpackedSize": 3131412,
         "lastPublish": "2026-06-24T12:39:39.402Z",
         "dependencyCount": 0
       },
-      "healthScore": 79
+      "healthScore": 65
     },
     {
       "id": "1243711735-root",
@@ -5753,14 +5753,14 @@
       "isArchived": false,
       "readme": "# Payload Video Streaming Plugin\n\nA [Payload CMS](https://payloadcms.com) plugin that enables seamless video uploads directly to streaming providers from Payload upload collections. This plugin automatically handles video file uploads to streaming platforms, providing optimized video delivery for your Payload CMS applications.\n\n## Features",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 38,
+        "monthlyDownloads": 125,
         "latestVersion": "1.3.1",
         "unpackedSize": 116016,
         "lastPublish": "2026-02-11T11:14:08.938Z",
         "dependencyCount": 0
       },
-      "healthScore": 56
+      "healthScore": 64
     },
     {
       "id": "889103286-root",
@@ -6126,14 +6126,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 29,
-        "monthlyDownloads": 528,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "2.0.2",
         "unpackedSize": 60802,
         "lastPublish": "2026-05-29T04:21:48.188Z",
         "dependencyCount": 0
       },
-      "healthScore": 69
+      "healthScore": 62
     },
     {
       "id": "1064440892-payload-utilities",
@@ -6167,7 +6167,7 @@
         "lastPublish": "2026-05-26T02:34:19.891Z",
         "dependencyCount": 1
       },
-      "healthScore": 62
+      "healthScore": 59
     },
     {
       "id": "1064440892-select-search-field",
@@ -6387,14 +6387,14 @@
       "isArchived": false,
       "readme": "# Payload Storage Cloudinary Plugin\n\nA powerful Cloudinary storage adapter for Payload CMS v3 that replaces local file storage with Cloudinary's cloud-based solution, providing automatic image optimization, transformations, and global CDN delivery.\n\n## Features",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 320,
+        "monthlyDownloads": 1021,
         "latestVersion": "1.2.1",
         "unpackedSize": 188551,
         "lastPublish": "2026-04-02T21:17:39.463Z",
         "dependencyCount": 2
       },
-      "healthScore": 59
+      "healthScore": 72
     },
     {
       "id": "1178652475-root",
@@ -6787,7 +6787,7 @@
       "description": "A plugin for Payload CMS to manage authentication and authorization",
       "stars": 4,
       "forks": 1,
-      "lastUpdate": "2026-06-24T02:40:35Z",
+      "lastUpdate": "2026-06-25T03:03:48Z",
       "createdAt": "2026-05-27T09:35:37Z",
       "owner": "zealamic",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/288271516?v=4",
@@ -6810,9 +6810,9 @@
       "npm": {
         "weeklyDownloads": 261,
         "monthlyDownloads": 487,
-        "latestVersion": "1.2.2",
-        "unpackedSize": 476983,
-        "lastPublish": "2026-06-24T02:42:01.542Z",
+        "latestVersion": "1.2.3",
+        "unpackedSize": 474981,
+        "lastPublish": "2026-06-25T03:05:05.801Z",
         "dependencyCount": 0
       },
       "healthScore": 76
@@ -7175,14 +7175,14 @@
       "openIssues": 4,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 223,
-        "monthlyDownloads": 2144,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.3.6",
         "unpackedSize": 536134,
         "lastPublish": "2026-06-23T11:46:15.666Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 53
     },
     {
       "id": "1220131707-root",
@@ -8861,6 +8861,37 @@
       "healthScore": 25
     },
     {
+      "id": "1276145587-root",
+      "name": "Payload LFRs",
+      "packageName": "payload-lfrs",
+      "description": "Like, Favourite, Rate & Review plugin for Payload CMS 3.x",
+      "stars": 0,
+      "forks": 0,
+      "lastUpdate": "2026-06-25T00:19:04Z",
+      "createdAt": "2026-06-21T15:43:09Z",
+      "owner": "Talaween",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/3596388?v=4",
+      "url": "https://github.com/Talaween/Payload-LFRs",
+      "topics": [
+        "likes",
+        "payload",
+        "payload-plugin",
+        "payloadcms",
+        "payloadcms-v3",
+        "ratings-and-reviews"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.84.1",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# Payload LFRs Plugin\n\nA comprehensive plugin for [Payload CMS 3.x](https://payloadcms.com) that adds **Likes**, **Favourites**, **Ratings**, and **Reviews** (LFRs) capabilities to your existing collections.\n\n## Features\n\n- **Likes & Dislikes**: Allow users to like or dislike documents.",
+      "healthScore": 35
+    },
+    {
       "id": "1270699948-root",
       "name": "payload plugin reviews",
       "packageName": "payload-plugin-reviews",
@@ -8891,14 +8922,14 @@
       "isArchived": false,
       "readme": "# payload-plugin-reviews\n\nA [Payload CMS v3](https://payloadcms.com) [ecommerce](https://zojewel.com) plugin to add customer reviews with moderation, star ratings, and Google rich snippets (Schema.org) support.\n\n## Features",
       "npm": {
-        "weeklyDownloads": 33,
-        "monthlyDownloads": 161,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.0.0",
         "unpackedSize": 11459,
         "lastPublish": "2026-06-16T01:57:45.544Z",
         "dependencyCount": 0
       },
-      "healthScore": 73
+      "healthScore": 65
     },
     {
       "id": "1229200348-root",
