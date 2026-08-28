@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-08-28T01:50:24.710Z",
+  "lastUpdated": "2026-08-28T17:47:19.483Z",
   "totalCount": 336,
   "plugins": [
     {
@@ -8,9 +8,9 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -26,8 +26,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 502461,
-        "monthlyDownloads": 1920572,
+        "weeklyDownloads": 521660,
+        "monthlyDownloads": 1939168,
         "latestVersion": "3.88.0",
         "unpackedSize": 167756,
         "lastPublish": "2026-08-11T20:56:29.400Z",
@@ -41,9 +41,9 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -59,14 +59,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 8012,
-        "monthlyDownloads": 35976,
+        "weeklyDownloads": 7406,
+        "monthlyDownloads": 35495,
         "latestVersion": "3.88.0",
         "unpackedSize": 1529314,
         "lastPublish": "2026-08-11T20:56:38.149Z",
         "dependencyCount": 3
       },
-      "healthScore": 100
+      "healthScore": 99
     },
     {
       "id": "official-plugin-form-builder",
@@ -74,9 +74,9 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -92,8 +92,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 105959,
-        "monthlyDownloads": 398117,
+        "weeklyDownloads": 111097,
+        "monthlyDownloads": 403689,
         "latestVersion": "3.88.0",
         "unpackedSize": 871774,
         "lastPublish": "2026-08-11T20:56:32.545Z",
@@ -107,9 +107,9 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -125,8 +125,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 40004,
-        "monthlyDownloads": 164481,
+        "weeklyDownloads": 39929,
+        "monthlyDownloads": 163389,
         "latestVersion": "3.88.0",
         "unpackedSize": 1516381,
         "lastPublish": "2026-08-11T20:56:35.299Z",
@@ -140,9 +140,9 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -158,8 +158,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 108933,
-        "monthlyDownloads": 373809,
+        "weeklyDownloads": 112659,
+        "monthlyDownloads": 382776,
         "latestVersion": "3.88.0",
         "unpackedSize": 887515,
         "lastPublish": "2026-08-11T20:56:40.372Z",
@@ -173,9 +173,9 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -191,8 +191,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 61505,
-        "monthlyDownloads": 247997,
+        "weeklyDownloads": 61860,
+        "monthlyDownloads": 247631,
         "latestVersion": "3.88.0",
         "unpackedSize": 399631,
         "lastPublish": "2026-08-11T20:56:42.854Z",
@@ -206,9 +206,9 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -224,8 +224,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 101046,
-        "monthlyDownloads": 376592,
+        "weeklyDownloads": 105549,
+        "monthlyDownloads": 381422,
         "latestVersion": "3.88.0",
         "unpackedSize": 52400,
         "lastPublish": "2026-08-11T20:56:45.117Z",
@@ -239,9 +239,9 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -257,8 +257,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 126361,
-        "monthlyDownloads": 500471,
+        "weeklyDownloads": 132113,
+        "monthlyDownloads": 505749,
         "latestVersion": "3.88.0",
         "unpackedSize": 37676,
         "lastPublish": "2026-08-11T20:56:47.314Z",
@@ -272,9 +272,9 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -290,8 +290,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 98600,
-        "monthlyDownloads": 383106,
+        "weeklyDownloads": 102746,
+        "monthlyDownloads": 388089,
         "latestVersion": "3.88.0",
         "unpackedSize": 114032,
         "lastPublish": "2026-08-11T20:56:49.452Z",
@@ -305,9 +305,9 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -323,8 +323,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 31523,
-        "monthlyDownloads": 138026,
+        "weeklyDownloads": 30304,
+        "monthlyDownloads": 135115,
         "latestVersion": "3.88.0",
         "unpackedSize": 17064,
         "lastPublish": "2026-08-11T20:56:51.617Z",
@@ -338,9 +338,9 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -356,8 +356,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 212098,
-        "monthlyDownloads": 829266,
+        "weeklyDownloads": 220633,
+        "monthlyDownloads": 837906,
         "latestVersion": "3.88.0",
         "unpackedSize": 317907,
         "lastPublish": "2026-08-11T20:56:54.228Z",
@@ -371,9 +371,9 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 44441,
-      "forks": 4101,
-      "lastUpdate": "2026-08-28T01:29:16Z",
+      "stars": 44460,
+      "forks": 4104,
+      "lastUpdate": "2026-08-28T17:35:58Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62968818?v=4",
@@ -389,8 +389,8 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 13688,
-        "monthlyDownloads": 55208,
+        "weeklyDownloads": 12109,
+        "monthlyDownloads": 53048,
         "latestVersion": "3.88.0",
         "unpackedSize": 117040,
         "lastPublish": "2026-08-11T20:56:56.435Z",
@@ -445,6 +445,42 @@
         "dependencyCount": 25
       },
       "healthScore": 65
+    },
+    {
+      "id": "944322391-payload-auth",
+      "name": "payload auth",
+      "packageName": "payload-auth",
+      "collection": "payload-auth",
+      "description": "The most powerful authentication solution for Payload CMS",
+      "stars": 334,
+      "forks": 49,
+      "lastUpdate": "2026-08-05T18:01:52Z",
+      "createdAt": "2025-03-07T06:33:03Z",
+      "owner": "payload-auth",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/204919379?v=4",
+      "url": "https://github.com/payload-auth/payload-auth/tree/main/packages/payload-auth",
+      "topics": [
+        "better-auth",
+        "payload-cms",
+        "payload-plugin"
+      ],
+      "isOfficial": false,
+      "payloadVersion": ">=3.79.1 <4",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 19,
+      "isArchived": false,
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "3.0.0",
+        "unpackedSize": 1664541,
+        "lastPublish": "2026-08-05T16:34:25.551Z",
+        "dependencyCount": 7
+      },
+      "healthScore": 67
     },
     {
       "id": "684372049-better-localized-fields",
@@ -718,42 +754,6 @@
         "dependencyCount": 2
       },
       "healthScore": 38
-    },
-    {
-      "id": "944322391-payload-auth",
-      "name": "payload auth",
-      "packageName": "payload-auth",
-      "collection": "payload-auth",
-      "description": "The most powerful authentication solution for Payload CMS",
-      "stars": 332,
-      "forks": 49,
-      "lastUpdate": "2026-08-05T18:01:52Z",
-      "createdAt": "2025-03-07T06:33:03Z",
-      "owner": "payload-auth",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/204919379?v=4",
-      "url": "https://github.com/payload-auth/payload-auth/tree/main/packages/payload-auth",
-      "topics": [
-        "better-auth",
-        "payload-cms",
-        "payload-plugin"
-      ],
-      "isOfficial": false,
-      "payloadVersion": ">=3.79.1 <4",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 19,
-      "isArchived": false,
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "3.0.0",
-        "unpackedSize": 1664541,
-        "lastPublish": "2026-08-05T16:34:25.551Z",
-        "dependencyCount": 7
-      },
-      "healthScore": 67
     },
     {
       "id": "827352945-root",
@@ -1877,7 +1877,7 @@
       "description": "A collection of powerful plugins designed to enhance Payload CMS",
       "stars": 101,
       "forks": 6,
-      "lastUpdate": "2026-08-25T21:11:47Z",
+      "lastUpdate": "2026-08-28T14:00:14Z",
       "createdAt": "2024-11-30T10:43:28Z",
       "owner": "jhb-software",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/131646571?v=4",
@@ -1894,10 +1894,10 @@
         0
       ],
       "license": null,
-      "openIssues": 5,
+      "openIssues": 6,
       "isArchived": false,
       "readme": "# JHB Software - Payload CMS Plugins\n\n[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)\n\nThis repository contains a collection of powerful plugins designed to enhance [Payload CMS](https://payloadcms.com/), a headless content management system.\n\n## Plugins\n\n### Admin Search Plugin\n\n[![NPM Version](https://img.shields.io/npm/v/%40jhb.software%2Fpayload-admin-search)](https://www.npmjs.com/package/@jhb.software/payload-admin-search)",
-      "healthScore": 40
+      "healthScore": 37
     },
     {
       "id": "1127989065-root",
@@ -2393,7 +2393,7 @@
       "name": "payload better auth",
       "packageName": "@delmaredigital/payload-better-auth",
       "description": "Better Auth adapter and plugins for Payload CMS",
-      "stars": 64,
+      "stars": 65,
       "forks": 10,
       "lastUpdate": "2026-08-25T16:29:56Z",
       "createdAt": "2026-01-04T19:27:15Z",
@@ -3682,14 +3682,14 @@
       "isArchived": false,
       "readme": "# payload-reserve\n\n[![npm version](https://img.shields.io/npm/v/payload-reserve.svg)](https://www.npmjs.com/package/payload-reserve)\n[![npm downloads](https://img.shields.io/npm/dm/payload-reserve.svg)](https://www.npmjs.com/package/payload-reserve)\n[![license](https://img.shields.io/npm/l/payload-reserve.svg)](./LICENSE)\n\nA full-featured reservation and booking plugin for Payload CMS 3.x.",
       "npm": {
-        "weeklyDownloads": 351,
-        "monthlyDownloads": 1144,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "4.1.0",
         "unpackedSize": 1456995,
         "lastPublish": "2026-08-26T23:45:42.219Z",
         "dependencyCount": 0
       },
-      "healthScore": 80
+      "healthScore": 67
     },
     {
       "id": "855845541-root",
@@ -5083,7 +5083,7 @@
       "description": "A/B testing plugin for Payload CMS",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5110,7 +5110,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5130,7 +5130,7 @@
       "description": "No description available",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5157,7 +5157,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5177,7 +5177,7 @@
       "description": "No description available",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5204,7 +5204,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5224,7 +5224,7 @@
       "description": "Presets plugin for Payload CMS - save and apply reusable block configurations",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5251,7 +5251,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5271,7 +5271,7 @@
       "description": "Schedule publication plugin for Payload CMS",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5298,7 +5298,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5318,7 +5318,7 @@
       "description": "No description available",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5345,7 +5345,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5365,7 +5365,7 @@
       "description": "Translation plugin for Payload CMS 3.x. Automatically translate your localized content using any translation provider.",
       "stars": 16,
       "forks": 0,
-      "lastUpdate": "2026-08-27T09:33:25Z",
+      "lastUpdate": "2026-08-28T16:58:12Z",
       "createdAt": "2026-03-10T15:24:13Z",
       "owner": "focusreactive",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/47592118?v=4",
@@ -5392,7 +5392,7 @@
         3
       ],
       "license": null,
-      "openIssues": 14,
+      "openIssues": 23,
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 0,
@@ -5501,14 +5501,14 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 27,
-        "monthlyDownloads": 219,
+        "weeklyDownloads": 41,
+        "monthlyDownloads": 227,
         "latestVersion": "0.3.0",
         "unpackedSize": 163810,
         "lastPublish": "2026-07-21T23:48:31.649Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 66
     },
     {
       "id": "1064440892-algolia-search",
@@ -5536,7 +5536,7 @@
       "isArchived": false,
       "npm": {
         "weeklyDownloads": 3,
-        "monthlyDownloads": 28,
+        "monthlyDownloads": 27,
         "latestVersion": "0.2.0",
         "unpackedSize": 197776,
         "lastPublish": "2026-07-14T00:59:22.934Z",
@@ -5569,8 +5569,8 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 15,
-        "monthlyDownloads": 119,
+        "weeklyDownloads": 19,
+        "monthlyDownloads": 114,
         "latestVersion": "0.2.0",
         "unpackedSize": 144633,
         "lastPublish": "2026-07-17T02:12:24.552Z",
@@ -5603,8 +5603,8 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 17,
-        "monthlyDownloads": 95,
+        "weeklyDownloads": 19,
+        "monthlyDownloads": 91,
         "latestVersion": "2.0.2",
         "unpackedSize": 60802,
         "lastPublish": "2026-05-29T04:21:48.188Z",
@@ -5637,14 +5637,14 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 2,
-        "monthlyDownloads": 34,
+        "weeklyDownloads": 1,
+        "monthlyDownloads": 33,
         "latestVersion": "2.1.1",
         "unpackedSize": 79614,
         "lastPublish": "2026-06-30T01:43:52.440Z",
         "dependencyCount": 0
       },
-      "healthScore": 60
+      "healthScore": 58
     },
     {
       "id": "1064440892-paths",
@@ -5671,8 +5671,8 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 12,
-        "monthlyDownloads": 97,
+        "weeklyDownloads": 9,
+        "monthlyDownloads": 89,
         "latestVersion": "0.3.1",
         "unpackedSize": 454113,
         "lastPublish": "2026-07-24T03:52:27.522Z",
@@ -5705,14 +5705,14 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 12,
-        "monthlyDownloads": 65,
+        "weeklyDownloads": 13,
+        "monthlyDownloads": 64,
         "latestVersion": "3.0.0",
         "unpackedSize": 85429,
         "lastPublish": "2026-05-26T02:34:19.891Z",
         "dependencyCount": 1
       },
-      "healthScore": 59
+      "healthScore": 60
     },
     {
       "id": "1064440892-rbac",
@@ -5739,14 +5739,14 @@
       "openIssues": 1,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 28,
-        "monthlyDownloads": 215,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.5.0",
         "unpackedSize": 285971,
         "lastPublish": "2026-08-11T06:24:12.720Z",
         "dependencyCount": 0
       },
-      "healthScore": 66
+      "healthScore": 59
     },
     {
       "id": "1064440892-redirects",
@@ -5891,7 +5891,7 @@
       "description": "Phone Number Plugin for Payload CMS.",
       "stars": 15,
       "forks": 0,
-      "lastUpdate": "2026-08-26T20:38:12Z",
+      "lastUpdate": "2026-08-28T16:34:07Z",
       "createdAt": "2024-12-29T18:01:54Z",
       "owner": "adsign",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/3929524?v=4",
@@ -5905,7 +5905,7 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 1,
+      "openIssues": 2,
       "isArchived": false,
       "readme": "# Payload CMS Phone Number Plugin\n\n[![Payload CMS](https://img.shields.io/badge/Payload%20CMS-v3-blue)](https://github.com/payloadcms/payload)\n[![NPM Version](https://img.shields.io/npm/v/payload-phone-number-plugin)](https://www.npmjs.com/package/payload-phone-number-plugin)\n\nThis Payload CMS plugin uses [libphonenumber-js](https://www.npmjs.com/package/libphonenumber-js) to format and validate phone numbers.\n\n![Preview](./src/assets/preview.png)",
       "npm": {
@@ -5916,7 +5916,7 @@
         "lastPublish": "2026-07-22T00:39:51.955Z",
         "dependencyCount": 3
       },
-      "healthScore": 61
+      "healthScore": 58
     },
     {
       "id": "1083913111-root",
@@ -7853,6 +7853,47 @@
       "healthScore": 41
     },
     {
+      "id": "1249769132-root",
+      "name": "payload plugin sms",
+      "packageName": "@elghaied/payload-plugin-sms",
+      "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
+      "stars": 5,
+      "forks": 0,
+      "lastUpdate": "2026-06-09T10:47:06Z",
+      "createdAt": "2026-05-26T02:51:17Z",
+      "owner": "elghaied",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/23630662?v=4",
+      "url": "https://github.com/elghaied/payload-plugin-sms",
+      "topics": [
+        "aws-sns",
+        "payload-plugin",
+        "payloadcms",
+        "payloadcms-v3",
+        "sms-providers",
+        "telnyx",
+        "twilio",
+        "vonage"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": null,
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# @elghaied/payload-plugin-sms\n\n[![npm version](https://img.shields.io/npm/v/@elghaied/payload-plugin-sms.svg)](https://www.npmjs.com/package/@elghaied/payload-plugin-sms)\n[![npm downloads](https://img.shields.io/npm/dm/@elghaied/payload-plugin-sms.svg)](https://www.npmjs.com/package/@elghaied/payload-plugin-sms)\n[![license](https://img.shields.io/npm/l/@elghaied/payload-plugin-sms.svg)](https://github.com/elghaied/payload-plugin-sms/blob/main/LICENSE)",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "0.5.0",
+        "unpackedSize": 571877,
+        "lastPublish": "2026-06-09T10:48:50.149Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 51
+    },
+    {
       "id": "1261882090-root",
       "name": "payload plugin notifications",
       "packageName": "@elghaied/payload-plugin-notifications",
@@ -8030,7 +8071,7 @@
       "description": "Live preview for Payload CMS in Astro and any SSR/static frontend (SvelteKit, Nuxt, Next.js, plain HTML). Patches the DOM live, no rebuild.",
       "stars": 4,
       "forks": 0,
-      "lastUpdate": "2026-08-28T01:37:46Z",
+      "lastUpdate": "2026-08-28T14:47:27Z",
       "createdAt": "2026-07-11T12:37:55Z",
       "owner": "relative23",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62724298?v=4",
@@ -8058,59 +8099,18 @@
         0
       ],
       "license": "MIT",
-      "openIssues": 1,
+      "openIssues": 0,
       "isArchived": false,
       "readme": "# payload-live-preview\n\n[![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)\n[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)\n[![Node >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen)](package.json)\n[![Payload 2.x / 3.x](https://img.shields.io/badge/Payload-2.x%20%2F%203.x-black)](https://payloadcms.com)\n[![npm](https://img.shields",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 1292,
+        "monthlyDownloads": 2132,
         "latestVersion": "1.8.1",
         "unpackedSize": 4527564,
         "lastPublish": "2026-08-26T20:26:51.466Z",
         "dependencyCount": 0
       },
-      "healthScore": 53
-    },
-    {
-      "id": "1249769132-root",
-      "name": "payload plugin sms",
-      "packageName": "@elghaied/payload-plugin-sms",
-      "description": "Multi-provider SMS plugin for Payload CMS 3.x with Twilio, Telnyx, Plivo, Vonage, and AWS SNS adapters.",
-      "stars": 4,
-      "forks": 0,
-      "lastUpdate": "2026-06-09T10:47:06Z",
-      "createdAt": "2026-05-26T02:51:17Z",
-      "owner": "elghaied",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/23630662?v=4",
-      "url": "https://github.com/elghaied/payload-plugin-sms",
-      "topics": [
-        "aws-sns",
-        "payload-plugin",
-        "payloadcms",
-        "payloadcms-v3",
-        "sms-providers",
-        "telnyx",
-        "twilio",
-        "vonage"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": null,
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# @elghaied/payload-plugin-sms\n\n[![npm version](https://img.shields.io/npm/v/@elghaied/payload-plugin-sms.svg)](https://www.npmjs.com/package/@elghaied/payload-plugin-sms)\n[![npm downloads](https://img.shields.io/npm/dm/@elghaied/payload-plugin-sms.svg)](https://www.npmjs.com/package/@elghaied/payload-plugin-sms)\n[![license](https://img.shields.io/npm/l/@elghaied/payload-plugin-sms.svg)](https://github.com/elghaied/payload-plugin-sms/blob/main/LICENSE)",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "0.5.0",
-        "unpackedSize": 571877,
-        "lastPublish": "2026-06-09T10:48:50.149Z",
-        "dependencyCount": 0
-      },
-      "healthScore": 51
+      "healthScore": 79
     },
     {
       "id": "1216292583-root",
@@ -8619,7 +8619,7 @@
       "packageName": "payload-cloudflare-email-adapter",
       "description": "Cloudflare Email Service adapter for Payload CMS",
       "stars": 3,
-      "forks": 0,
+      "forks": 1,
       "lastUpdate": "2026-06-11T22:49:44Z",
       "createdAt": "2026-06-11T20:22:39Z",
       "owner": "WLF-Studios",
@@ -8640,7 +8640,7 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 0,
+      "openIssues": 1,
       "isArchived": false,
       "readme": "# Payload Cloudflare Email Adapter\n\nPayload email adapter that sends transactional email through the Cloudflare Email Service Workers\nbinding.\n\n<p align=\"center\">\n  <img alt=\"Payload Cloudflare Email Adapter\" src=\"assets/pcea-cover.jpg\" width=\"100%\" />\n</p>\n\nBuilt for Payload applications deployed to Cloudflare Workers. It uses Cloudflare's native\n`send_email` binding, so it does not require an API token or use the Cloudflare REST API.\n\nTested with Payload `3.84`.\n\n## Install",
       "npm": {
@@ -8651,7 +8651,7 @@
         "lastPublish": "2026-06-11T21:31:07.344Z",
         "dependencyCount": 0
       },
-      "healthScore": 59
+      "healthScore": 49
     },
     {
       "id": "1245559680-root",
@@ -9718,7 +9718,7 @@
       "description": "Add passkey support to Payload CMS.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-08-27T21:16:42Z",
+      "lastUpdate": "2026-08-28T16:44:07Z",
       "createdAt": "2026-08-02T11:58:48Z",
       "owner": "Robot-Inventor",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/50550561?v=4",
@@ -9736,7 +9736,7 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 3,
+      "openIssues": 4,
       "isArchived": false,
       "readme": "# payload-passkey\n\nThis plugin adds passkey support to [Payload CMS](https://github.com/payloadcms/payload) using [Better Auth](https://github.com/better-auth/better-auth).\n\nAlthough it is a wrapper around [@delmaredigital/payload-better-auth](https://github.com/delmaredigital/payload-better-auth/), this plugin focuses specifically on passkeys. It preserves Payload's default login screen and uses Payload's UI components to match Payload's design language.",
       "npm": {
@@ -9812,14 +9812,14 @@
       "isArchived": false,
       "readme": "# MobilizeHub Payload Plugin\n\nA comprehensive email advocacy and contact management plugin for [Payload CMS](https://payloadcms.com). Build powerful advocacy campaigns, manage contacts, send targeted email broadcasts, and track engagement—all within your Payload admin.",
       "npm": {
-        "weeklyDownloads": 204,
-        "monthlyDownloads": 269,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.11.0",
         "unpackedSize": 477234,
         "lastPublish": "2026-08-27T10:19:27.021Z",
         "dependencyCount": 2
       },
-      "healthScore": 68
+      "healthScore": 56
     },
     {
       "id": "1342450007-root",
@@ -10374,14 +10374,14 @@
       "isArchived": false,
       "readme": "# payload-shipping-classes\n\n[![npm](https://img.shields.io/npm/v/payload-shipping-classes?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-shipping-classes) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 131,
+        "monthlyDownloads": 131,
         "latestVersion": "1.0.0",
         "unpackedSize": 32372,
         "lastPublish": "2026-08-21T10:54:07.972Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340410409-root",
@@ -10413,14 +10413,14 @@
       "isArchived": false,
       "readme": "# payload-sales-reports\n\n[![npm](https://img.shields.io/npm/v/payload-sales-reports?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-sales-reports) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 166,
+        "monthlyDownloads": 287,
         "latestVersion": "1.0.1",
         "unpackedSize": 36260,
         "lastPublish": "2026-08-21T07:41:08.949Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340410327-root",
@@ -10452,14 +10452,14 @@
       "isArchived": false,
       "readme": "# payload-reviews\n\n[![npm](https://img.shields.io/npm/v/payload-reviews?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-reviews) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 165,
+        "monthlyDownloads": 300,
         "latestVersion": "1.0.1",
         "unpackedSize": 40438,
         "lastPublish": "2026-08-21T07:36:55.306Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340410250-root",
@@ -10491,14 +10491,14 @@
       "isArchived": false,
       "readme": "# payload-refunds\n\n[![npm](https://img.shields.io/npm/v/payload-refunds?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-refunds) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 200,
+        "monthlyDownloads": 333,
         "latestVersion": "1.0.1",
         "unpackedSize": 53671,
         "lastPublish": "2026-08-21T07:35:30.354Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 75
     },
     {
       "id": "1339781367-root",
@@ -10530,14 +10530,14 @@
       "isArchived": false,
       "readme": "# payload-order-numbers\n\n[![npm](https://img.shields.io/npm/v/payload-order-numbers?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-order-numbers) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 186,
+        "monthlyDownloads": 321,
         "latestVersion": "1.0.1",
         "unpackedSize": 15533,
         "lastPublish": "2026-08-21T07:32:41.958Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340410156-root",
@@ -10569,14 +10569,14 @@
       "isArchived": false,
       "readme": "# payload-order-emails\n\n[![npm](https://img.shields.io/npm/v/payload-order-emails?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-order-emails) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 174,
+        "monthlyDownloads": 301,
         "latestVersion": "1.0.1",
         "unpackedSize": 31788,
         "lastPublish": "2026-08-21T07:33:21.690Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340410075-root",
@@ -10608,14 +10608,14 @@
       "isArchived": false,
       "readme": "# payload-invoices\n\n[![npm](https://img.shields.io/npm/v/payload-invoices?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-invoices) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 218,
+        "monthlyDownloads": 365,
         "latestVersion": "1.0.1",
         "unpackedSize": 77268,
         "lastPublish": "2026-08-21T07:34:47.391Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 75
     },
     {
       "id": "1340409988-root",
@@ -10647,14 +10647,14 @@
       "isArchived": false,
       "readme": "# payload-fulfillment\n\n[![npm](https://img.shields.io/npm/v/payload-fulfillment?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-fulfillment) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 169,
+        "monthlyDownloads": 308,
         "latestVersion": "1.0.1",
         "unpackedSize": 33115,
         "lastPublish": "2026-08-21T07:34:04.752Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340409911-root",
@@ -10686,14 +10686,14 @@
       "isArchived": false,
       "readme": "# payload-downloads\n\n[![npm](https://img.shields.io/npm/v/payload-downloads?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-downloads) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 158,
+        "monthlyDownloads": 295,
         "latestVersion": "1.0.1",
         "unpackedSize": 48577,
         "lastPublish": "2026-08-21T07:38:20.404Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 76
     },
     {
       "id": "1340409834-root",
@@ -10725,14 +10725,14 @@
       "isArchived": false,
       "readme": "# payload-coupons\n\n[![npm](https://img.shields.io/npm/v/payload-coupons?style=flat-square&color=0F766E)](https://www.npmjs.com/package/payload-coupons) ![node](https://img.shields.io/badge/node-%3E%3D20-339933?style=flat-square) ![license](https://img.shields.io/badge/license-MIT-6C757D?style=flat-square) ![payload](https://img.shields.io/badge/Payload-3.88+-0a0c0b?style=flat-square)",
       "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
+        "weeklyDownloads": 190,
+        "monthlyDownloads": 316,
         "latestVersion": "1.0.1",
         "unpackedSize": 65224,
         "lastPublish": "2026-08-21T07:36:12.950Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 74
     },
     {
       "id": "1340409742-root",
@@ -11519,14 +11519,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 350,
-        "monthlyDownloads": 1605,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.3.2",
         "unpackedSize": 197063,
         "lastPublish": "2026-08-22T02:24:42.900Z",
         "dependencyCount": 1
       },
-      "healthScore": 76
+      "healthScore": 63
     },
     {
       "id": "1294311885-pages",
@@ -11553,14 +11553,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 67,
-        "monthlyDownloads": 736,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "2.0.0",
         "unpackedSize": 25318,
         "lastPublish": "2026-08-19T16:33:24.500Z",
         "dependencyCount": 0
       },
-      "healthScore": 74
+      "healthScore": 65
     },
     {
       "id": "1294311885-permalink",
@@ -11587,14 +11587,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 231,
-        "monthlyDownloads": 294,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.0.2",
         "unpackedSize": 139183,
         "lastPublish": "2026-08-27T02:54:32.208Z",
         "dependencyCount": 1
       },
-      "healthScore": 75
+      "healthScore": 63
     },
     {
       "id": "1294311885-rbac",
@@ -11621,14 +11621,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 13,
-        "monthlyDownloads": 104,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.1.0",
         "unpackedSize": 244839,
         "lastPublish": "2026-08-10T21:10:05.777Z",
         "dependencyCount": 1
       },
-      "healthScore": 67
+      "healthScore": 61
     },
     {
       "id": "1294311885-seo",
@@ -11655,14 +11655,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 13,
-        "monthlyDownloads": 259,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.2.3",
         "unpackedSize": 577681,
         "lastPublish": "2026-07-25T21:01:05.374Z",
         "dependencyCount": 1
       },
-      "healthScore": 64
+      "healthScore": 58
     },
     {
       "id": "1294311885-slug-field",
@@ -11689,14 +11689,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 27,
-        "monthlyDownloads": 286,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.3.0",
         "unpackedSize": 18253,
         "lastPublish": "2026-08-18T20:49:29.866Z",
         "dependencyCount": 2
       },
-      "healthScore": 72
+      "healthScore": 65
     },
     {
       "id": "1294311885-strings",
@@ -11757,14 +11757,14 @@
       "openIssues": 0,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 15,
-        "monthlyDownloads": 297,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.4.0",
         "unpackedSize": 84554,
         "lastPublish": "2026-07-29T20:33:13.061Z",
         "dependencyCount": 1
       },
-      "healthScore": 69
+      "healthScore": 63
     },
     {
       "id": "1292287451-root",
@@ -12118,7 +12118,7 @@
         "lastPublish": "2026-07-29T04:11:03.807Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 57
     },
     {
       "id": "1313834549-root",
