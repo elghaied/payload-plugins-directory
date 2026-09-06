@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-09-06T09:46:58.496Z",
+  "lastUpdated": "2026-09-06T19:40:38.130Z",
   "totalCount": 341,
   "plugins": [
     {
@@ -8,7 +8,7 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -41,7 +41,7 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -74,7 +74,7 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -107,7 +107,7 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -140,7 +140,7 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -173,7 +173,7 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -206,7 +206,7 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -239,7 +239,7 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -272,7 +272,7 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -305,7 +305,7 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -338,7 +338,7 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -371,7 +371,7 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 44592,
+      "stars": 44599,
       "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
@@ -1904,7 +1904,7 @@
       "name": "payload puck",
       "packageName": "@delmaredigital/payload-puck",
       "description": "Puck visual page builder plugin for Payload CMS",
-      "stars": 101,
+      "stars": 102,
       "forks": 9,
       "lastUpdate": "2026-09-02T01:16:39Z",
       "createdAt": "2026-01-05T01:04:40Z",
@@ -4731,14 +4731,14 @@
       "openIssues": 28,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 222,
-        "monthlyDownloads": 445,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.2.2",
         "unpackedSize": 1570655,
         "lastPublish": "2026-07-08T11:23:35.621Z",
         "dependencyCount": 5
       },
-      "healthScore": 57
+      "healthScore": 45
     },
     {
       "id": "1177993877-payload-plugin-comments",
@@ -5431,7 +5431,7 @@
         "lastPublish": "2026-06-07T20:07:34.884Z",
         "dependencyCount": 4
       },
-      "healthScore": 52
+      "healthScore": 47
     },
     {
       "id": "1064440892-activity-log",
@@ -7750,7 +7750,7 @@
       "description": "Live preview for Payload CMS in Astro and any SSR/static frontend (SvelteKit, Nuxt, Next.js, plain HTML). Patches the DOM live, no rebuild.",
       "stars": 5,
       "forks": 0,
-      "lastUpdate": "2026-09-06T09:39:29Z",
+      "lastUpdate": "2026-09-06T19:37:45Z",
       "createdAt": "2026-07-11T12:37:55Z",
       "owner": "relative23",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62724298?v=4",
@@ -9894,6 +9894,44 @@
       "healthScore": 27
     },
     {
+      "id": "1320143736-root",
+      "name": "payload passkey",
+      "packageName": "payload-passkey",
+      "description": "Add passkey support to Payload CMS.",
+      "stars": 1,
+      "forks": 0,
+      "lastUpdate": "2026-09-06T17:37:39Z",
+      "createdAt": "2026-08-02T11:58:48Z",
+      "owner": "Robot-Inventor",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/50550561?v=4",
+      "url": "https://github.com/Robot-Inventor/payload-passkey",
+      "topics": [
+        "passkey",
+        "payload",
+        "payload-cms",
+        "payload-plugin",
+        "payloadcms"
+      ],
+      "isOfficial": false,
+      "payloadVersion": ">=3.69.0 <4",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 6,
+      "isArchived": false,
+      "readme": "# payload-passkey\n\nThis plugin adds passkey support to [Payload CMS](https://github.com/payloadcms/payload) using [Better Auth](https://github.com/better-auth/better-auth).\n\nAlthough it is a wrapper around [@delmaredigital/payload-better-auth](https://github.com/delmaredigital/payload-better-auth/), this plugin focuses specifically on passkeys. It preserves Payload's default login screen and uses Payload's UI components to match Payload's design language.",
+      "npm": {
+        "weeklyDownloads": 416,
+        "monthlyDownloads": 3310,
+        "latestVersion": "2.0.3",
+        "unpackedSize": 120714,
+        "lastPublish": "2026-09-04T02:09:15.072Z",
+        "dependencyCount": 3
+      },
+      "healthScore": 66
+    },
+    {
       "id": "1273411047-root",
       "name": "payload comments",
       "packageName": "@navanem/payload-comments",
@@ -9925,44 +9963,6 @@
       "isArchived": false,
       "readme": "# @navanem/payload-comments\n\nAnonymous comments and reactions for Payload 3.x — with Markdown comment bodies, optional pre-publish\nmoderation, mood emojis, reactions on comments, and up to 3 levels of replies.\n\n## Features",
       "healthScore": 35
-    },
-    {
-      "id": "1320143736-root",
-      "name": "payload passkey",
-      "packageName": "payload-passkey",
-      "description": "Add passkey support to Payload CMS.",
-      "stars": 1,
-      "forks": 0,
-      "lastUpdate": "2026-09-06T09:32:59Z",
-      "createdAt": "2026-08-02T11:58:48Z",
-      "owner": "Robot-Inventor",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/50550561?v=4",
-      "url": "https://github.com/Robot-Inventor/payload-passkey",
-      "topics": [
-        "passkey",
-        "payload",
-        "payload-cms",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": ">=3.69.0 <4",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 8,
-      "isArchived": false,
-      "readme": "# payload-passkey\n\nThis plugin adds passkey support to [Payload CMS](https://github.com/payloadcms/payload) using [Better Auth](https://github.com/better-auth/better-auth).\n\nAlthough it is a wrapper around [@delmaredigital/payload-better-auth](https://github.com/delmaredigital/payload-better-auth/), this plugin focuses specifically on passkeys. It preserves Payload's default login screen and uses Payload's UI components to match Payload's design language.",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "2.0.3",
-        "unpackedSize": 120714,
-        "lastPublish": "2026-09-04T02:09:15.072Z",
-        "dependencyCount": 3
-      },
-      "healthScore": 53
     },
     {
       "id": "1342450007-root",
@@ -11242,7 +11242,7 @@
         "lastPublish": "2026-03-31T07:37:35.045Z",
         "dependencyCount": 0
       },
-      "healthScore": 41
+      "healthScore": 36
     },
     {
       "id": "1250710535-root",
