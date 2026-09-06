@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2026-09-05T19:38:43.951Z",
+  "lastUpdated": "2026-09-06T09:46:58.496Z",
   "totalCount": 341,
   "plugins": [
     {
@@ -8,8 +8,8 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -41,8 +41,8 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -74,8 +74,8 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -107,8 +107,8 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -140,8 +140,8 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -173,8 +173,8 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -206,8 +206,8 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -239,8 +239,8 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -272,8 +272,8 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -305,8 +305,8 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -338,8 +338,8 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -371,8 +371,8 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 44585,
-      "forks": 4126,
+      "stars": 44592,
+      "forks": 4127,
       "lastUpdate": "2026-09-04T09:09:06Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -403,7 +403,7 @@
       "name": "payload ai",
       "packageName": "@ai-stack/payloadcms",
       "description": "AI Plugin is a powerful extension for the Payload CMS, integrating advanced AI capabilities to enhance content creation and management.",
-      "stars": 548,
+      "stars": 547,
       "forks": 65,
       "lastUpdate": "2026-09-03T08:11:39Z",
       "createdAt": "2024-07-17T00:26:53Z",
@@ -1246,7 +1246,7 @@
         3
       ],
       "license": null,
-      "openIssues": 1,
+      "openIssues": 2,
       "isArchived": false,
       "readme": "# Payload TOTP (Time-based One-Time Password)\n[![NPM](https://img.shields.io/npm/v/payload-totp)](https://www.npmjs.com/package/payload-totp)\n[![Downloads](http://img.shields.io/npm/dm/payload-totp.svg)](https://www.npmjs.com/package/payload-totp)\n![banner](https://github.com/user-attachments/assets/631dd9bf-8425-439e-9988-d25b6d5d3f6e)",
       "npm": {
@@ -1877,7 +1877,7 @@
       "description": "A collection of powerful plugins designed to enhance Payload CMS",
       "stars": 102,
       "forks": 6,
-      "lastUpdate": "2026-09-04T13:49:39Z",
+      "lastUpdate": "2026-09-06T06:54:11Z",
       "createdAt": "2024-11-30T10:43:28Z",
       "owner": "jhb-software",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/131646571?v=4",
@@ -3919,48 +3919,11 @@
       "healthScore": 42
     },
     {
-      "id": "1000565815-root",
-      "name": "payload plugin ai localization",
-      "packageName": "payload-plugin-ai-localization",
-      "description": "AI-powered localization plugin for Payload CMS using OpenAI",
-      "stars": 26,
-      "forks": 1,
-      "lastUpdate": "2025-06-12T04:04:07Z",
-      "createdAt": "2025-06-12T01:47:50Z",
-      "owner": "Crayonan",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/78920025?v=4",
-      "url": "https://github.com/Crayonan/payload-plugin-ai-localization",
-      "topics": [
-        "nodejs",
-        "payload-plugin",
-        "payloadcms",
-        "typesc"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.37.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# AI Localization Plugin for Payload CMS\n\nA Payload CMS plugin that provides AI-powered content translation using OpenAI, designed to work seamlessly with Payload's built-in localization system.\n\n## Features",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.0.3",
-        "unpackedSize": 51875,
-        "lastPublish": "2025-06-12T03:53:23.973Z",
-        "dependencyCount": 2
-      },
-      "healthScore": 35
-    },
-    {
       "id": "795386489-root",
       "name": "payload google map autocomplete places",
       "packageName": "payload-google-autocomplete-places",
       "description": "A Google Map Places Autocomplete Field for Payload CMS",
-      "stars": 26,
+      "stars": 27,
       "forks": 4,
       "lastUpdate": "2024-05-04T20:50:45Z",
       "createdAt": "2024-05-03T07:03:53Z",
@@ -3998,6 +3961,43 @@
         "dependencyCount": 3
       },
       "healthScore": 32
+    },
+    {
+      "id": "1000565815-root",
+      "name": "payload plugin ai localization",
+      "packageName": "payload-plugin-ai-localization",
+      "description": "AI-powered localization plugin for Payload CMS using OpenAI",
+      "stars": 26,
+      "forks": 1,
+      "lastUpdate": "2025-06-12T04:04:07Z",
+      "createdAt": "2025-06-12T01:47:50Z",
+      "owner": "Crayonan",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/78920025?v=4",
+      "url": "https://github.com/Crayonan/payload-plugin-ai-localization",
+      "topics": [
+        "nodejs",
+        "payload-plugin",
+        "payloadcms",
+        "typesc"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.37.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# AI Localization Plugin for Payload CMS\n\nA Payload CMS plugin that provides AI-powered content translation using OpenAI, designed to work seamlessly with Payload's built-in localization system.\n\n## Features",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.0.3",
+        "unpackedSize": 51875,
+        "lastPublish": "2025-06-12T03:53:23.973Z",
+        "dependencyCount": 2
+      },
+      "healthScore": 35
     },
     {
       "id": "767805757-root",
@@ -4450,52 +4450,12 @@
       "healthScore": 50
     },
     {
-      "id": "1243548138-root",
-      "name": "payload icon picker",
-      "packageName": "payload-icon-picker",
-      "description": "A dynamic icon picker field plugin for Payload CMS 3.0 supporting custom icon packs, searching, and custom SVG rendering.",
-      "stars": 20,
-      "forks": 0,
-      "lastUpdate": "2026-08-26T10:27:14Z",
-      "createdAt": "2026-05-19T12:50:13Z",
-      "owner": "Metax7",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/113465348?v=4",
-      "url": "https://github.com/Metax7/payload-icon-picker",
-      "topics": [
-        "icons",
-        "payload-field",
-        "payload-icon-field",
-        "payload-icon-picker",
-        "payload-plugin",
-        "react-icons",
-        "typescript"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "![Icon Picker Interface](./media/icon_picker_interface.png)\n\n# payload-icon-picker\n\nA field plugin for Payload CMS 3.x that adds a highly optimized icon picker. It supports both a searchable dropdown interface and an advanced grid-based sliding drawer panel. It automatically extracts and saves the selected icon name and its raw SVG string to the database, allowing you to render icons on your frontend without importing or bundling heavy icon packages.\n\n## Features",
-      "npm": {
-        "weeklyDownloads": 0,
-        "monthlyDownloads": 0,
-        "latestVersion": "1.5.12",
-        "unpackedSize": 107981,
-        "lastPublish": "2026-08-26T10:37:06.323Z",
-        "dependencyCount": 3
-      },
-      "healthScore": 70
-    },
-    {
       "id": "1296456147-payload-theme",
       "name": "payload theme",
       "packageName": "payload-theme",
       "collection": "payload-theme",
       "description": "A shadcn-style theme for the Payload CMS admin panel — dashboard with sparklines, ⌘K command palette, grouped icon sidebar, live theme customizer, dark mode, 8 languages. One accent color, two lines of setup.",
-      "stars": 19,
+      "stars": 20,
       "forks": 1,
       "lastUpdate": "2026-08-27T13:05:17Z",
       "createdAt": "2026-07-10T12:02:56Z",
@@ -4536,7 +4496,47 @@
         "lastPublish": "2026-08-27T13:05:36.987Z",
         "dependencyCount": 1
       },
-      "healthScore": 61
+      "healthScore": 62
+    },
+    {
+      "id": "1243548138-root",
+      "name": "payload icon picker",
+      "packageName": "payload-icon-picker",
+      "description": "A dynamic icon picker field plugin for Payload CMS 3.0 supporting custom icon packs, searching, and custom SVG rendering.",
+      "stars": 20,
+      "forks": 0,
+      "lastUpdate": "2026-08-26T10:27:14Z",
+      "createdAt": "2026-05-19T12:50:13Z",
+      "owner": "Metax7",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/113465348?v=4",
+      "url": "https://github.com/Metax7/payload-icon-picker",
+      "topics": [
+        "icons",
+        "payload-field",
+        "payload-icon-field",
+        "payload-icon-picker",
+        "payload-plugin",
+        "react-icons",
+        "typescript"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "![Icon Picker Interface](./media/icon_picker_interface.png)\n\n# payload-icon-picker\n\nA field plugin for Payload CMS 3.x that adds a highly optimized icon picker. It supports both a searchable dropdown interface and an advanced grid-based sliding drawer panel. It automatically extracts and saves the selected icon name and its raw SVG string to the database, allowing you to render icons on your frontend without importing or bundling heavy icon packages.\n\n## Features",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "1.5.12",
+        "unpackedSize": 107981,
+        "lastPublish": "2026-08-26T10:37:06.323Z",
+        "dependencyCount": 3
+      },
+      "healthScore": 70
     },
     {
       "id": "1131676452-root",
@@ -4777,14 +4777,14 @@
       "openIssues": 28,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 239,
-        "monthlyDownloads": 1944,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.11.1",
         "unpackedSize": 625436,
         "lastPublish": "2026-07-04T16:12:21.980Z",
         "dependencyCount": 7
       },
-      "healthScore": 58
+      "healthScore": 46
     },
     {
       "id": "1177993877-payload-plugin-presets",
@@ -4823,14 +4823,14 @@
       "openIssues": 28,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 254,
-        "monthlyDownloads": 1939,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.12.0",
         "unpackedSize": 254475,
         "lastPublish": "2026-06-28T23:01:20.179Z",
         "dependencyCount": 1
       },
-      "healthScore": 61
+      "healthScore": 49
     },
     {
       "id": "1177993877-payload-plugin-scheduling",
@@ -4869,14 +4869,14 @@
       "openIssues": 28,
       "isArchived": false,
       "npm": {
-        "weeklyDownloads": 282,
-        "monthlyDownloads": 502,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "1.3.0",
         "unpackedSize": 24219,
         "lastPublish": "2026-06-18T23:20:50.738Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 53
     },
     {
       "id": "1177993877-payload-plugin-seo",
@@ -5431,7 +5431,7 @@
         "lastPublish": "2026-06-07T20:07:34.884Z",
         "dependencyCount": 4
       },
-      "healthScore": 56
+      "healthScore": 52
     },
     {
       "id": "1064440892-activity-log",
@@ -6810,7 +6810,7 @@
       "description": "PayloadCMS adapter for sending emails via the useSend API (previously Unsend).",
       "stars": 8,
       "forks": 0,
-      "lastUpdate": "2026-09-01T07:36:00Z",
+      "lastUpdate": "2026-09-05T20:23:49Z",
       "createdAt": "2025-09-09T05:09:57Z",
       "owner": "rubix-studios-pty-ltd",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/139659623?v=4",
@@ -6835,7 +6835,7 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 0,
+      "openIssues": 4,
       "isArchived": false,
       "readme": "# PayloadCMS + useSend Email Adapter\n\nuseSend is an API-first email delivery platform built for transactional and marketing email workflows. It adopts an architectural model comparable to Resend while remaining fully open source and self-hostable. This combination enables teams to standardise email delivery without surrendering control over infrastructure, deployment topology, or data locality.",
       "npm": {
@@ -6846,7 +6846,7 @@
         "lastPublish": "2026-07-04T18:21:25.474Z",
         "dependencyCount": 0
       },
-      "healthScore": 67
+      "healthScore": 57
     },
     {
       "id": "1276145587-root",
@@ -7750,7 +7750,7 @@
       "description": "Live preview for Payload CMS in Astro and any SSR/static frontend (SvelteKit, Nuxt, Next.js, plain HTML). Patches the DOM live, no rebuild.",
       "stars": 5,
       "forks": 0,
-      "lastUpdate": "2026-09-05T16:28:24Z",
+      "lastUpdate": "2026-09-06T09:39:29Z",
       "createdAt": "2026-07-11T12:37:55Z",
       "owner": "relative23",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/62724298?v=4",
@@ -7778,7 +7778,7 @@
         0
       ],
       "license": "MIT",
-      "openIssues": 1,
+      "openIssues": 2,
       "isArchived": false,
       "readme": "# payload-live-preview\n\n[![CI](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml/badge.svg)](https://github.com/relative23/payload-live-preview/actions/workflows/ci.yml)\n[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)\n[![Node >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-brightgreen)](package.json)\n[![Payload 2.x / 3.x](https://img.shields.io/badge/Payload-2.x%20%2F%203.x-black)](https://payloadcms.com)\n[![npm](https://img.shields",
       "npm": {
@@ -8252,7 +8252,7 @@
         "lastPublish": "2026-06-08T00:56:25.453Z",
         "dependencyCount": 0
       },
-      "healthScore": 58
+      "healthScore": 49
     },
     {
       "id": "1175545924-payload-hypervalue",
@@ -9119,6 +9119,39 @@
       "healthScore": 20
     },
     {
+      "id": "1274892328-root",
+      "name": "payload contact",
+      "packageName": "@navanem/payload-contact",
+      "description": "Contact form plugin for Payload 3.x: a message inbox collection, runtime settings, spam protection (honeypot + rate limit), an admin inbox view, and a ready-to-use form component.",
+      "stars": 2,
+      "forks": 0,
+      "lastUpdate": "2026-09-06T03:26:30Z",
+      "createdAt": "2026-06-20T02:18:38Z",
+      "owner": "navanem",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/287356801?v=4",
+      "url": "https://github.com/navanem/payload-contact",
+      "topics": [
+        "contact-form",
+        "navanem",
+        "open-source",
+        "payload-plugin",
+        "payloadcms",
+        "payloadcms-v3",
+        "spam-protection",
+        "typescript"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.88.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# @navanem/payload-contact\n\nA contact-form plugin for **Payload 3.x**. It gives you a public form component, a\nvalidated submit endpoint with built-in spam protection, an admin **inbox** to read\nand triage messages, and a **settings** global to open/close the form and tune it at\nruntime — no redeploy required. No email is sent or exposed; messages are stored in\nyour Payload admin.",
+      "healthScore": 37
+    },
+    {
       "id": "1078131883-root",
       "name": "payload dub",
       "packageName": "@rubixstudios/payload-dub",
@@ -9480,36 +9513,6 @@
         "dependencyCount": 0
       },
       "healthScore": 41
-    },
-    {
-      "id": "1274892328-root",
-      "name": "navanem_payload_contact",
-      "packageName": "@navanem/payload-contact",
-      "description": "Contact form plugin for Payload 3.x: a message inbox collection, runtime settings, spam protection (honeypot + rate limit), an admin inbox view, and a ready-to-use form component.",
-      "stars": 2,
-      "forks": 0,
-      "lastUpdate": "2026-06-23T20:06:42Z",
-      "createdAt": "2026-06-20T02:18:38Z",
-      "owner": "navanem",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/287356801?v=4",
-      "url": "https://github.com/navanem/navanem_payload_contact",
-      "topics": [
-        "navanem",
-        "payload",
-        "payload-contact",
-        "payload-plugin",
-        "payloadcms"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# @navanem/payload-contact\n\nA contact-form plugin for **Payload 3.x**. It gives you a public form component, a\nvalidated submit endpoint with built-in spam protection, an admin **inbox** to read\nand triage messages, and a **settings** global to open/close the form and tune it at\nruntime — no redeploy required. No email is sent or exposed; messages are stored in\nyour Payload admin.",
-      "healthScore": 32
     },
     {
       "id": "1258571172-root",
@@ -9891,13 +9894,46 @@
       "healthScore": 27
     },
     {
+      "id": "1273411047-root",
+      "name": "payload comments",
+      "packageName": "@navanem/payload-comments",
+      "description": "Anonymous comments and reactions plugin for Payload 3.x with optional moderation and 3-level threads.",
+      "stars": 1,
+      "forks": 0,
+      "lastUpdate": "2026-09-06T03:26:29Z",
+      "createdAt": "2026-06-18T13:51:31Z",
+      "owner": "navanem",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/287356801?v=4",
+      "url": "https://github.com/navanem/payload-comments",
+      "topics": [
+        "comments",
+        "moderation",
+        "navanem",
+        "open-source",
+        "payload-plugin",
+        "payloadcms",
+        "payloadcms-v3",
+        "typescript"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.88.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# @navanem/payload-comments\n\nAnonymous comments and reactions for Payload 3.x — with Markdown comment bodies, optional pre-publish\nmoderation, mood emojis, reactions on comments, and up to 3 levels of replies.\n\n## Features",
+      "healthScore": 35
+    },
+    {
       "id": "1320143736-root",
       "name": "payload passkey",
       "packageName": "payload-passkey",
       "description": "Add passkey support to Payload CMS.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-09-05T18:32:55Z",
+      "lastUpdate": "2026-09-06T09:32:59Z",
       "createdAt": "2026-08-02T11:58:48Z",
       "owner": "Robot-Inventor",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/50550561?v=4",
@@ -9915,7 +9951,7 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 6,
+      "openIssues": 8,
       "isArchived": false,
       "readme": "# payload-passkey\n\nThis plugin adds passkey support to [Payload CMS](https://github.com/payloadcms/payload) using [Better Auth](https://github.com/better-auth/better-auth).\n\nAlthough it is a wrapper around [@delmaredigital/payload-better-auth](https://github.com/delmaredigital/payload-better-auth/), this plugin focuses specifically on passkeys. It preserves Payload's default login screen and uses Payload's UI components to match Payload's design language.",
       "npm": {
@@ -11142,38 +11178,6 @@
         "dependencyCount": 2
       },
       "healthScore": 55
-    },
-    {
-      "id": "1273411047-root",
-      "name": "navanem_payload_comments",
-      "packageName": "@navanem/payload-comments",
-      "description": "Anonymous comments and reactions plugin for Payload 3.x with optional moderation and 3-level threads.",
-      "stars": 1,
-      "forks": 0,
-      "lastUpdate": "2026-06-23T20:05:53Z",
-      "createdAt": "2026-06-18T13:51:31Z",
-      "owner": "navanem",
-      "ownerAvatar": "https://avatars.githubusercontent.com/u/287356801?v=4",
-      "url": "https://github.com/navanem/navanem_payload_comments",
-      "topics": [
-        "comments-system",
-        "payload",
-        "payload-comments",
-        "payload-plugin",
-        "payloadcms",
-        "payloadcms-v3",
-        "plugin-payload"
-      ],
-      "isOfficial": false,
-      "payloadVersion": "^3.0.0",
-      "payloadVersionMajor": [
-        3
-      ],
-      "license": "MIT",
-      "openIssues": 0,
-      "isArchived": false,
-      "readme": "# @navanem/payload-comments\n\nAnonymous comments and reactions for Payload 3.x — with Markdown comment bodies, optional pre-publish\nmoderation, mood emojis, reactions on comments, and up to 3 levels of replies.\n\n## Features",
-      "healthScore": 30
     },
     {
       "id": "1266960418-root",
