@@ -1,6 +1,6 @@
 {
-  "lastUpdated": "2026-09-20T10:11:49.671Z",
-  "totalCount": 345,
+  "lastUpdated": "2026-09-20T19:53:34.479Z",
+  "totalCount": 346,
   "plugins": [
     {
       "id": "official-plugin-cloud-storage",
@@ -8,8 +8,8 @@
       "packageName": "@payloadcms/plugin-cloud-storage",
       "collection": "payload",
       "description": "The official cloud storage plugin for Payload CMS",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -41,8 +41,8 @@
       "packageName": "@payloadcms/plugin-ecommerce",
       "collection": "payload",
       "description": "Ecommerce plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -74,8 +74,8 @@
       "packageName": "@payloadcms/plugin-form-builder",
       "collection": "payload",
       "description": "Form builder plugin for Payload CMS",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -107,8 +107,8 @@
       "packageName": "@payloadcms/plugin-import-export",
       "collection": "payload",
       "description": "Import-Export plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -140,8 +140,8 @@
       "packageName": "@payloadcms/plugin-mcp",
       "collection": "payload",
       "description": "MCP (Model Context Protocol) capabilities with Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -173,8 +173,8 @@
       "packageName": "@payloadcms/plugin-multi-tenant",
       "collection": "payload",
       "description": "Multi Tenant plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -206,8 +206,8 @@
       "packageName": "@payloadcms/plugin-nested-docs",
       "collection": "payload",
       "description": "The official Nested Docs plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -239,8 +239,8 @@
       "packageName": "@payloadcms/plugin-redirects",
       "collection": "payload",
       "description": "Redirects plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -272,8 +272,8 @@
       "packageName": "@payloadcms/plugin-search",
       "collection": "payload",
       "description": "Search plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -305,8 +305,8 @@
       "packageName": "@payloadcms/plugin-sentry",
       "collection": "payload",
       "description": "Sentry plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -338,8 +338,8 @@
       "packageName": "@payloadcms/plugin-seo",
       "collection": "payload",
       "description": "SEO plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -371,8 +371,8 @@
       "packageName": "@payloadcms/plugin-stripe",
       "collection": "payload",
       "description": "Stripe plugin for Payload",
-      "stars": 44840,
-      "forks": 4175,
+      "stars": 44844,
+      "forks": 4177,
       "lastUpdate": "2026-09-18T20:50:43Z",
       "createdAt": "2021-01-05T18:49:45Z",
       "owner": "payloadcms",
@@ -918,7 +918,7 @@
       "packageName": "payload-authjs",
       "collection": "payload-authjs",
       "description": "A Payload CMS 3 plugin for Auth.js 5",
-      "stars": 206,
+      "stars": 207,
       "forks": 10,
       "lastUpdate": "2026-05-29T21:40:45Z",
       "createdAt": "2024-08-28T19:10:32Z",
@@ -1246,7 +1246,7 @@
         3
       ],
       "license": null,
-      "openIssues": 1,
+      "openIssues": 2,
       "isArchived": false,
       "readme": "# Payload TOTP (Time-based One-Time Password)\n[![NPM](https://img.shields.io/npm/v/payload-totp)](https://www.npmjs.com/package/payload-totp)\n[![Downloads](http://img.shields.io/npm/dm/payload-totp.svg)](https://www.npmjs.com/package/payload-totp)\n![banner](https://github.com/user-attachments/assets/631dd9bf-8425-439e-9988-d25b6d5d3f6e)",
       "npm": {
@@ -3590,7 +3590,7 @@
       "description": "A Payload CMS 3.x plugin for reservation and booking management with conflict detection, status workflows, and calendar UI",
       "stars": 33,
       "forks": 7,
-      "lastUpdate": "2026-09-20T01:31:08Z",
+      "lastUpdate": "2026-09-20T11:59:53Z",
       "createdAt": "2026-02-13T15:04:06Z",
       "owner": "elghaied",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/23630662?v=4",
@@ -3611,9 +3611,9 @@
       "npm": {
         "weeklyDownloads": 519,
         "monthlyDownloads": 1785,
-        "latestVersion": "4.4.1",
-        "unpackedSize": 1689366,
-        "lastPublish": "2026-09-20T01:34:44.505Z",
+        "latestVersion": "4.4.2",
+        "unpackedSize": 1690767,
+        "lastPublish": "2026-09-20T12:03:55.299Z",
         "dependencyCount": 0
       },
       "healthScore": 82
@@ -7394,7 +7394,7 @@
         "lastPublish": "2025-09-20T17:36:32.660Z",
         "dependencyCount": 16
       },
-      "healthScore": 19
+      "healthScore": 15
     },
     {
       "id": "562124033-root",
@@ -8471,14 +8471,14 @@
       "isArchived": false,
       "readme": "# Payload Subscribers Plugin\n\nA plugin to manage subscribers and the \"channels\" they can subscribe to.\n\nThis includes ways to allow your subscribers to:\n\n- Sign up or sign in by requesting a magic link email\n- Verify the magic link to authenticate\n- Sign up or sign in by requesting a one-time login code email, as an alternative to the magic link\n- Verify the code to authenticate\n- Opt in or out of \"opt-in channels\"\n\nYou manage the opt-in channels via the Payload admin.",
       "npm": {
-        "weeklyDownloads": 203,
-        "monthlyDownloads": 577,
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
         "latestVersion": "0.1.1",
         "unpackedSize": 461279,
         "lastPublish": "2026-09-18T16:34:40.678Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 53
     },
     {
       "id": "1266644715-root",
@@ -9893,7 +9893,7 @@
       "description": "Add passkey support to Payload CMS.",
       "stars": 1,
       "forks": 0,
-      "lastUpdate": "2026-09-20T08:29:40Z",
+      "lastUpdate": "2026-09-20T14:32:24Z",
       "createdAt": "2026-08-02T11:58:48Z",
       "owner": "Robot-Inventor",
       "ownerAvatar": "https://avatars.githubusercontent.com/u/50550561?v=4",
@@ -9911,7 +9911,7 @@
         3
       ],
       "license": "MIT",
-      "openIssues": 3,
+      "openIssues": 4,
       "isArchived": false,
       "readme": "# payload-passkey\n\nThis plugin adds passkey support to [Payload CMS](https://github.com/payloadcms/payload) using [Better Auth](https://github.com/better-auth/better-auth).\n\nAlthough it is a wrapper around [@delmaredigital/payload-better-auth](https://github.com/delmaredigital/payload-better-auth/), this plugin focuses specifically on passkeys. It preserves Payload's default login screen and uses Payload's UI components to match Payload's design language.",
       "npm": {
@@ -10385,7 +10385,7 @@
         "lastPublish": "2026-08-21T16:37:35.330Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 57
     },
     {
       "id": "1341834252-root",
@@ -10425,7 +10425,7 @@
         "lastPublish": "2026-08-21T13:21:28.880Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 55
     },
     {
       "id": "1340410807-root",
@@ -10464,7 +10464,7 @@
         "lastPublish": "2026-08-21T10:57:04.881Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 55
     },
     {
       "id": "1340410744-root",
@@ -10503,7 +10503,7 @@
         "lastPublish": "2026-08-21T10:56:16.548Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 57
     },
     {
       "id": "1340410667-root",
@@ -10542,7 +10542,7 @@
         "lastPublish": "2026-08-21T10:55:28.069Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 57
     },
     {
       "id": "1340410589-root",
@@ -10581,7 +10581,7 @@
         "lastPublish": "2026-08-21T10:54:39.103Z",
         "dependencyCount": 0
       },
-      "healthScore": 63
+      "healthScore": 55
     },
     {
       "id": "1340410496-root",
@@ -10620,7 +10620,7 @@
         "lastPublish": "2026-08-21T10:54:07.972Z",
         "dependencyCount": 0
       },
-      "healthScore": 65
+      "healthScore": 57
     },
     {
       "id": "1340410409-root",
@@ -11598,6 +11598,40 @@
         "dependencyCount": 2
       },
       "healthScore": 25
+    },
+    {
+      "id": "1378504171-root",
+      "name": "payload plugin outbound webhooks",
+      "packageName": "payload-plugin-outbound-webhooks",
+      "description": "Generic outbound webhooks for Payload CMS: fire signed HTTP callbacks on collection create/update/delete, delivered durably via the Jobs Queue.",
+      "stars": 0,
+      "forks": 0,
+      "lastUpdate": "2026-09-20T19:27:41Z",
+      "createdAt": "2026-09-20T15:47:39Z",
+      "owner": "DSamuelHodge",
+      "ownerAvatar": "https://avatars.githubusercontent.com/u/41060830?v=4",
+      "url": "https://github.com/DSamuelHodge/payload-plugin-outbound-webhooks",
+      "topics": [
+        "payload-plugin"
+      ],
+      "isOfficial": false,
+      "payloadVersion": "^3.0.0",
+      "payloadVersionMajor": [
+        3
+      ],
+      "license": "MIT",
+      "openIssues": 0,
+      "isArchived": false,
+      "readme": "# payload-plugin-outbound-webhooks\n\n[![npm version](https://img.shields.io/npm/v/payload-plugin-outbound-webhooks.svg)](https://www.npmjs.com/package/payload-plugin-outbound-webhooks) [![test](https://github.com/DSamuelHodge/payload-plugin-outbound-webhooks/actions/workflows/test.yml/badge.svg)](https://github.com/DSamuelHodge/payload-plugin-outbound-webhooks/actions/workflows/test.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)",
+      "npm": {
+        "weeklyDownloads": 0,
+        "monthlyDownloads": 0,
+        "latestVersion": "0.3.5",
+        "unpackedSize": 59171,
+        "lastPublish": "2026-09-20T19:29:44.634Z",
+        "dependencyCount": 0
+      },
+      "healthScore": 63
     },
     {
       "id": "1373499609-root",
