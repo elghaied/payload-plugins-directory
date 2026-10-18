@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { assertConfirmed, isLocalDatabaseUrl, planPull, planPush, recoveryInfo, shq, type DbEnv } from '../../scripts/db/plan'
+import {
+  assertConfirmed,
+  isLocalDatabaseUrl,
+  parseLocalDatabaseUrl,
+  planPull,
+  planPush,
+  recoveryInfo,
+  shq,
+  type DbEnv,
+} from '../../scripts/db/plan'
 
 const env: DbEnv = {
   sshHost: 'kawlya',
@@ -88,10 +97,45 @@ describe('planPush hardening', () => {
     }
     expect(steps.find((s) => s.label === 'dump local')!.cmd).toContain('mkdir -p -m 700 .db-dumps')
   })
-  it('passes a URL with $ and " intact inside single quotes', () => {
-    const url = 'postgresql://u:p$w"d@localhost:5433/directory'
-    const cmd = planPush({ ...opts, env: { ...env, localUrl: url } }).find((s) => s.label === 'dump local')!.cmd
-    expect(cmd).toContain(`-d '${url}'`)
+  it('dumps local inside the dev Postgres container, streaming to a host file', () => {
+    const step = steps.find((s) => s.label === 'dump local')!
+    expect(step.cmd).toBe(
+      "umask 077 && mkdir -p -m 700 .db-dumps && docker compose -f docker-compose.dev.yml exec -T -e PGPASSWORD postgres " +
+        "pg_dump -h 127.0.0.1 -p 5432 -U 'directory' -d 'directory' -Fc > './.db-dumps/local-s1.dump'",
+    )
+    expect(step.env).toEqual({ PGPASSWORD: 'directory' })
+  })
+  it('keeps the password out of the command and quotes user/db names', () => {
+    const url = `postgresql://${encodeURIComponent("o'k")}:${encodeURIComponent('p$w"d')}@localhost:5433/${encodeURIComponent('dir$x')}`
+    const step = planPush({ ...opts, env: { ...env, localUrl: url } }).find((s) => s.label === 'dump local')!
+    expect(step.cmd).toContain(`-U 'o'\\''k' -d 'dir$x'`)
+    expect(step.cmd).not.toContain('p$w')
+    expect(step.env).toEqual({ PGPASSWORD: 'p$w"d' })
+  })
+})
+
+describe('planPull local restore', () => {
+  it('restores inside the dev Postgres container from a host file, in one transaction', () => {
+    const step = planPull({ target: 'production', env, withMedia: false, stamp: 's' }).find((s) => s.label === 'restore local')!
+    expect(step.where).toBe('local')
+    expect(step.cmd).toBe(
+      "docker compose -f docker-compose.dev.yml exec -T -e PGPASSWORD postgres pg_restore -h 127.0.0.1 -p 5432 -U 'directory' -d 'directory' " +
+        "--clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error < './.db-dumps/production-s.dump'",
+    )
+    expect(step.env).toEqual({ PGPASSWORD: 'directory' })
+  })
+  it('never attaches env to remote steps', () => {
+    const all = [...planPull({ target: 'staging', env, withMedia: false, stamp: 's' }), ...planPush({ target: 'staging', env, withMedia: true, stamp: 's' })]
+    for (const step of all.filter((s) => s.where === 'remote')) expect(step.env).toBeUndefined()
+  })
+})
+
+describe('parseLocalDatabaseUrl', () => {
+  it('decodes user, password and database name', () => {
+    expect(parseLocalDatabaseUrl('postgresql://a%40b:p%24ss@localhost:5433/my%20db')).toEqual({ user: 'a@b', password: 'p$ss', dbName: 'my db' })
+  })
+  it('rejects a URL without a database name', () => {
+    expect(() => parseLocalDatabaseUrl('postgresql://u:p@localhost:5433/')).toThrow(/database name/)
   })
 })
 

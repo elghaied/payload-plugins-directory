@@ -55,7 +55,7 @@ else if (typed !== 'local') throw new Error(`Aborted: expected "local", got "${t
 
 const runStep = (step: (typeof plan)[number]) => {
   const cmd = step.where === 'remote' ? `ssh ${env.sshHost} ${shq(step.cmd)}` : step.cmd
-  execSync(cmd, { stdio: 'inherit', shell: '/bin/bash' })
+  execSync(cmd, { stdio: 'inherit', shell: '/bin/bash', env: { ...process.env, ...step.env } })
 }
 
 let workerStopped = false
