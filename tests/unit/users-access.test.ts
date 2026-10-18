@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Users } from '@/collections/Users'
 
 const req = (user: unknown) => ({ req: { user } }) as never
@@ -13,4 +13,18 @@ describe('Users access', () => {
       expect(rule(op)(req({ id: 1, collection: 'users' }))).toBe(true)
     })
   }
+})
+
+describe('Users auth cookie', () => {
+  it('is Secure only in production builds', async () => {
+    const load = async (nodeEnv: string) => {
+      vi.resetModules()
+      vi.stubEnv('NODE_ENV', nodeEnv)
+      const { Users: u } = await import('@/collections/Users')
+      return (u.auth as { cookies?: { secure?: boolean } }).cookies?.secure
+    }
+    expect(await load('production')).toBe(true)
+    expect(await load('development')).toBe(false)
+    vi.unstubAllEnvs()
+  })
 })
