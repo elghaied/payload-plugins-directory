@@ -255,7 +255,7 @@ export interface Repository {
   /**
    * GitHub repository creation date.
    */
-  createdAt: string;
+  githubCreatedAt?: string | null;
   defaultBranch?: string | null;
   topics?: string[] | null;
   isMonorepo?: boolean | null;
@@ -280,6 +280,7 @@ export interface Repository {
         value: number | Maintainer;
       } | null);
   updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -707,7 +708,7 @@ export interface RepositoriesSelect<T extends boolean = true> {
   license?: T;
   isArchived?: T;
   pushedAt?: T;
-  createdAt?: T;
+  githubCreatedAt?: T;
   defaultBranch?: T;
   topics?: T;
   isMonorepo?: T;
@@ -716,6 +717,7 @@ export interface RepositoriesSelect<T extends boolean = true> {
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

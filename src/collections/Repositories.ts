@@ -19,7 +19,7 @@ export const Repositories: CollectionConfig = {
     { name: 'license', type: 'text' },
     { name: 'isArchived', type: 'checkbox', defaultValue: false },
     { name: 'pushedAt', type: 'date' },
-    { name: 'createdAt', type: 'date', admin: { description: 'GitHub repository creation date.' } },
+    { name: 'githubCreatedAt', type: 'date', admin: { description: 'GitHub repository creation date.' } },
     { name: 'defaultBranch', type: 'text' },
     { name: 'topics', type: 'text', hasMany: true },
     { name: 'isMonorepo', type: 'checkbox', defaultValue: false },

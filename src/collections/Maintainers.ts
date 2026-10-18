@@ -5,6 +5,7 @@ export const Maintainers: CollectionConfig = {
   slug: 'maintainers',
   admin: { useAsTitle: 'login', group: 'Community' },
   auth: { disableLocalStrategy: true, strategies: [] },
+  versions: false,
   access: {
     read: ({ req }) => isAdminUser(req.user) || (req.user?.collection === 'maintainers' ? { id: { equals: req.user.id } } : false),
     create: isAdmin,

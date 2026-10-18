@@ -1,10 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import type { Payload } from 'payload'
+import { Forbidden, ValidationError, type Payload } from 'payload'
+import type { Maintainer } from '@/payload-types'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
 let payload: Payload
 const admin = { id: 1, collection: 'users' } as const
 const maintainer = { id: 1, collection: 'maintainers' } as const
+let maintainerA: Maintainer & { collection: 'maintainers' }
+let maintainerB: Maintainer & { collection: 'maintainers' }
+let listedId: number
+let hiddenId: number
 
 beforeAll(async () => {
   payload = await getTestPayload()
@@ -23,15 +28,18 @@ beforeAll(async () => {
   }
   const trashed = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'trashed-one' } } })
   await payload.delete({ collection: 'plugins', id: trashed.docs[0].id, overrideAccess: true })
-  await payload.create({
-    collection: 'maintainers',
-    overrideAccess: true,
-    data: { githubId: 42, login: 'octo' },
-  })
+  const all = await payload.find({ collection: 'plugins', overrideAccess: true })
+  listedId = all.docs.find((d) => d.slug === 'listed-one')!.id
+  hiddenId = all.docs.find((d) => d.slug === 'hidden-one')!.id
+  const a = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 42, login: 'octo' } })
+  const b = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 43, login: 'other' } })
+  maintainerA = { ...a, collection: 'maintainers' }
+  maintainerB = { ...b, collection: 'maintainers' }
 })
 afterAll(async () => resetDatabase(payload))
 
 const slugs = (docs: { slug: string }[]) => docs.map((d) => d.slug).sort()
+const relId = (v: unknown) => (typeof v === 'object' && v !== null ? (v as { id: number }).id : v)
 
 describe('access matrix', () => {
   it('anonymous sees only listed, non-trashed plugins', async () => {
@@ -44,23 +52,29 @@ describe('access matrix', () => {
   })
   it('anonymous cannot create plugins', async () => {
     await expect(
-      payload.create({ collection: 'plugins', overrideAccess: false, user: null, data: { slug: 'x', name: 'x', repository: 1, url: 'u', source: 'topic', visibility: 'listed' } }),
-    ).rejects.toThrow()
+      payload.create({
+        collection: 'plugins',
+        overrideAccess: false,
+        user: null,
+        data: { slug: 'x', name: 'x', repository: 1, url: 'u', source: 'topic', visibility: 'listed' },
+      }),
+    ).rejects.toThrow(Forbidden)
   })
   it('anonymous cannot read maintainers, users, or submissions', async () => {
     for (const collection of ['maintainers', 'users', 'submissions'] as const) {
-      await expect(payload.find({ collection, overrideAccess: false, user: null })).rejects.toThrow()
+      await expect(payload.find({ collection, overrideAccess: false, user: null })).rejects.toThrow(Forbidden)
     }
   })
   it('maintainer cannot update plugins', async () => {
-    const listed = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'listed-one' } } })
     await expect(
-      payload.update({ collection: 'plugins', id: listed.docs[0].id, overrideAccess: false, user: maintainer as never, data: { name: 'pwned' } }),
-    ).rejects.toThrow()
+      payload.update({ collection: 'plugins', id: listedId, overrideAccess: false, user: maintainer as never, data: { name: 'pwned' } }),
+    ).rejects.toThrow(Forbidden)
   })
   it('anonymous can read repositories, categories, tags', async () => {
+    const expected = { repositories: 1, categories: 0, tags: 0 } as const
     for (const collection of ['repositories', 'categories', 'tags'] as const) {
-      await expect(payload.find({ collection, overrideAccess: false, user: null })).resolves.toBeDefined()
+      const res = await payload.find({ collection, overrideAccess: false, user: null })
+      expect(res.totalDocs).toBe(expected[collection])
     }
   })
   it('anonymous cannot read the ai settings group', async () => {
@@ -73,5 +87,74 @@ describe('access matrix', () => {
     await payload.create({ collection: 'users', overrideAccess: true, data: { email, password } })
     const result = await payload.login({ collection: 'users', data: { email, password }, overrideAccess: false })
     expect(result.token).toEqual(expect.any(String))
+  })
+})
+
+describe('submissions', () => {
+  let submissionA: number
+  let submissionB: number
+
+  it('a maintainer can create a listing submission, owned by themselves', async () => {
+    const a = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerA,
+      data: { type: 'listing', url: 'https://github.com/a/one', submittedBy: maintainerA.id, status: 'pending' },
+    })
+    const b = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerB,
+      data: { type: 'listing', url: 'https://github.com/b/one', submittedBy: maintainerB.id, status: 'pending' },
+    })
+    submissionA = a.id
+    submissionB = b.id
+    expect(relId(a.submittedBy)).toBe(maintainerA.id)
+    expect(relId(b.submittedBy)).toBe(maintainerB.id)
+  })
+  it("a maintainer sees only their own submissions", async () => {
+    const res = await payload.find({ collection: 'submissions', overrideAccess: false, user: maintainerA })
+    expect(res.docs.map((d) => d.id)).toEqual([submissionA])
+    expect(res.docs.map((d) => d.id)).not.toContain(submissionB)
+  })
+  it('a maintainer cannot set status or rejectionReason on create', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerA,
+      data: { type: 'listing', url: 'https://github.com/a/two', submittedBy: maintainerA.id, status: 'approved', rejectionReason: 'x' },
+    })
+    const stored = await payload.findByID({ collection: 'submissions', id: doc.id, overrideAccess: true })
+    expect(stored.status).toBe('pending')
+    expect(stored.rejectionReason ?? undefined).toBeUndefined()
+  })
+  it('a maintainer cannot file a submission as another maintainer', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerA,
+      data: { type: 'listing', url: 'https://github.com/a/three', submittedBy: maintainerB.id, status: 'pending' },
+    })
+    const stored = await payload.findByID({ collection: 'submissions', id: doc.id, overrideAccess: true, depth: 0 })
+    expect(relId(stored.submittedBy)).toBe(maintainerA.id)
+  })
+  it('a maintainer can claim a listed plugin', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerA,
+      data: { type: 'claim', plugin: listedId, submittedBy: maintainerA.id, status: 'pending' },
+    })
+    expect(relId(doc.plugin)).toBe(listedId)
+  })
+  it('a maintainer cannot claim a hidden plugin', async () => {
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user: maintainerA,
+        data: { type: 'claim', plugin: hiddenId, submittedBy: maintainerA.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
   })
 })

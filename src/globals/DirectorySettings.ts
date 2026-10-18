@@ -4,6 +4,7 @@ import { adminOnly, anyone, isAdmin } from '@/access'
 export const DirectorySettings: GlobalConfig = {
   slug: 'directory-settings',
   admin: { group: 'System' },
+  versions: false, // version endpoints could otherwise expose the admin-only `ai` group
   access: { read: anyone, update: isAdmin },
   fields: [
     { name: 'featuredPlugins', type: 'relationship', relationTo: 'plugins', hasMany: true },
