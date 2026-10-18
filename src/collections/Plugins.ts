@@ -16,6 +16,7 @@ export const Plugins: CollectionConfig = {
     defaultColumns: ['name', 'slug', 'category', 'healthScore', 'visibility'],
   },
   versions: false,
+  authorship: false, // system-synced; no per-user attribution to track (or leak)
   trash: true,
   access: {
     read: ({ req }) => (isAdminUser(req.user) ? true : listedPluginsWhere),

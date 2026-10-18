@@ -261,24 +261,6 @@ export interface Repository {
   isMonorepo?: boolean | null;
   lastSyncedAt?: string | null;
   missedDiscoveries?: number | null;
-  createdBy?:
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: 'maintainers';
-        value: number | Maintainer;
-      } | null);
-  updatedBy?:
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: 'maintainers';
-        value: number | Maintainer;
-      } | null);
   updatedAt: string;
   createdAt: string;
 }
@@ -341,24 +323,6 @@ export interface Plugin {
   customTagline?: string | null;
   logo?: (number | null) | Media;
   visibility: 'listed' | 'hidden';
-  createdBy?:
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: 'maintainers';
-        value: number | Maintainer;
-      } | null);
-  updatedBy?:
-    | ({
-        relationTo: 'users';
-        value: number | User;
-      } | null)
-    | ({
-        relationTo: 'maintainers';
-        value: number | Maintainer;
-      } | null);
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -714,8 +678,6 @@ export interface RepositoriesSelect<T extends boolean = true> {
   isMonorepo?: T;
   lastSyncedAt?: T;
   missedDiscoveries?: T;
-  createdBy?: T;
-  updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -777,8 +739,6 @@ export interface PluginsSelect<T extends boolean = true> {
   customTagline?: T;
   logo?: T;
   visibility?: T;
-  createdBy?: T;
-  updatedBy?: T;
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;

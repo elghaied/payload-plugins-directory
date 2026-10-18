@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
+import { adminOnlyAuthorship } from '@/fields/authorship'
 
 export const Categories: CollectionConfig = {
   slug: 'categories',
@@ -11,5 +12,6 @@ export const Categories: CollectionConfig = {
     { name: 'slug', type: 'text', required: true, unique: true, index: true },
     { name: 'intro', type: 'textarea', admin: { description: 'SEO paragraph shown on the category page.' } },
     { name: 'icon', type: 'text', admin: { description: 'lucide-react icon name, e.g. "database".' } },
+    ...adminOnlyAuthorship(),
   ],
 }

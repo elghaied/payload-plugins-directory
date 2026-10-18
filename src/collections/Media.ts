@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
+import { adminOnlyAuthorship } from '@/fields/authorship'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -7,5 +8,5 @@ export const Media: CollectionConfig = {
   versions: false,
   access: { read: anyone, create: isAdmin, update: isAdmin, delete: isAdmin },
   upload: { staticDir: process.env.MEDIA_DIR || 'media', mimeTypes: ['image/*'] },
-  fields: [{ name: 'alt', type: 'text', required: true }],
+  fields: [{ name: 'alt', type: 'text', required: true }, ...adminOnlyAuthorship()],
 }

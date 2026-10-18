@@ -1,5 +1,6 @@
 import type { GlobalConfig } from 'payload'
 import { adminOnly, anyone, isAdmin } from '@/access'
+import { adminOnlyAuthorship } from '@/fields/authorship'
 
 export const DirectorySettings: GlobalConfig = {
   slug: 'directory-settings',
@@ -27,5 +28,6 @@ export const DirectorySettings: GlobalConfig = {
         { name: 'maxNewTagsPerPlugin', type: 'number', defaultValue: 2, min: 0, max: 5 },
       ],
     },
+    ...adminOnlyAuthorship(),
   ],
 }

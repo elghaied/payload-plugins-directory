@@ -6,6 +6,7 @@ export const Repositories: CollectionConfig = {
   admin: { useAsTitle: 'fullName', group: 'Directory', defaultColumns: ['fullName', 'stars', 'pushedAt', 'isArchived'] },
   access: { read: anyone, create: isAdmin, update: isAdmin, delete: isAdmin },
   versions: false,
+  authorship: false, // system-synced; no per-user attribution to track (or leak)
   fields: [
     { name: 'fullName', type: 'text', required: true, unique: true, index: true },
     { name: 'githubId', type: 'number', unique: true, index: true },

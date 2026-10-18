@@ -102,6 +102,42 @@ describe('access matrix', () => {
       expect(res.totalDocs).toBe(expected[collection])
     }
   })
+  it('anonymous plugin and repository docs carry no createdBy/updatedBy', async () => {
+    for (const collection of ['plugins', 'repositories'] as const) {
+      const res = await payload.find({ collection, overrideAccess: false, user: null })
+      expect(res.docs.length).toBeGreaterThan(0)
+      for (const doc of res.docs) {
+        expect(doc).not.toHaveProperty('createdBy')
+        expect(doc).not.toHaveProperty('updatedBy')
+      }
+    }
+  })
+  it('authorship on categories is stamped but readable only by admins', async () => {
+    const editor = await payload.create({
+      collection: 'users',
+      overrideAccess: true,
+      data: { email: 'editor@example.com', password: 'correct-horse-battery-staple' },
+    })
+    const editorUser = { ...editor, collection: 'users' } as never
+    const created = await payload.create({
+      collection: 'categories',
+      overrideAccess: false,
+      user: editorUser,
+      data: { title: 'Auth', slug: 'auth' },
+    })
+    const anon = await payload.findByID({ collection: 'categories', id: created.id, overrideAccess: false, user: null, depth: 0 })
+    expect(anon).not.toHaveProperty('createdBy')
+    expect(anon).not.toHaveProperty('updatedBy')
+    const asAdmin = await payload.findByID({ collection: 'categories', id: created.id, overrideAccess: false, user: admin as never, depth: 0 })
+    expect(asAdmin.createdBy).toEqual({ relationTo: 'users', value: editor.id })
+    await payload.delete({ collection: 'categories', id: created.id, overrideAccess: true })
+    await payload.delete({ collection: 'users', id: editor.id, overrideAccess: true })
+  })
+  it('anonymous cannot read the settings global authorship', async () => {
+    const settings = await payload.findGlobal({ slug: 'directory-settings', overrideAccess: false, user: null })
+    expect(settings).not.toHaveProperty('createdBy')
+    expect(settings).not.toHaveProperty('updatedBy')
+  })
   it('anonymous cannot read the ai settings group', async () => {
     const settings = await payload.findGlobal({ slug: 'directory-settings', overrideAccess: false, user: null })
     expect(settings.ai).toBeUndefined()

@@ -1,6 +1,7 @@
 import * as migration_20261018_214820_initial from './20261018_214820_initial';
 import * as migration_20261018_220035_data_model from './20261018_220035_data_model';
 import * as migration_20261018_220655_rename_github_created_at from './20261018_220655_rename_github_created_at';
+import * as migration_20261018_225054_authorship_admin_only from './20261018_225054_authorship_admin_only';
 
 export const migrations = [
   {
@@ -16,6 +17,11 @@ export const migrations = [
   {
     up: migration_20261018_220655_rename_github_created_at.up,
     down: migration_20261018_220655_rename_github_created_at.down,
-    name: '20261018_220655_rename_github_created_at'
+    name: '20261018_220655_rename_github_created_at',
+  },
+  {
+    up: migration_20261018_225054_authorship_admin_only.up,
+    down: migration_20261018_225054_authorship_admin_only.down,
+    name: '20261018_225054_authorship_admin_only'
   },
 ];

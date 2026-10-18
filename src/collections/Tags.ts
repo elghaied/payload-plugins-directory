@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
+import { adminOnlyUpdatedBy } from '@/fields/authorship'
 
 export const Tags: CollectionConfig = {
   slug: 'tags',
@@ -22,5 +23,7 @@ export const Tags: CollectionConfig = {
       options: ['admin', 'alias', 'ai'],
       admin: { position: 'sidebar' },
     },
+    // `createdBy` above is the tag's origin (and replaces v4's authorship createdBy); hide updatedBy.
+    adminOnlyUpdatedBy(),
   ],
 }
