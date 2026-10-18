@@ -70,6 +70,61 @@ export function recoveryInfo({ target, env, stamp }: Pick<PlanOpts, 'target' | '
   }
 }
 
+/** Docker label that marks a container's environment when its name does not say it (e.g. Coolify UUID names). */
+export const ENV_LABEL = 'directory.env'
+const INSPECT_SEP = '|'
+
+/** Pre-flight: print name and environment label of the target's db and web containers, one line each. */
+export function verifyTargetStep(target: DbTarget, env: DbEnv): DbStep {
+  const { db, web } = env.containers[target]
+  const names = [db, web].filter(Boolean).map((n) => shq(n!)).join(' ')
+  return {
+    label: 'verify target',
+    where: 'remote',
+    cmd: `docker inspect -f '{{.Name}}${INSPECT_SEP}{{index .Config.Labels "${ENV_LABEL}"}}' ${names}`,
+  }
+}
+
+/**
+ * Checks `verifyTargetStep` output. A container passes when its `directory.env` label equals the target,
+ * or, when it has no such label, when its name contains the target and not the other environment's name.
+ * Returns the reasons it refuses (empty = OK).
+ */
+export function checkTargetContainers(target: DbTarget, inspectOutput: string): string[] {
+  const other: DbTarget = target === 'staging' ? 'production' : 'staging'
+  const lines = inspectOutput.split('\n').map((l) => l.trim()).filter(Boolean)
+  if (lines.length === 0) return ['docker inspect printed nothing']
+  const problems: string[] = []
+  for (const line of lines) {
+    const i = line.lastIndexOf(INSPECT_SEP)
+    const name = (i === -1 ? line : line.slice(0, i)).replace(/^\//, '')
+    const rawLabel = i === -1 ? '' : line.slice(i + 1).trim()
+    const label = rawLabel === '<no value>' ? '' : rawLabel
+    if (label) {
+      if (label !== target) problems.push(`${name}: label ${ENV_LABEL}=${label}, expected ${target}`)
+      continue
+    }
+    const lower = name.toLowerCase()
+    if (!lower.includes(target) || lower.includes(other)) {
+      problems.push(`${name}: name does not identify ${target} and it has no ${ENV_LABEL}=${target} label`)
+    }
+  }
+  return problems
+}
+
+/** Human-readable header for the confirmation prompt: where the commands will run and on what. */
+export function describeTarget(mode: 'pull' | 'push', target: DbTarget, env: DbEnv): string[] {
+  const { db, web, worker } = env.containers[target]
+  return [
+    `${mode.toUpperCase()} ${mode === 'push' ? `local → ${target}` : `${target} → local`}`,
+    `  SSH host:         ${env.sshHost}`,
+    `  DB container:     ${db}`,
+    `  Web container:    ${web ?? '(none)'}`,
+    `  Worker container: ${worker ?? '(none)'}`,
+    `  Remote database:  ${env.dbName} (user ${env.dbUser})`,
+  ]
+}
+
 export function planPull({ target, env, stamp }: PlanOpts): DbStep[] {
   const { db } = env.containers[target]
   const remoteFile = dumpFile(stamp, target)
@@ -104,6 +159,7 @@ export function planPush({ target, env, withMedia, stamp }: PlanOpts): DbStep[] 
   const { backupFile } = recoveryInfo({ target, env, stamp })
   const dump = localPg('pg_dump', env.localUrl)
   const steps: DbStep[] = [
+    verifyTargetStep(target, env),
     {
       label: 'dump local',
       where: 'local',

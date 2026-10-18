@@ -1,7 +1,18 @@
 import { execSync } from 'child_process'
 import { createInterface } from 'readline/promises'
 import { parseArgs } from 'util'
-import { assertConfirmed, isLocalDatabaseUrl, planPull, planPush, recoveryInfo, shq, type DbEnv, type DbTarget } from './plan'
+import {
+  assertConfirmed,
+  checkTargetContainers,
+  describeTarget,
+  isLocalDatabaseUrl,
+  planPull,
+  planPush,
+  recoveryInfo,
+  shq,
+  type DbEnv,
+  type DbTarget,
+} from './plan'
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -42,7 +53,7 @@ if (!isLocalDatabaseUrl(env.localUrl)) {
 const stamp = new Date().toISOString().replace(/[:.]/g, '-')
 const plan = (mode === 'push' ? planPush : planPull)({ target, env, withMedia: values['with-media']!, stamp })
 
-console.log(`\n${mode.toUpperCase()} ${mode === 'push' ? `local → ${target}` : `${target} → local`}\n`)
+console.log(`\n${describeTarget(mode, target, env).join('\n')}\n`)
 for (const step of plan) console.log(`  [${step.where}] ${step.label}`)
 const recovery = mode === 'push' ? recoveryInfo({ target, env, stamp }) : undefined
 if (recovery) console.log(`\n  Backup of ${target} (kept on ${env.sshHost}): ${recovery.backupFile}`)
@@ -55,15 +66,25 @@ else if (typed !== 'local') throw new Error(`Aborted: expected "local", got "${t
 
 const runStep = (step: (typeof plan)[number]) => {
   const cmd = step.where === 'remote' ? `ssh ${env.sshHost} ${shq(step.cmd)}` : step.cmd
+  if (step.label === 'verify target') {
+    // Capture output: refuse unless the containers really belong to the target environment.
+    const out = execSync(cmd, { encoding: 'utf8', stdio: ['inherit', 'pipe', 'inherit'], shell: '/bin/bash' })
+    const problems = checkTargetContainers(target, out)
+    if (problems.length) throw new Error(`Containers do not belong to ${target}:\n  ${problems.join('\n  ')}`)
+    console.log(`  ${out.trim().split('\n').join('\n  ')}`)
+    return
+  }
   execSync(cmd, { stdio: 'inherit', shell: '/bin/bash', env: { ...process.env, ...step.env } })
 }
 
 let workerStopped = false
+let backupTaken = false
 try {
   for (const step of plan) {
     console.log(`→ ${step.label}`)
     if (step.label === 'stop worker') workerStopped = true
     runStep(step)
+    if (step.label === 'backup target') backupTaken = true
     if (step.label === 'start worker') workerStopped = false
   }
 } catch (err) {
@@ -77,7 +98,8 @@ try {
       console.error(`Could not restart the worker; run on ${env.sshHost}: ${startStep.cmd}`)
     }
   }
-  if (recovery) {
+  if (recovery && !backupTaken) console.error(`\nNothing on ${target} was changed (failed before the backup step).`)
+  if (recovery && backupTaken) {
     console.error(`\nBackup of ${target}: ${recovery.backupFile}`)
     console.error(`Manual restore: ssh ${env.sshHost} ${shq(recovery.restoreCmd)}`)
   }

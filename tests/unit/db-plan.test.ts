@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   assertConfirmed,
+  checkTargetContainers,
+  describeTarget,
   isLocalDatabaseUrl,
   parseLocalDatabaseUrl,
   planPull,
@@ -8,6 +10,7 @@ import {
   recoveryInfo,
   shq,
   type DbEnv,
+  verifyTargetStep,
 } from '../../scripts/db/plan'
 
 const env: DbEnv = {
@@ -36,7 +39,7 @@ describe('planPush', () => {
 
   it('backs up the target before anything destructive', () => {
     expect(labels.indexOf('backup target')).toBeLessThan(labels.indexOf('restore'))
-    expect(labels[0]).toBe('dump local')
+    expect(labels.slice(0, 2)).toEqual(['verify target', 'dump local'])
   })
   it('stops the worker before restore and starts it after', () => {
     expect(labels.indexOf('stop worker')).toBeLessThan(labels.indexOf('restore'))
@@ -167,5 +170,47 @@ describe('isLocalDatabaseUrl', () => {
 describe('shq', () => {
   it('escapes embedded single quotes', () => {
     expect(shq("a'b")).toBe("'a'\\''b'")
+  })
+})
+
+describe('verify target (push pre-flight)', () => {
+  it('is planned first and inspects the target db and web containers by name and label', () => {
+    const steps = planPush({ target: 'staging', env, withMedia: false, stamp: 's' })
+    expect(steps[0]).toEqual(verifyTargetStep('staging', env))
+    expect(steps[0]).toEqual({
+      label: 'verify target',
+      where: 'remote',
+      cmd: `docker inspect -f '{{.Name}}|{{index .Config.Labels "directory.env"}}' 'stg-db' 'stg-web'`,
+    })
+  })
+})
+
+describe('checkTargetContainers', () => {
+  it.each([
+    ['/directory-staging-db|<no value>', 'staging'],
+    ['/stg-web|staging', 'staging'],
+    ['/postgres-abc123|production\n/web-abc123|production', 'production'],
+    ['/directory-production-db|\n', 'production'],
+  ] as const)('accepts %j for %s', (out, target) => {
+    expect(checkTargetContainers(target, out)).toEqual([])
+  })
+  it.each([
+    ['/directory-production-db|<no value>', 'staging'], // wrong name
+    ['/postgres-abc123|<no value>', 'staging'], // name does not say, no label
+    ['/directory-staging-db|production', 'staging'], // label wins over name
+    ['/staging-copy-of-production|<no value>', 'production'], // ambiguous name
+    ['/directory-staging-db|staging\n/directory-production-web|<no value>', 'staging'], // one of two is wrong
+    ['', 'staging'], // no output
+  ] as const)('refuses %j for %s', (out, target) => {
+    expect(checkTargetContainers(target, out).length).toBeGreaterThan(0)
+  })
+})
+
+describe('describeTarget', () => {
+  it('names the SSH host, every container and the remote database', () => {
+    const text = describeTarget('push', 'production', env).join('\n')
+    expect(text).toContain('local → production')
+    for (const v of ['kawlya', 'prod-db', 'prod-web', 'prod-worker', 'directory']) expect(text).toContain(v)
+    expect(text).not.toContain('stg-')
   })
 })

@@ -1,8 +1,16 @@
 # Staging stack for Coolify (pasted into a Docker Compose resource; this file is the source of truth).
+#
+# `directory.env` labels let `pnpm db:push` verify it is about to overwrite the right environment
+# (Coolify container names are UUIDs). The Postgres database is a separate Coolify resource: give it
+# the same label, `directory.env=staging` (e.g. `--label directory.env=staging` in the resource's custom
+# Docker options, if Coolify offers them for databases), or a container name containing "staging".
+# db:push refuses to run when neither is true.
 services:
   web:
     image: ghcr.io/elghaied/payload-plugins-directory:staging
     command: ['web']
+    labels:
+      directory.env: staging
     environment:
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
