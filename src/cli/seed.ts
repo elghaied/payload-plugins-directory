@@ -43,8 +43,13 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
       limit: 1,
     })
     if (existing.docs[0]) {
+      // Visibility rule: admins own visibility of existing plugins, so a re-seed never writes 'listed'
+      // over an admin's choice. The blocklist can only tighten it: a blocklisted slug is forced 'hidden'.
+      // New plugins (create branch) take visibility from the blocklist as mapped.
+      const { visibility, ...rest } = data
+      const updateData = visibility === 'hidden' ? data : rest
       // trash: true — updateByID otherwise 404s on a trashed plugin. `data` has no deletedAt, so it stays trashed.
-      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, data })
+      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, data: updateData })
       counts.pluginsUpdated++
     } else {
       await payload.create({

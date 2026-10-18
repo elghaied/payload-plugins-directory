@@ -66,4 +66,23 @@ describe('seedDirectory', () => {
     })
     expect(repo.docs[0].stars).toBe(stars)
   })
+
+  it('preserves admin-set visibility on re-seed', async () => {
+    const slug = '684372049-better-localized-fields'
+    const find = () => payload.find({ collection: 'plugins', overrideAccess: true, trash: true, where: { slug: { equals: slug } } })
+    const doc = (await find()).docs[0]
+    await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, trash: true, data: { visibility: 'hidden' } })
+    await seedDirectory(payload, input)
+    expect((await find()).docs[0].visibility).toBe('hidden')
+    // restore for later tests
+    await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, trash: true, data: { visibility: 'listed' } })
+  })
+
+  it('hides an existing listed plugin newly added to the blocklist', async () => {
+    const slug = '684372049-better-localized-fields'
+    const find = () => payload.find({ collection: 'plugins', overrideAccess: true, trash: true, where: { slug: { equals: slug } } })
+    expect((await find()).docs[0].visibility).toBe('listed')
+    await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, ['684372049-translator', slug]))
+    expect((await find()).docs[0].visibility).toBe('hidden')
+  })
 })

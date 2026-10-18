@@ -836,4 +836,7 @@ async function main() {
   console.log(`Output saved to ${OUTPUT_PATH}`);
 }
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
