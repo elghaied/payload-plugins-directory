@@ -25,7 +25,7 @@ jobs:
           push: true
           tags: |
             ghcr.io/elghaied/payload-plugins-directory:${{ github.sha }}
-            ghcr.io/elghaied/payload-plugins-directory:staging
+            ghcr.io/elghaied/payload-plugins-directory:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Trigger Coolify deploy

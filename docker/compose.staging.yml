@@ -13,7 +13,7 @@
 # It runs scripts/fetch-plugins.ts then `payload seed` inside the running container.
 services:
   web:
-    image: ghcr.io/elghaied/payload-plugins-directory:staging
+    image: ghcr.io/elghaied/payload-plugins-directory:latest
     command: ['web']
     labels:
       directory.env: staging
