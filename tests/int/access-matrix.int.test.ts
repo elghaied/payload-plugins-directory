@@ -27,7 +27,14 @@ beforeAll(async () => {
     })
   }
   const trashed = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'trashed-one' } } })
-  await payload.delete({ collection: 'plugins', id: trashed.docs[0].id, overrideAccess: true })
+  // Soft-delete (move to trash). In 4.0.0-beta.2 `payload.delete` removes the row permanently even on a
+  // trash-enabled collection, so trash is set through `deletedAt`, as the admin UI's "Move to trash" does.
+  await payload.update({
+    collection: 'plugins',
+    id: trashed.docs[0].id,
+    overrideAccess: true,
+    data: { deletedAt: new Date().toISOString() },
+  })
   const all = await payload.find({ collection: 'plugins', overrideAccess: true })
   listedId = all.docs.find((d) => d.slug === 'listed-one')!.id
   hiddenId = all.docs.find((d) => d.slug === 'hidden-one')!.id
@@ -49,6 +56,24 @@ describe('access matrix', () => {
   it('admin sees listed and hidden plugins', async () => {
     const res = await payload.find({ collection: 'plugins', overrideAccess: false, user: admin as never })
     expect(slugs(res.docs)).toEqual(['hidden-one', 'listed-one'])
+  })
+  it('the trashed plugin is really in the trash (not hard-deleted)', async () => {
+    const res = await payload.find({
+      collection: 'plugins',
+      overrideAccess: true,
+      trash: true,
+      where: { slug: { equals: 'trashed-one' } },
+    })
+    expect(res.docs).toHaveLength(1)
+    expect(res.docs[0].deletedAt).toEqual(expect.any(String))
+  })
+  it('admin sees the trashed plugin with trash: true', async () => {
+    const res = await payload.find({ collection: 'plugins', overrideAccess: false, user: admin as never, trash: true })
+    expect(slugs(res.docs)).toEqual(['hidden-one', 'listed-one', 'trashed-one'])
+  })
+  it('anonymous never sees the trashed plugin, even with trash: true', async () => {
+    const res = await payload.find({ collection: 'plugins', overrideAccess: false, user: null, trash: true })
+    expect(slugs(res.docs)).toEqual(['listed-one'])
   })
   it('anonymous cannot create plugins', async () => {
     await expect(

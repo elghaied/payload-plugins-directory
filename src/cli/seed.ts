@@ -34,7 +34,8 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
       limit: 1,
     })
     if (existing.docs[0]) {
-      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, data })
+      // trash: true — updateByID otherwise 404s on a trashed plugin. `data` has no deletedAt, so it stays trashed.
+      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, data })
       counts.pluginsUpdated++
     } else {
       await payload.create({

@@ -13,7 +13,20 @@ beforeAll(async () => {
   await resetDatabase(payload)
   await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, ['684372049-translator']))
   const trashed = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: '829724738-root' } } })
-  await payload.delete({ collection: 'plugins', id: trashed.docs[0].id, overrideAccess: true })
+  // Soft-delete: `payload.delete` hard-deletes in 4.0.0-beta.2, so move to trash via `deletedAt`.
+  await payload.update({
+    collection: 'plugins',
+    id: trashed.docs[0].id,
+    overrideAccess: true,
+    data: { deletedAt: new Date().toISOString() },
+  })
+  const stillThere = await payload.count({
+    collection: 'plugins',
+    overrideAccess: true,
+    trash: true,
+    where: { slug: { equals: '829724738-root' } },
+  })
+  if (stillThere.totalDocs !== 1) throw new Error('setup: trashed plugin was not kept in the trash')
 })
 afterAll(async () => resetDatabase(payload))
 

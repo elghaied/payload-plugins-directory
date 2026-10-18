@@ -33,4 +33,20 @@ describe('seedDirectory', () => {
     const count = await payload.count({ collection: 'plugins', overrideAccess: true })
     expect(count.totalDocs).toBe(4)
   })
+
+  it('keeps a trashed plugin trashed on re-run, without creating a duplicate', async () => {
+    const slug = '684372049-better-localized-fields'
+    const before = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: slug } } })
+    const id = before.docs[0].id
+    await payload.update({ collection: 'plugins', id, overrideAccess: true, data: { deletedAt: new Date().toISOString() } })
+
+    const result = await seedDirectory(payload, input)
+    expect(result).toEqual({ repositoriesCreated: 0, pluginsCreated: 0, pluginsUpdated: 4 })
+
+    const matches = await payload.find({ collection: 'plugins', overrideAccess: true, trash: true, where: { slug: { equals: slug } } })
+    expect(matches.docs.map((d) => d.id)).toEqual([id])
+    expect(matches.docs[0].deletedAt).toEqual(expect.any(String))
+    const all = await payload.count({ collection: 'plugins', overrideAccess: true, trash: true })
+    expect(all.totalDocs).toBe(4)
+  })
 })
