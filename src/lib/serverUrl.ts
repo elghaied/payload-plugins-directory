@@ -11,3 +11,17 @@ type Env = Record<string, string | undefined>
 export function getServerURL(env: Env = process.env): string {
   return (env.SERVER_URL || env.NEXT_PUBLIC_SITE_URL || '').replace(/\/+$/, '')
 }
+
+export const PRODUCTION_HOST = 'payloaddirectory.dev'
+
+/**
+ * True only for the public production site. Anything else (staging, previews, local, unset)
+ * must not be indexed, so a missing or malformed URL counts as non-production.
+ */
+export function isProductionSite(serverURL: string): boolean {
+  try {
+    return new URL(serverURL).hostname === PRODUCTION_HOST
+  } catch {
+    return false
+  }
+}

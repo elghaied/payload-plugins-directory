@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getServerURL } from '@/lib/serverUrl'
+import { getServerURL, isProductionSite } from '@/lib/serverUrl'
 
 describe('getServerURL', () => {
   it('prefers the runtime SERVER_URL', () => {
@@ -13,5 +13,19 @@ describe('getServerURL', () => {
   it('strips a trailing slash and returns empty when unset', () => {
     expect(getServerURL({ SERVER_URL: 'https://payloaddirectory.dev/' })).toBe('https://payloaddirectory.dev')
     expect(getServerURL({})).toBe('')
+  })
+})
+
+describe('isProductionSite', () => {
+  it.each([
+    ['https://payloaddirectory.dev', true],
+    ['https://payloaddirectory.dev/', true],
+    ['https://next.payloaddirectory.dev', false],
+    ['http://localhost:3000', false],
+    ['https://payloaddirectory.dev.evil.com', false],
+    ['', false],
+    ['not a url', false],
+  ])('%j -> %s', (url, expected) => {
+    expect(isProductionSite(url)).toBe(expected)
   })
 })
