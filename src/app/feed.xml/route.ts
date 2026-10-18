@@ -1,4 +1,6 @@
-import { getPlugins, getPluginsMetadata } from "@/lib/getPlugins";
+import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
+
+export const dynamic = "force-dynamic";
 
 function escapeXml(str: string): string {
   return str
@@ -10,8 +12,8 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
-  const plugins = getPlugins();
-  const metadata = getPluginsMetadata();
+  const plugins = await getPluginSummaries();
+  const metadata = await getDirectoryMeta();
 
   const recent = [...plugins]
     .sort(
@@ -25,10 +27,10 @@ export async function GET() {
       (p) => `
     <item>
       <title>${escapeXml(p.name)}</title>
-      <link>${escapeXml(`https://payloaddirectory.dev/plugins/${p.id}`)}</link>
+      <link>${escapeXml(`https://payloaddirectory.dev/plugins/${p.slug}`)}</link>
       <description>${escapeXml(p.description)}</description>
       <pubDate>${new Date(p.createdAt).toUTCString()}</pubDate>
-      <guid isPermaLink="false">${p.id}</guid>
+      <guid isPermaLink="false">${p.slug}</guid>
     </item>`
     )
     .join("");

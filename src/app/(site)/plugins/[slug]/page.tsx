@@ -17,7 +17,7 @@ import {
   Layers,
   Flag,
 } from "lucide-react";
-import { getPlugins, getPluginById } from "@/lib/getPlugins";
+import { getPluginDetail } from "@/lib/directory/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
@@ -31,18 +31,16 @@ import {
   getHealthDisplayFromScore,
 } from "@/lib/formatters";
 
-export function generateStaticParams() {
-  return getPlugins().map((plugin) => ({ id: plugin.id }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
-  const plugin = getPluginById(id);
-  if (!plugin) return { title: "Plugin Not Found" };
+  const { slug } = await params;
+  const plugin = await getPluginDetail(slug);
+  if (!plugin) notFound();
 
   const title = `${plugin.name} — Payload Plugin Directory`;
   const description = plugin.description.slice(0, 160);
@@ -66,10 +64,10 @@ export async function generateMetadata({
 export default async function PluginDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const plugin = getPluginById(id);
+  const { slug } = await params;
+  const plugin = await getPluginDetail(slug);
   if (!plugin) notFound();
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
@@ -79,7 +77,7 @@ export default async function PluginDetailPage({
     "@type": "SoftwareApplication",
     name: plugin.name,
     description: plugin.description,
-    url: `https://payloaddirectory.dev/plugins/${plugin.id}`,
+    url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
     applicationCategory: "Plugin",
     operatingSystem: "Node.js",
     author: {
@@ -155,19 +153,19 @@ export default async function PluginDetailPage({
 
           {/* Version & license badges */}
           <div className="flex items-center gap-2 mt-4 flex-wrap">
-            {plugin.payloadVersionMajor.map((v) => (
+            {plugin.payloadMajors.map((v) => (
               <Badge
                 key={v}
                 variant="secondary"
                 className={`${versionColors[v] || "bg-gray-100"} text-xs font-medium`}
               >
                 <PayloadIcon className="h-3 w-3 mr-1" />
-                {v === 0 ? "v?" : `v${v}`}
+                {v === "unknown" ? "v?" : `v${v}`}
               </Badge>
             ))}
-            {plugin.payloadVersion && (
+            {plugin.payloadVersionRange && (
               <Badge variant="outline" className="text-xs font-normal font-mono">
-                {plugin.payloadVersion}
+                {plugin.payloadVersionRange}
               </Badge>
             )}
             {plugin.license && (
@@ -250,7 +248,7 @@ export default async function PluginDetailPage({
                     <Download className="h-4 w-4 text-violet-600 dark:text-violet-400" />
                   </div>
                   <div>
-                    <p className="text-lg font-semibold">{formatDownloads(plugin.npm.weeklyDownloads)}</p>
+                    <p className="text-lg font-semibold">{formatDownloads(plugin.npm.weeklyDownloads ?? 0)}</p>
                     <p className="text-xs text-muted-foreground">Weekly Downloads</p>
                   </div>
                 </CardContent>
@@ -393,7 +391,7 @@ export default async function PluginDetailPage({
           )}
           {!plugin.isOfficial && (
             <a
-              href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.id}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
+              href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.slug}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 py-3 px-6 border rounded-lg transition-colors text-sm font-medium text-muted-foreground hover:text-destructive hover:border-destructive/30 hover:bg-destructive/5"

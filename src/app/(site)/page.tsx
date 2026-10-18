@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { PluginDirectory } from "@/components/PluginDirectory";
-import { getPlugins, getPluginsMetadata } from "@/lib/getPlugins";
+import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
 
-export default function Page() {
-  const plugins = getPlugins();
-  const metadata = getPluginsMetadata();
+export const dynamic = "force-dynamic";
+
+export default async function Page() {
+  const [plugins, metadata] = await Promise.all([getPluginSummaries(), getDirectoryMeta()]);
 
   const topPlugins = [...plugins]
     .sort((a, b) => b.stars - a.stars)
@@ -26,7 +27,7 @@ export default function Page() {
           "@type": "SoftwareApplication",
           name: plugin.name,
           description: plugin.description,
-          url: `https://payloaddirectory.dev/plugins/${plugin.id}`,
+          url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
           applicationCategory: "Plugin",
           operatingSystem: "Node.js",
           author: {

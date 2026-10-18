@@ -42,7 +42,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import type { LegacyPlugin as Plugin } from "@/lib/seed/mapLegacy";
+import type { PluginSummary as Plugin } from "@/lib/directory/types";
 import { SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ComparisonView } from "../ComparisonView";
@@ -111,7 +111,7 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
         <div className="flex items-start gap-3">
           {compareMode && (
             <button
-              onClick={() => onToggleSelect?.(plugin.id)}
+              onClick={() => onToggleSelect?.(plugin.slug)}
               className={`shrink-0 mt-1 h-5 w-5 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${isSelected ? "bg-primary border-primary" : "border-muted-foreground/40 hover:border-primary"}`}
             >
               {isSelected && <Check className="h-3 w-3 text-primary-foreground" />}
@@ -128,11 +128,11 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-lg capitalize truncate">
-                {plugin.readme ? (
+                {plugin.description ? (
                   <HoverCard>
                     <HoverCardTrigger asChild>
                       <Link
-                        href={`/plugins/${plugin.id}`}
+                        href={`/plugins/${plugin.slug}`}
                         className="hover:text-primary transition-colors"
                       >
                         {plugin.name}
@@ -140,13 +140,13 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
                     </HoverCardTrigger>
                     <HoverCardContent className="w-80">
                       <p className="text-xs text-muted-foreground whitespace-pre-line line-clamp-[8] font-normal">
-                        {plugin.readme}
+                        {plugin.description}
                       </p>
                     </HoverCardContent>
                   </HoverCard>
                 ) : (
                   <Link
-                    href={`/plugins/${plugin.id}`}
+                    href={`/plugins/${plugin.slug}`}
                     className="hover:text-primary transition-colors"
                   >
                     {plugin.name}
@@ -204,25 +204,25 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
         </div>
 
         <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-          {plugin.payloadVersionMajor.map((v) => (
+          {plugin.payloadMajors.map((v) => (
             <Badge
               key={v}
               variant="secondary"
               className={`${versionColors[v] || "bg-gray-100"} text-xs font-medium`}
             >
               <PayloadIcon className="h-3 w-3 mr-1" />
-              {v === 0 ? "v?" : `v${v}`}
+              {v === "unknown" ? "v?" : `v${v}`}
             </Badge>
           ))}
-          {plugin.npm?.latestVersion && (
+          {plugin.latestVersion && (
             <Badge variant="outline" className="text-xs font-normal font-mono">
-              v{plugin.npm.latestVersion}
+              v{plugin.latestVersion}
             </Badge>
           )}
-          {plugin.npm?.unpackedSize != null && (
+          {plugin.unpackedSize != null && (
             <Badge variant="outline" className="text-xs font-normal">
               <Box className="h-3 w-3 mr-1" />
-              {formatSize(plugin.npm.unpackedSize)}
+              {formatSize(plugin.unpackedSize)}
             </Badge>
           )}
           {plugin.license && (
@@ -268,13 +268,13 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
                 {plugin.openIssues}
               </span>
             )}
-            {plugin.npm?.weeklyDownloads != null && plugin.npm.weeklyDownloads > 0 && (
+            {plugin.weeklyDownloads != null && plugin.weeklyDownloads > 0 && (
               <span
                 className="flex items-center gap-1"
-                title={`${plugin.npm.weeklyDownloads.toLocaleString()} weekly downloads`}
+                title={`${plugin.weeklyDownloads.toLocaleString()} weekly downloads`}
               >
                 <Download className="h-4 w-4 text-violet-500" />
-                {formatDownloads(plugin.npm.weeklyDownloads)}/wk
+                {formatDownloads(plugin.weeklyDownloads)}/wk
               </span>
             )}
           </div>
@@ -321,7 +321,7 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
           </a>
           {!plugin.isOfficial && (
             <a
-              href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.id}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
+              href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.slug}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 flex items-center justify-center h-9 w-9 rounded-md bg-secondary text-muted-foreground transition-colors cursor-pointer hover:bg-destructive/10 hover:text-destructive"
@@ -345,7 +345,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   const searchTerm = searchParams.get("q") || "";
   const sortBy = (searchParams.get("sort") as SortOption) || "featured";
-  const versionFilter = (searchParams.get("version") as VersionFilter) || "all";
+  const rawVersion = searchParams.get("version");
+  const versionFilter: VersionFilter =
+    rawVersion === "0"
+      ? "unknown"
+      : ["1", "2", "3", "4", "unknown"].includes(rawVersion ?? "")
+        ? (rawVersion as VersionFilter)
+        : "all";
   const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
   const licenseFilter = searchParams.get("license") || "all";
 
@@ -418,7 +424,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
         const matchesVersion =
           versionFilter === "all" ||
-          plugin.payloadVersionMajor.includes(parseInt(versionFilter));
+          plugin.payloadMajors.includes(versionFilter as Plugin["payloadMajors"][number]);
 
         const matchesSource =
           sourceFilter === "all" ||
@@ -456,7 +462,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
           case "downloads":
-            return (b.npm?.weeklyDownloads ?? 0) - (a.npm?.weeklyDownloads ?? 0);
+            return (b.weeklyDownloads ?? 0) - (a.weeklyDownloads ?? 0);
           case "health":
             return (b.healthScore ?? 0) - (a.healthScore ?? 0);
           case "name":
@@ -607,7 +613,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   }, []);
 
   const selectedPlugins = useMemo(
-    () => plugins.filter((p) => selectedIds.has(p.id)),
+    () => plugins.filter((p) => selectedIds.has(p.slug)),
     [plugins, selectedIds]
   );
 
@@ -621,12 +627,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
   // Stats
   const stats = useMemo(() => {
-    const result = { v1: 0, v2: 0, v3: 0, unknown: 0, official: 0, community: 0 };
+    const result = { v1: 0, v2: 0, v3: 0, v4: 0, unknown: 0, official: 0, community: 0 };
     plugins.forEach((p) => {
-      if (p.payloadVersionMajor.includes(0)) result.unknown++;
-      if (p.payloadVersionMajor.includes(1)) result.v1++;
-      if (p.payloadVersionMajor.includes(2)) result.v2++;
-      if (p.payloadVersionMajor.includes(3)) result.v3++;
+      if (p.payloadMajors.includes("unknown")) result.unknown++;
+      if (p.payloadMajors.includes("1")) result.v1++;
+      if (p.payloadMajors.includes("2")) result.v2++;
+      if (p.payloadMajors.includes("3")) result.v3++;
+      if (p.payloadMajors.includes("4")) result.v4++;
       if (p.isOfficial) result.official++;
       else result.community++;
     });
@@ -655,6 +662,15 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           <div className="hidden sm:flex items-center gap-4 mt-6 flex-wrap" role="group" aria-label="Quick filters">
             <div className="flex items-center gap-2 text-sm">
               <button
+                onClick={() => handleVersionChange(versionFilter === "4" ? "all" : "4")}
+                aria-pressed={versionFilter === "4"}
+                className="cursor-pointer"
+              >
+                <Badge variant="outline" className={`${versionColors[4]} border-0 hover:opacity-80`}>
+                  v4: {stats.v4}
+                </Badge>
+              </button>
+              <button
                 onClick={() => handleVersionChange(versionFilter === "3" ? "all" : "3")}
                 aria-pressed={versionFilter === "3"}
                 className="cursor-pointer"
@@ -682,11 +698,11 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 </Badge>
               </button>
               <button
-                onClick={() => handleVersionChange(versionFilter === "0" ? "all" : "0")}
-                aria-pressed={versionFilter === "0"}
+                onClick={() => handleVersionChange(versionFilter === "unknown" ? "all" : "unknown")}
+                aria-pressed={versionFilter === "unknown"}
                 className="cursor-pointer"
               >
-                <Badge variant="outline" className={`${versionColors[0]} border-0 hover:opacity-80`}>
+                <Badge variant="outline" className={`${versionColors.unknown} border-0 hover:opacity-80`}>
                   v?: {stats.unknown}
                 </Badge>
               </button>
@@ -764,10 +780,11 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Versions</SelectItem>
+                <SelectItem value="4">Payload v4</SelectItem>
                 <SelectItem value="3">Payload v3</SelectItem>
                 <SelectItem value="2">Payload v2</SelectItem>
                 <SelectItem value="1">Payload v1</SelectItem>
-                <SelectItem value="0">Unknown (v?)</SelectItem>
+                <SelectItem value="unknown">Unknown (v?)</SelectItem>
               </SelectContent>
             </Select>
 
@@ -831,7 +848,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                   onClick={() => handleVersionChange("all" as VersionFilter)}
                   className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
-                  {versionFilter === "0" ? "v?" : `v${versionFilter}`}
+                  {versionFilter === "unknown" ? "v?" : `v${versionFilter}`}
                   <X className="h-3 w-3" />
                 </button>
               )}
@@ -867,8 +884,8 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {recentlyAdded.map((plugin) => (
                 <Link
-                  key={plugin.id}
-                  href={`/plugins/${plugin.id}`}
+                  key={plugin.slug}
+                  href={`/plugins/${plugin.slug}`}
                   className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:shadow-md hover:border-primary/20 transition-all"
                 >
                   <img
@@ -949,12 +966,12 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                   >
                     {rowPlugins.map((plugin) => (
                       <PluginCard
-                        key={plugin.id}
+                        key={plugin.slug}
                         plugin={plugin}
                         onTopicClick={handleTopicClick}
                         onOwnerClick={handleOwnerClick}
                         compareMode={compareMode}
-                        isSelected={selectedIds.has(plugin.id)}
+                        isSelected={selectedIds.has(plugin.slug)}
                         onToggleSelect={handleToggleSelect}
                       />
                     ))}
@@ -994,10 +1011,11 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Versions</SelectItem>
-                  <SelectItem value="3">Payload v3</SelectItem>
+                  <SelectItem value="4">Payload v4</SelectItem>
+                <SelectItem value="3">Payload v3</SelectItem>
                   <SelectItem value="2">Payload v2</SelectItem>
                   <SelectItem value="1">Payload v1</SelectItem>
-                  <SelectItem value="0">Unknown (v?)</SelectItem>
+                  <SelectItem value="unknown">Unknown (v?)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

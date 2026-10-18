@@ -50,4 +50,4 @@ export interface NpmData {
 
 
 export type SortOption = "featured" | "stars" | "forks" | "recent" | "created" | "name" | "downloads" | "health";
-export type VersionFilter = "all" | "0" | "1" | "2" | "3"; // 0 = unknown version
+export type VersionFilter = "all" | "unknown" | "1" | "2" | "3" | "4";

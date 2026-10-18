@@ -1,4 +1,5 @@
-import { getPluginStats, getPluginsMetadata } from "@/lib/getPlugins";
+import { computeStats } from "@/lib/directory/stats";
+import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -43,14 +44,17 @@ function formatDownloads(num: number): string {
   return num.toString();
 }
 
-export default function StatsPage() {
-  const stats = getPluginStats();
-  const meta = getPluginsMetadata();
+export const dynamic = "force-dynamic";
+
+export default async function StatsPage() {
+  const [plugins, meta] = await Promise.all([getPluginSummaries(), getDirectoryMeta()]);
+  const stats = computeStats(plugins);
 
   const maxVersion = Math.max(
     stats.versions.v1,
     stats.versions.v2,
     stats.versions.v3,
+    stats.versions.v4,
     stats.versions.unknown
   );
   const maxLicense = stats.licenseDistribution[0]?.[1] || 1;
@@ -76,7 +80,6 @@ export default function StatsPage() {
           {[
             { label: "Total Plugins", value: stats.total.toLocaleString() },
             { label: "Weekly Downloads", value: formatDownloads(stats.totalDownloadsWeekly) },
-            { label: "Monthly Downloads", value: formatDownloads(stats.totalDownloadsMonthly) },
             { label: "Avg Health Score", value: stats.avgHealth.toString() },
             { label: "Official", value: stats.official.toLocaleString() },
             { label: "Community", value: stats.community.toLocaleString() },
@@ -157,6 +160,13 @@ export default function StatsPage() {
               Version Adoption
             </h2>
             <div className="space-y-3">
+              <Bar
+                label="v4"
+                value={stats.versions.v4}
+                max={maxVersion}
+                count={stats.versions.v4}
+                color="bg-violet-500"
+              />
               <Bar
                 label="v3"
                 value={stats.versions.v3}

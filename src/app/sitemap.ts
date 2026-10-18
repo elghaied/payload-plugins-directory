@@ -1,12 +1,14 @@
 import type { MetadataRoute } from "next";
-import { getPlugins } from "@/lib/getPlugins";
+import { getPluginSummaries } from "@/lib/directory/queries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const plugins = getPlugins();
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const plugins = await getPluginSummaries();
 
   const pluginUrls: MetadataRoute.Sitemap = plugins.map((plugin) => ({
-    url: `https://payloaddirectory.dev/plugins/${plugin.id}`,
-    lastModified: new Date(plugin.lastUpdate),
+    url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
+    lastModified: plugin.lastUpdate ? new Date(plugin.lastUpdate) : undefined,
     changeFrequency: "weekly",
     priority: 0.7,
   }));

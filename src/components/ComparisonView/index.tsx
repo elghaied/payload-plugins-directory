@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { LegacyPlugin as Plugin } from "@/lib/seed/mapLegacy";
+import type { PluginSummary as Plugin } from "@/lib/directory/types";
 import { PayloadIcon } from "../PayloadIcon";
 import {
   versionColors,
@@ -64,7 +64,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       ),
       getBest: (ps) => {
         const max = Math.max(...ps.map((p) => p.stars));
-        return new Set(ps.filter((p) => p.stars === max).map((p) => p.id));
+        return new Set(ps.filter((p) => p.stars === max).map((p) => p.slug));
       },
     },
     {
@@ -77,7 +77,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       ),
       getBest: (ps) => {
         const max = Math.max(...ps.map((p) => p.forks));
-        return new Set(ps.filter((p) => p.forks === max).map((p) => p.id));
+        return new Set(ps.filter((p) => p.forks === max).map((p) => p.slug));
       },
     },
     {
@@ -90,7 +90,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       ),
       getBest: (ps) => {
         const min = Math.min(...ps.map((p) => p.openIssues));
-        return new Set(ps.filter((p) => p.openIssues === min).map((p) => p.id));
+        return new Set(ps.filter((p) => p.openIssues === min).map((p) => p.slug));
       },
     },
     {
@@ -98,13 +98,13 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       icon: <PayloadIcon className="h-3.5 w-3.5" />,
       render: (p) => (
         <div className="flex gap-1 flex-wrap">
-          {p.payloadVersionMajor.map((v) => (
+          {p.payloadMajors.map((v) => (
             <Badge
               key={v}
               variant="secondary"
               className={`${versionColors[v] || "bg-gray-100"} text-[10px] px-1.5 py-0`}
             >
-              {v === 0 ? "v?" : `v${v}`}
+              {v === "unknown" ? "v?" : `v${v}`}
             </Badge>
           ))}
         </div>
@@ -132,7 +132,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       getBest: (ps) => {
         const max = Math.max(...ps.map((p) => new Date(p.lastUpdate).getTime()));
         return new Set(
-          ps.filter((p) => new Date(p.lastUpdate).getTime() === max).map((p) => p.id)
+          ps.filter((p) => new Date(p.lastUpdate).getTime() === max).map((p) => p.slug)
         );
       },
     },
@@ -151,14 +151,14 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       icon: <Download className="h-3.5 w-3.5 text-violet-500" />,
       render: (p, best) => (
         <span className={best ? "text-foreground font-bold" : "text-muted-foreground"}>
-          {p.npm?.weeklyDownloads != null ? formatDownloads(p.npm.weeklyDownloads) : "—"}
+          {p.weeklyDownloads != null ? formatDownloads(p.weeklyDownloads) : "—"}
         </span>
       ),
       getBest: (ps) => {
-        const withDl = ps.filter((p) => p.npm?.weeklyDownloads != null);
+        const withDl = ps.filter((p) => p.weeklyDownloads != null);
         if (withDl.length === 0) return new Set<string>();
-        const max = Math.max(...withDl.map((p) => p.npm!.weeklyDownloads));
-        return new Set(withDl.filter((p) => p.npm!.weeklyDownloads === max).map((p) => p.id));
+        const max = Math.max(...withDl.map((p) => p.weeklyDownloads ?? 0));
+        return new Set(withDl.filter((p) => p.weeklyDownloads === max).map((p) => p.slug));
       },
     },
     {
@@ -166,7 +166,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       icon: <Tag className="h-3.5 w-3.5 text-muted-foreground" />,
       render: (p) => (
         <span className="text-muted-foreground font-mono text-xs">
-          {p.npm?.latestVersion ? `v${p.npm.latestVersion}` : "—"}
+          {p.latestVersion ? `v${p.latestVersion}` : "—"}
         </span>
       ),
       getBest: () => new Set<string>(),
@@ -176,14 +176,14 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       icon: <Box className="h-3.5 w-3.5 text-muted-foreground" />,
       render: (p, best) => (
         <span className={best ? "text-foreground font-bold" : "text-muted-foreground"}>
-          {formatSize(p.npm?.unpackedSize)}
+          {formatSize(p.unpackedSize)}
         </span>
       ),
       getBest: (ps) => {
-        const withSize = ps.filter((p) => p.npm?.unpackedSize != null);
+        const withSize = ps.filter((p) => p.unpackedSize != null);
         if (withSize.length === 0) return new Set<string>();
-        const min = Math.min(...withSize.map((p) => p.npm!.unpackedSize!));
-        return new Set(withSize.filter((p) => p.npm!.unpackedSize === min).map((p) => p.id));
+        const min = Math.min(...withSize.map((p) => p.unpackedSize!));
+        return new Set(withSize.filter((p) => p.unpackedSize === min).map((p) => p.slug));
       },
     },
     {
@@ -211,7 +211,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
       },
       getBest: (ps) => {
         const max = Math.max(...ps.map((p) => p.healthScore ?? 0));
-        return new Set(ps.filter((p) => (p.healthScore ?? 0) === max).map((p) => p.id));
+        return new Set(ps.filter((p) => (p.healthScore ?? 0) === max).map((p) => p.slug));
       },
     },
   ];
@@ -262,7 +262,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
                     Metric
                   </th>
                   {plugins.map((plugin) => (
-                    <th key={plugin.id} className="p-3 text-left">
+                    <th key={plugin.slug} className="p-3 text-left">
                       <div className="flex items-center gap-2.5 mb-2">
                         <img
                           src={plugin.ownerAvatar}
@@ -282,7 +282,7 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onRemove(plugin.id)}
+                          onClick={() => onRemove(plugin.slug)}
                           className="h-6 px-2 text-[11px] text-muted-foreground hover:text-destructive cursor-pointer"
                         >
                           <X className="h-3 w-3 mr-0.5" />
@@ -321,8 +321,8 @@ export function ComparisonView({ plugins, onRemove, onClose }: ComparisonViewPro
                         </div>
                       </td>
                       {plugins.map((plugin) => (
-                        <td key={plugin.id} className="p-3 text-sm">
-                          {row.render(plugin, bestIds.has(plugin.id))}
+                        <td key={plugin.slug} className="p-3 text-sm">
+                          {row.render(plugin, bestIds.has(plugin.slug))}
                         </td>
                       ))}
                     </tr>
