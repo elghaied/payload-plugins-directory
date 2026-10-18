@@ -5,6 +5,12 @@
 # the same label, `directory.env=staging` (e.g. `--label directory.env=staging` in the resource's custom
 # Docker options, if Coolify offers them for databases), or a container name containing "staging".
 # db:push refuses to run when neither is true.
+#
+# Data refresh (stopgap until sync jobs exist): add a Coolify Scheduled Task on the `web` service:
+#   command:   /entrypoint.sh refresh
+#   frequency: 0 6,18 * * *
+#   env:       GITHUB_TOKEN (required; add it to the web service environment)
+# It runs scripts/fetch-plugins.ts then `payload seed` inside the running container.
 services:
   web:
     image: ghcr.io/elghaied/payload-plugins-directory:staging
