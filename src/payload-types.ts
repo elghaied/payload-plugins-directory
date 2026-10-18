@@ -70,8 +70,11 @@ export interface Config {
   collections: {
     users: User;
     maintainers: Maintainer;
+    repositories: Repository;
+    plugins: Plugin;
     categories: Category;
     tags: Tag;
+    submissions: Submission;
     media: Media;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -83,8 +86,11 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     maintainers: MaintainersSelect<false> | MaintainersSelect<true>;
+    repositories: RepositoriesSelect<false> | RepositoriesSelect<true>;
+    plugins: PluginsSelect<false> | PluginsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
+    submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -96,8 +102,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'directory-settings': DirectorySetting;
+  };
+  globalsSelect: {
+    'directory-settings': DirectorySettingsSelect<false> | DirectorySettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     welcome: WelcomeWidget;
@@ -226,6 +236,134 @@ export interface Maintainer {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "repositories".
+ */
+export interface Repository {
+  id: number;
+  fullName: string;
+  githubId?: number | null;
+  owner: string;
+  ownerAvatar?: string | null;
+  url: string;
+  description?: string | null;
+  stars?: number | null;
+  forks?: number | null;
+  openIssues?: number | null;
+  license?: string | null;
+  isArchived?: boolean | null;
+  pushedAt?: string | null;
+  /**
+   * GitHub repository creation date.
+   */
+  createdAt: string;
+  defaultBranch?: string | null;
+  topics?: string[] | null;
+  isMonorepo?: boolean | null;
+  lastSyncedAt?: string | null;
+  missedDiscoveries?: number | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugins".
+ */
+export interface Plugin {
+  id: number;
+  slug: string;
+  name: string;
+  packageName?: string | null;
+  repository: number | Repository;
+  /**
+   * Monorepo subdirectory; empty for single-package repos.
+   */
+  path?: string | null;
+  url: string;
+  isOfficial?: boolean | null;
+  source: 'topic' | 'official' | 'submission';
+  firstSeenAt?: string | null;
+  description?: string | null;
+  readme?: string | null;
+  contentHash?: string | null;
+  payloadVersionRange?: string | null;
+  payloadMajors?: ('1' | '2' | '3' | '4' | 'unknown')[] | null;
+  npm?: {
+    weeklyDownloads?: number | null;
+    monthlyDownloads?: number | null;
+    latestVersion?: string | null;
+    unpackedSize?: number | null;
+    lastPublish?: string | null;
+    dependencyCount?: number | null;
+  };
+  healthScore?: number | null;
+  category?: (number | null) | Category;
+  _h_tags?: (number | Tag)[] | null;
+  /**
+   * Generated from the README. Lock a field to stop it being overwritten.
+   */
+  ai?: {
+    tagline?: string | null;
+    summary?: string | null;
+    features?: string[] | null;
+    useCases?: string[] | null;
+    confidence?: number | null;
+    model?: string | null;
+    enrichedAt?: string | null;
+    enrichedHash?: string | null;
+  };
+  locks?: {
+    category?: boolean | null;
+    tags?: boolean | null;
+    tagline?: boolean | null;
+    summary?: boolean | null;
+    features?: boolean | null;
+    useCases?: boolean | null;
+  };
+  maintainers?: (number | Maintainer)[] | null;
+  customTagline?: string | null;
+  logo?: (number | null) | Media;
+  visibility: 'listed' | 'hidden';
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories".
  */
 export interface Category {
@@ -341,6 +479,40 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions".
+ */
+export interface Submission {
+  id: number;
+  type: 'listing' | 'claim';
+  url?: string | null;
+  plugin?: (number | null) | Plugin;
+  submittedBy: number | Maintainer;
+  note?: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'duplicate';
+  rejectionReason?: string | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -372,12 +544,24 @@ export interface PayloadLockedDocument {
         value: number | Maintainer;
       } | null)
     | ({
+        relationTo: 'repositories';
+        value: number | Repository;
+      } | null)
+    | ({
+        relationTo: 'plugins';
+        value: number | Plugin;
+      } | null)
+    | ({
         relationTo: 'categories';
         value: number | Category;
       } | null)
     | ({
         relationTo: 'tags';
         value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'submissions';
+        value: number | Submission;
       } | null)
     | ({
         relationTo: 'media';
@@ -508,6 +692,97 @@ export interface MaintainersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "repositories_select".
+ */
+export interface RepositoriesSelect<T extends boolean = true> {
+  fullName?: T;
+  githubId?: T;
+  owner?: T;
+  ownerAvatar?: T;
+  url?: T;
+  description?: T;
+  stars?: T;
+  forks?: T;
+  openIssues?: T;
+  license?: T;
+  isArchived?: T;
+  pushedAt?: T;
+  createdAt?: T;
+  defaultBranch?: T;
+  topics?: T;
+  isMonorepo?: T;
+  lastSyncedAt?: T;
+  missedDiscoveries?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "plugins_select".
+ */
+export interface PluginsSelect<T extends boolean = true> {
+  slug?: T;
+  name?: T;
+  packageName?: T;
+  repository?: T;
+  path?: T;
+  url?: T;
+  isOfficial?: T;
+  source?: T;
+  firstSeenAt?: T;
+  description?: T;
+  readme?: T;
+  contentHash?: T;
+  payloadVersionRange?: T;
+  payloadMajors?: T;
+  npm?:
+    | T
+    | {
+        weeklyDownloads?: T;
+        monthlyDownloads?: T;
+        latestVersion?: T;
+        unpackedSize?: T;
+        lastPublish?: T;
+        dependencyCount?: T;
+      };
+  healthScore?: T;
+  category?: T;
+  _h_tags?: T;
+  ai?:
+    | T
+    | {
+        tagline?: T;
+        summary?: T;
+        features?: T;
+        useCases?: T;
+        confidence?: T;
+        model?: T;
+        enrichedAt?: T;
+        enrichedHash?: T;
+      };
+  locks?:
+    | T
+    | {
+        category?: T;
+        tags?: T;
+        tagline?: T;
+        summary?: T;
+        features?: T;
+        useCases?: T;
+      };
+  maintainers?: T;
+  customTagline?: T;
+  logo?: T;
+  visibility?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -538,6 +813,23 @@ export interface TagsSelect<T extends boolean = true> {
   createdAt?: T;
   _h_slugPath?: T;
   _h_titlePath?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_select".
+ */
+export interface SubmissionsSelect<T extends boolean = true> {
+  type?: T;
+  url?: T;
+  plugin?: T;
+  submittedBy?: T;
+  note?: T;
+  status?: T;
+  rejectionReason?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -629,6 +921,70 @@ export interface PayloadLlmInstructionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "directory-settings".
+ */
+export interface DirectorySetting {
+  id: number;
+  featuredPlugins?: (number | Plugin)[] | null;
+  announcement?: {
+    text?: string | null;
+    link?: string | null;
+  };
+  ai?: {
+    enabled?: boolean | null;
+    model?: string | null;
+    instructions?: string | null;
+    maxNewTagsPerPlugin?: number | null;
+  };
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "directory-settings_select".
+ */
+export interface DirectorySettingsSelect<T extends boolean = true> {
+  featuredPlugins?: T;
+  announcement?:
+    | T
+    | {
+        text?: T;
+        link?: T;
+      };
+  ai?:
+    | T
+    | {
+        enabled?: T;
+        model?: T;
+        instructions?: T;
+        maxNewTagsPerPlugin?: T;
+      };
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "welcome_widget".
  */
 export interface WelcomeWidget {
@@ -654,7 +1010,8 @@ export interface CollectionsWidget {
 export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
-    relatedCollection: 'users' | 'maintainers' | 'categories' | 'tags' | 'media';
+    relatedCollection:
+      'users' | 'maintainers' | 'repositories' | 'plugins' | 'categories' | 'tags' | 'submissions' | 'media';
     where?:
       | {
           [k: string]: unknown;
@@ -676,7 +1033,8 @@ export interface CollectionQueryWidget {
  */
 export interface ActivityWidget {
   data?: {
-    excludedCollections?: ('users' | 'maintainers' | 'categories' | 'tags' | 'media')[] | null;
+    excludedCollections?:
+      ('users' | 'maintainers' | 'repositories' | 'plugins' | 'categories' | 'tags' | 'submissions' | 'media')[] | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }

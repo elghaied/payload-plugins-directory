@@ -1,0 +1,29 @@
+import type { CollectionConfig } from 'payload'
+import { anyone, isAdmin } from '@/access'
+
+export const Repositories: CollectionConfig = {
+  slug: 'repositories',
+  admin: { useAsTitle: 'fullName', group: 'Directory', defaultColumns: ['fullName', 'stars', 'pushedAt', 'isArchived'] },
+  access: { read: anyone, create: isAdmin, update: isAdmin, delete: isAdmin },
+  versions: false,
+  fields: [
+    { name: 'fullName', type: 'text', required: true, unique: true, index: true },
+    { name: 'githubId', type: 'number', unique: true, index: true },
+    { name: 'owner', type: 'text', required: true, index: true },
+    { name: 'ownerAvatar', type: 'text' },
+    { name: 'url', type: 'text', required: true },
+    { name: 'description', type: 'textarea' },
+    { name: 'stars', type: 'number', defaultValue: 0, index: true },
+    { name: 'forks', type: 'number', defaultValue: 0 },
+    { name: 'openIssues', type: 'number', defaultValue: 0 },
+    { name: 'license', type: 'text' },
+    { name: 'isArchived', type: 'checkbox', defaultValue: false },
+    { name: 'pushedAt', type: 'date' },
+    { name: 'createdAt', type: 'date', admin: { description: 'GitHub repository creation date.' } },
+    { name: 'defaultBranch', type: 'text' },
+    { name: 'topics', type: 'text', hasMany: true },
+    { name: 'isMonorepo', type: 'checkbox', defaultValue: false },
+    { name: 'lastSyncedAt', type: 'date' },
+    { name: 'missedDiscoveries', type: 'number', defaultValue: 0 },
+  ],
+}

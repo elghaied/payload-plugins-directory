@@ -1,4 +1,4 @@
-import type { CollectionSlug, GlobalConfig } from 'payload'
+import type { GlobalConfig } from 'payload'
 import { adminOnly, anyone, isAdmin } from '@/access'
 
 export const DirectorySettings: GlobalConfig = {
@@ -6,8 +6,7 @@ export const DirectorySettings: GlobalConfig = {
   admin: { group: 'System' },
   access: { read: anyone, update: isAdmin },
   fields: [
-    { name: 'featuredPlugins', type: 'relationship', // TODO(task 5): drop the cast once the `plugins` collection exists.
-      relationTo: 'plugins' as CollectionSlug, hasMany: true },
+    { name: 'featuredPlugins', type: 'relationship', relationTo: 'plugins', hasMany: true },
     {
       name: 'announcement',
       type: 'group',
