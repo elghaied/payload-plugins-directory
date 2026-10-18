@@ -3,6 +3,8 @@ on:
   pull_request:
   push:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -17,7 +19,9 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U directory" --health-interval 5s --health-retries 10
     env:
-      DATABASE_URL: postgresql://directory:directory@localhost:5433/directory_test
+      # Must differ from DATABASE_URL_TEST (the test-DB guard refuses equal URLs). The build
+      # does not connect, so this database does not need to exist in CI.
+      DATABASE_URL: postgresql://directory:directory@localhost:5433/directory
       DATABASE_URL_TEST: postgresql://directory:directory@localhost:5433/directory_test
       PAYLOAD_SECRET: ci-secret
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
