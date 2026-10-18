@@ -1,3 +1,4 @@
+export { extractMajorVersions } from "./versions";
 import { Plugin, PluginsData } from "../types";
 import pluginsData from "../../data/plugins.json";
 import blocklistData from "../../data/blocklist.json";
@@ -186,34 +187,4 @@ export function getPluginStats() {
     avgHealth,
     pluginsWithNpmCount,
   };
-}
-
-/**
- * Extract major versions from a Payload version string.
- * Useful for filtering and display.
- */
-export function extractMajorVersions(version: string): number[] {
-  if (version.toLowerCase().includes("beta")) {
-    return [3];
-  }
-
-  const versionRanges = version.split("||").map((v) => v.trim());
-  const majorVersions = new Set<number>();
-
-  versionRanges.forEach((range) => {
-    const cleanVersion = range.replace(/[\^~>=<]/g, "").trim();
-
-    const betaMatch = cleanVersion.match(/^(\d+)\.0\.0(?:-beta|$)/);
-    if (betaMatch) {
-      majorVersions.add(parseInt(betaMatch[1]));
-      return;
-    }
-
-    const match = cleanVersion.match(/^(\d+)/);
-    if (match) {
-      majorVersions.add(parseInt(match[1]));
-    }
-  });
-
-  return Array.from(majorVersions).sort((a, b) => a - b);
 }

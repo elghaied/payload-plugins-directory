@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/Navbar";
-import { SpeedInsights } from "@vercel/speed-insights/next"
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -69,7 +68,6 @@ export default function RootLayout({
           <Navbar />
         {children}
         </ThemeProvider>
-        <SpeedInsights/>
       </body>
     </html>
   );

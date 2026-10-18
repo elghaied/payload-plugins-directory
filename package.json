@@ -2,11 +2,18 @@
   "name": "payload-plugins-directory",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --project unit",
+    "test:int": "vitest run --project int",
     "fetch-plugins": "tsx --env-file=.env scripts/fetch-plugins.ts"
   },
   "dependencies": {
@@ -17,7 +24,6 @@
     "@radix-ui/react-select": "^2.4.1",
     "@radix-ui/react-slot": "^1.5.0",
     "@tanstack/react-virtual": "^3.14.21",
-    "@vercel/speed-insights": "^1.3.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",
@@ -29,15 +35,19 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
     "@tailwindcss/postcss": "^4.3.3",
-    "@types/node": "^25.2.1",
+    "@types/node": "^24.12.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "dotenv": "16.4.7",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.4.2",
     "postcss": "^8.5.30",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3",
+    "vite-tsconfig-paths": "6.0.5",
+    "vitest": "5.0.1"
   }
 }
