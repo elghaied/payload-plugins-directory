@@ -1,7 +1,7 @@
 import { execSync } from 'child_process'
 import { createInterface } from 'readline/promises'
 import { parseArgs } from 'util'
-import { assertConfirmed, planPull, planPush, type DbEnv, type DbTarget } from './plan'
+import { assertConfirmed, isLocalDatabaseUrl, planPull, planPush, recoveryInfo, shq, type DbEnv, type DbTarget } from './plan'
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -32,7 +32,10 @@ const env: DbEnv = {
   },
 }
 if (!env.containers[target].db) throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_CONTAINER in .env`)
-if (!env.localUrl.includes('localhost') && !env.localUrl.includes('127.0.0.1')) {
+if (mode === 'push' && !env.containers[target].web) {
+  throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_WEB_CONTAINER in .env (push needs it to migrate and restart web)`)
+}
+if (!isLocalDatabaseUrl(env.localUrl)) {
   throw new Error('DATABASE_URL must point at the local database')
 }
 
@@ -41,6 +44,8 @@ const plan = (mode === 'push' ? planPush : planPull)({ target, env, withMedia: v
 
 console.log(`\n${mode.toUpperCase()} ${mode === 'push' ? `local → ${target}` : `${target} → local`}\n`)
 for (const step of plan) console.log(`  [${step.where}] ${step.label}`)
+const recovery = mode === 'push' ? recoveryInfo({ target, env, stamp }) : undefined
+if (recovery) console.log(`\n  Backup of ${target} (kept on ${env.sshHost}): ${recovery.backupFile}`)
 const overwritten = mode === 'push' ? target : 'local'
 const rl = createInterface({ input: process.stdin, output: process.stdout })
 const typed = await rl.question(`\nThis REPLACES the ${overwritten} database. Type "${mode === 'push' ? target : 'local'}" to continue: `)
@@ -48,9 +53,35 @@ rl.close()
 if (mode === 'push') assertConfirmed(target, typed)
 else if (typed !== 'local') throw new Error(`Aborted: expected "local", got "${typed}".`)
 
-for (const step of plan) {
-  console.log(`→ ${step.label}`)
-  const cmd = step.where === 'remote' ? `ssh ${env.sshHost} ${JSON.stringify(step.cmd)}` : step.cmd
+const runStep = (step: (typeof plan)[number]) => {
+  const cmd = step.where === 'remote' ? `ssh ${env.sshHost} ${shq(step.cmd)}` : step.cmd
   execSync(cmd, { stdio: 'inherit', shell: '/bin/bash' })
 }
+
+let workerStopped = false
+try {
+  for (const step of plan) {
+    console.log(`→ ${step.label}`)
+    if (step.label === 'stop worker') workerStopped = true
+    runStep(step)
+    if (step.label === 'start worker') workerStopped = false
+  }
+} catch (err) {
+  console.error(`\nStep failed: ${err instanceof Error ? err.message : String(err)}`)
+  const startStep = plan.find((s) => s.label === 'start worker')
+  if (workerStopped && startStep) {
+    console.error('→ attempting recovery: start worker')
+    try {
+      runStep(startStep)
+    } catch {
+      console.error(`Could not restart the worker; run on ${env.sshHost}: ${startStep.cmd}`)
+    }
+  }
+  if (recovery) {
+    console.error(`\nBackup of ${target}: ${recovery.backupFile}`)
+    console.error(`Manual restore: ssh ${env.sshHost} ${shq(recovery.restoreCmd)}`)
+  }
+  process.exit(1)
+}
+if (recovery) console.log(`\nBackup of ${target} kept on ${env.sshHost}: ${recovery.backupFile}`)
 console.log('Done.')

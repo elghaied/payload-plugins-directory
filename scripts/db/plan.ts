@@ -13,56 +13,97 @@ export function assertConfirmed(target: DbTarget, typed: string): void {
   if (typed !== target) throw new Error(`Aborted: expected "${target}", got "${typed}".`)
 }
 
+/** Single-quote a value for safe interpolation into a POSIX shell command. */
+export function shq(s: string): string {
+  return `'${s.replace(/'/g, `'\\''`)}'`
+}
+
+/** True only when the URL's host is exactly localhost, 127.0.0.1 or ::1. */
+export function isLocalDatabaseUrl(url: string): boolean {
+  try {
+    const { hostname } = new URL(url)
+    return ['localhost', '127.0.0.1', '[::1]', '::1'].includes(hostname)
+  } catch {
+    return false
+  }
+}
+
 const dumpFile = (stamp: string, kind: string) => `/tmp/directory-${kind}-${stamp}.dump`
+const RESTORE_FLAGS = '--clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error'
+
+/** Where the pre-push backup of the target lives, and how to restore it by hand (remote command). */
+export function recoveryInfo({ target, env, stamp }: Pick<PlanOpts, 'target' | 'env' | 'stamp'>): {
+  backupFile: string
+  restoreCmd: string
+} {
+  const { db } = env.containers[target]
+  const backupFile = `/root/directory-backups/${target}-before-push-${stamp}.dump`
+  return {
+    backupFile,
+    restoreCmd: `docker exec -i ${db} pg_restore -U ${env.dbUser} -d ${env.dbName} ${RESTORE_FLAGS} < ${shq(backupFile)}`,
+  }
+}
 
 export function planPull({ target, env, stamp }: PlanOpts): DbStep[] {
   const { db } = env.containers[target]
-  const remoteFile = dumpFile(stamp, `${target}`)
+  const remoteFile = dumpFile(stamp, target)
   const localFile = `./.db-dumps/${target}-${stamp}.dump`
   return [
     {
       label: 'dump remote',
       where: 'remote',
-      cmd: `docker exec ${db} pg_dump -U ${env.dbUser} -d ${env.dbName} -Fc > ${remoteFile}`,
+      cmd: `umask 077 && docker exec ${db} pg_dump -U ${env.dbUser} -d ${env.dbName} -Fc > ${shq(remoteFile)}`,
     },
-    { label: 'copy dump', where: 'local', cmd: `mkdir -p .db-dumps && scp ${env.sshHost}:${remoteFile} ${localFile}` },
+    {
+      label: 'copy dump',
+      where: 'local',
+      cmd: `umask 077 && mkdir -p -m 700 .db-dumps && scp ${env.sshHost}:${shq(remoteFile)} ${shq(localFile)}`,
+    },
+    { label: 'cleanup remote', where: 'remote', cmd: `rm -f ${shq(remoteFile)}` },
     {
       label: 'restore local',
       where: 'local',
-      cmd: `pg_restore --clean --if-exists --no-owner --no-acl -d "${env.localUrl}" ${localFile}`,
+      cmd: `pg_restore ${RESTORE_FLAGS} -d ${shq(env.localUrl)} ${shq(localFile)}`,
     },
   ]
 }
 
 export function planPush({ target, env, withMedia, stamp }: PlanOpts): DbStep[] {
   const { db, worker, web } = env.containers[target]
+  if (!web) throw new Error(`A web container is required to push to ${target}`)
   const localFile = `./.db-dumps/local-${stamp}.dump`
   const remoteFile = dumpFile(stamp, 'local')
-  const backupFile = `/root/directory-backups/${target}-before-push-${stamp}.dump`
+  const { backupFile } = recoveryInfo({ target, env, stamp })
   const steps: DbStep[] = [
-    { label: 'dump local', where: 'local', cmd: `mkdir -p .db-dumps && pg_dump -Fc -d "${env.localUrl}" -f ${localFile}` },
-    { label: 'copy dump', where: 'local', cmd: `scp ${localFile} ${env.sshHost}:${remoteFile}` },
+    {
+      label: 'dump local',
+      where: 'local',
+      cmd: `umask 077 && mkdir -p -m 700 .db-dumps && pg_dump -Fc -d ${shq(env.localUrl)} -f ${shq(localFile)}`,
+    },
+    { label: 'copy dump', where: 'local', cmd: `scp ${shq(localFile)} ${env.sshHost}:${shq(remoteFile)}` },
     {
       label: 'backup target',
       where: 'remote',
-      cmd: `mkdir -p /root/directory-backups && docker exec ${db} pg_dump -U ${env.dbUser} -d ${env.dbName} -Fc > ${backupFile}`,
+      cmd: `umask 077 && mkdir -p -m 700 /root/directory-backups && docker exec ${db} pg_dump -U ${env.dbUser} -d ${env.dbName} -Fc > ${shq(backupFile)}`,
     },
   ]
   if (worker) steps.push({ label: 'stop worker', where: 'remote', cmd: `docker stop ${worker}` })
   steps.push({
     label: 'restore',
     where: 'remote',
-    cmd: `docker exec -i ${db} pg_restore -U ${env.dbUser} -d ${env.dbName} --clean --if-exists --no-owner --no-acl < ${remoteFile}`,
+    cmd: `docker exec -i ${db} pg_restore -U ${env.dbUser} -d ${env.dbName} ${RESTORE_FLAGS} < ${shq(remoteFile)}`,
   })
-  if (web) steps.push({ label: 'migrate', where: 'remote', cmd: `docker exec ${web} sh -c 'cd /app/cli && npx payload migrate'` })
+  steps.push({ label: 'migrate', where: 'remote', cmd: `docker exec ${web} sh -c 'cd /app/cli && npx payload migrate'` })
   if (worker) steps.push({ label: 'start worker', where: 'remote', cmd: `docker start ${worker}` })
-  if (withMedia && web) {
+  if (withMedia) {
     steps.push({
       label: 'sync media',
       where: 'local',
-      cmd: `rsync -az ./media/ ${env.sshHost}:/tmp/directory-media/ && ssh ${env.sshHost} 'docker cp /tmp/directory-media/. ${web}:/app/media/'`,
+      cmd: `rsync -az ./media/ ${env.sshHost}:/tmp/directory-media/ && ssh ${env.sshHost} ${shq(`docker cp /tmp/directory-media/. ${web}:/app/media/`)}`,
     })
   }
-  if (web) steps.push({ label: 'restart web', where: 'remote', cmd: `docker restart ${web}` })
+  // Restarting web clears the Next data cache (phase 0 "full revalidation").
+  steps.push({ label: 'restart web', where: 'remote', cmd: `docker restart ${web}` })
+  steps.push({ label: 'cleanup', where: 'remote', cmd: `rm -f ${shq(remoteFile)}` })
   return steps
 }
