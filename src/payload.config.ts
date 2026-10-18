@@ -15,6 +15,7 @@ import { Users } from './collections/Users'
 import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
 import { DirectorySettings } from './globals/DirectorySettings'
+import { getServerURL } from './lib/serverUrl'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,7 +29,8 @@ export default buildConfig({
   endpoints: [healthEndpoint],
   cli: { commands: { seed: './cli/seed.js#seedCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',
-  serverURL: process.env.NEXT_PUBLIC_SITE_URL || '',
+  // Runtime value (SERVER_URL): Payload derives CSRF/CORS allowed origins from it.
+  serverURL: getServerURL(),
   upload: { transformers: [sharpTransformer()] },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({

@@ -1,0 +1,20 @@
+# Staging stack for Coolify (pasted into a Docker Compose resource; this file is the source of truth).
+services:
+  web:
+    image: ghcr.io/elghaied/payload-plugins-directory:staging
+    command: ['web']
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      # Read at runtime (Payload serverURL / allowed origins, noindex decision).
+      # NEXT_PUBLIC_* values are inlined at build time, so they cannot configure a prebuilt image.
+      SERVER_URL: https://next.payloaddirectory.dev
+    volumes:
+      - media:/app/media
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  media:
