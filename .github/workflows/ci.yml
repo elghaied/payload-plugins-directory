@@ -1,0 +1,34 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: directory
+          POSTGRES_PASSWORD: directory
+          POSTGRES_DB: directory_test
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U directory" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://directory:directory@localhost:5433/directory_test
+      DATABASE_URL_TEST: postgresql://directory:directory@localhost:5433/directory_test
+      PAYLOAD_SECRET: ci-secret
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with: { node-version-file: .nvmrc, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm test:int
+      - run: pnpm build
