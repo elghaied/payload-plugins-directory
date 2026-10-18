@@ -42,7 +42,8 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Plugin, SortOption, VersionFilter } from "../../types";
+import type { LegacyPlugin as Plugin } from "@/lib/seed/mapLegacy";
+import { SortOption, VersionFilter } from "../../types";
 import { PayloadIcon } from "../PayloadIcon";
 import { ComparisonView } from "../ComparisonView";
 import {

@@ -26,6 +26,7 @@ export default buildConfig({
   collections: [Users, Maintainers, Repositories, Plugins, Categories, Tags, Submissions, Media],
   globals: [DirectorySettings],
   endpoints: [healthEndpoint],
+  cli: { commands: { seed: './cli/seed.js#seedCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',
   serverURL: process.env.NEXT_PUBLIC_SITE_URL || '',
   upload: { transformers: [sharpTransformer()] },

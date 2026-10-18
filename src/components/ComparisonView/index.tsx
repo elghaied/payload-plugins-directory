@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plugin } from "../../types";
+import type { LegacyPlugin as Plugin } from "@/lib/seed/mapLegacy";
 import { PayloadIcon } from "../PayloadIcon";
 import {
   versionColors,

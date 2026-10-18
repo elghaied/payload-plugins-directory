@@ -48,36 +48,6 @@ export interface NpmData {
   dependencyCount: number;
 }
 
-export interface Plugin {
-  id: string;
-  name: string;
-  packageName?: string;
-  collection?: string;
-  description: string;
-  stars: number;
-  forks: number;
-  lastUpdate: string;
-  createdAt: string;
-  owner: string;
-  ownerAvatar: string;
-  url: string;
-  topics: string[];
-  isOfficial: boolean;
-  payloadVersion: string | null;
-  payloadVersionMajor: number[];
-  license: string | null;
-  openIssues: number;
-  isArchived: boolean;
-  readme?: string;
-  npm?: NpmData;
-  healthScore?: number;
-}
-
-export interface PluginsData {
-  lastUpdated: string;
-  totalCount: number;
-  plugins: Plugin[];
-}
 
 export type SortOption = "featured" | "stars" | "forks" | "recent" | "created" | "name" | "downloads" | "health";
 export type VersionFilter = "all" | "0" | "1" | "2" | "3"; // 0 = unknown version

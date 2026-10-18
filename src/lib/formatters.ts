@@ -1,4 +1,4 @@
-import type { Plugin } from "../types";
+import type { LegacyPlugin as Plugin } from "@/lib/seed/mapLegacy";
 
 export const versionColors: Record<number, string> = {
   0: "bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300",

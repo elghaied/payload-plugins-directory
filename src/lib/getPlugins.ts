@@ -1,5 +1,5 @@
 export { extractMajorVersions } from "./versions";
-import { Plugin, PluginsData } from "../types";
+import type { LegacyPlugin as Plugin, LegacyPluginsData as PluginsData } from "@/lib/seed/mapLegacy";
 import pluginsData from "../../data/plugins.json";
 import blocklistData from "../../data/blocklist.json";
 
