@@ -72,6 +72,12 @@ describe('planPush hardening', () => {
     const noWeb = { ...env, containers: { ...env.containers, production: { db: 'prod-db' } } }
     expect(() => planPush({ ...opts, env: noWeb })).toThrow(/web container/)
   })
+  it('clears the Next data cache immediately before restarting web', () => {
+    const i = labels.indexOf('clear cache')
+    expect(i).toBeGreaterThan(labels.indexOf('migrate'))
+    expect(labels[i + 1]).toBe('restart web')
+    expect(steps[i]).toEqual({ label: 'clear cache', where: 'remote', cmd: 'docker exec prod-web rm -rf /app/.next/cache/fetch-cache' })
+  })
   it('cleans up the remote dump last', () => {
     expect(labels.at(-1)).toBe('cleanup')
     expect(steps.at(-1)!.cmd).toMatch(/^rm -f .*directory-local-s1\.dump/)

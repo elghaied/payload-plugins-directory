@@ -29,6 +29,8 @@ export function isLocalDatabaseUrl(url: string): boolean {
 }
 
 const dumpFile = (stamp: string, kind: string) => `/tmp/directory-${kind}-${stamp}.dump`
+/** Next's on-disk data cache inside the web image (Dockerfile WORKDIR /app, standalone output). */
+export const NEXT_FETCH_CACHE_DIR = '/app/.next/cache/fetch-cache'
 const RESTORE_FLAGS = '--clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error'
 
 /** Where the pre-push backup of the target lives, and how to restore it by hand (remote command). */
@@ -102,7 +104,10 @@ export function planPush({ target, env, withMedia, stamp }: PlanOpts): DbStep[] 
       cmd: `rsync -az ./media/ ${env.sshHost}:/tmp/directory-media/ && ssh ${env.sshHost} ${shq(`docker cp /tmp/directory-media/. ${web}:/app/media/`)}`,
     })
   }
-  // Restarting web clears the Next data cache (phase 0 "full revalidation").
+  // Phase 0 "full revalidation": unstable_cache entries persist on disk in the standalone server's
+  // .next/cache/fetch-cache (serverDistDir/../cache/fetch-cache, WORKDIR /app) and survive a restart,
+  // so delete them first; the restart then drops the in-memory copy.
+  steps.push({ label: 'clear cache', where: 'remote', cmd: `docker exec ${web} rm -rf ${NEXT_FETCH_CACHE_DIR}` })
   steps.push({ label: 'restart web', where: 'remote', cmd: `docker restart ${web}` })
   steps.push({ label: 'cleanup', where: 'remote', cmd: `rm -f ${shq(remoteFile)}` })
   return steps
