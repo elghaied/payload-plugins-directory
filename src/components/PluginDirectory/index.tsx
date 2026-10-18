@@ -1012,7 +1012,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 <SelectContent>
                   <SelectItem value="all">All Versions</SelectItem>
                   <SelectItem value="4">Payload v4</SelectItem>
-                <SelectItem value="3">Payload v3</SelectItem>
+                  <SelectItem value="3">Payload v3</SelectItem>
                   <SelectItem value="2">Payload v2</SelectItem>
                   <SelectItem value="1">Payload v1</SelectItem>
                   <SelectItem value="unknown">Unknown (v?)</SelectItem>
