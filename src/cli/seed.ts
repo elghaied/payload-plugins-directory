@@ -5,7 +5,7 @@ import { defineCLICommand } from 'payload/cli'
 import { mapLegacy, type LegacyPluginsData } from '@/lib/seed/mapLegacy'
 
 export async function seedDirectory(payload: Payload, input: ReturnType<typeof mapLegacy>) {
-  const counts = { repositoriesCreated: 0, pluginsCreated: 0, pluginsUpdated: 0 }
+  const counts = { repositoriesCreated: 0, repositoriesUpdated: 0, pluginsCreated: 0, pluginsUpdated: 0 }
   const repoIds = new Map<string, number>()
 
   for (const repo of input.repositories) {
@@ -16,7 +16,16 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
       limit: 1,
     })
     if (existing.docs[0]) {
+      // githubId is unique and may be absent from the input; never null out a stored value.
+      const { githubId, ...rest } = repo
+      await payload.update({
+        collection: 'repositories',
+        id: existing.docs[0].id,
+        overrideAccess: true,
+        data: githubId === undefined ? rest : { ...rest, githubId },
+      })
       repoIds.set(repo.fullName, existing.docs[0].id)
+      counts.repositoriesUpdated++
       continue
     }
     const created = await payload.create({ collection: 'repositories', overrideAccess: true, data: repo })
