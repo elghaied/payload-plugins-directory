@@ -33,6 +33,10 @@ export const getPluginSummaries = unstable_cache(
 )
 
 export async function getPluginDetail(slug: string): Promise<PluginDetail | null> {
+  // Only slugs of listed plugins reach the per-slug cache: a crawler probing random slugs must not
+  // create one cache entry per miss. getPluginSummaries() is already cached and has every listed slug.
+  const summaries = await getPluginSummaries()
+  if (!summaries.some((s) => s.slug === slug)) return null
   return unstable_cache(
     async () => {
       const p = await payload()

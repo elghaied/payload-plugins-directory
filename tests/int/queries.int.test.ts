@@ -5,7 +5,13 @@ import { getTestPayload, resetDatabase } from './helpers/payload'
 import { mapLegacy, type LegacyPluginsData } from '@/lib/seed/mapLegacy'
 import { seedDirectory } from '@/cli/seed'
 
-vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }))
+const cacheKeys = vi.hoisted(() => [] as string[][])
+vi.mock('next/cache', () => ({
+  unstable_cache: (fn: unknown, keyParts: string[]) => {
+    cacheKeys.push(keyParts)
+    return fn
+  },
+}))
 
 let payload: Payload
 beforeAll(async () => {
@@ -41,6 +47,16 @@ describe('directory queries', () => {
     expect(await getPluginDetail('684372049-translator')).toBeNull()
     expect(await getPluginDetail('829724738-root')).toBeNull()
     expect(await getPluginDetail('does-not-exist')).toBeNull()
+  })
+  it('does not create per-slug cache entries for unknown, hidden or trashed slugs', async () => {
+    const { getPluginDetail } = await import('@/lib/directory/queries')
+    cacheKeys.length = 0
+    for (const slug of ['does-not-exist', '684372049-translator', '829724738-root']) {
+      expect(await getPluginDetail(slug)).toBeNull()
+    }
+    expect(cacheKeys.filter((k) => k[0] === 'plugin-detail')).toEqual([])
+    await getPluginDetail('official-plugin-form-builder')
+    expect(cacheKeys.filter((k) => k[0] === 'plugin-detail')).toEqual([['plugin-detail', 'official-plugin-form-builder']])
   })
   it('returns details with readme for listed plugins', async () => {
     const { getPluginDetail } = await import('@/lib/directory/queries')
