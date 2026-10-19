@@ -233,6 +233,11 @@ export interface Maintainer {
   login: string;
   name?: string | null;
   avatarUrl?: string | null;
+  blocked?: boolean | null;
+  /**
+   * Sessions issued before this moment are rejected. Bumped on logout.
+   */
+  sessionsValidAfter?: string | null;
   createdBy?:
     | ({
         relationTo: 'users';
@@ -875,6 +880,8 @@ export interface MaintainersSelect<T extends boolean = true> {
   login?: T;
   name?: T;
   avatarUrl?: T;
+  blocked?: T;
+  sessionsValidAfter?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

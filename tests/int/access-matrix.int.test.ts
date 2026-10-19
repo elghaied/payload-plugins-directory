@@ -248,3 +248,94 @@ describe('submissions', () => {
     ).rejects.toThrow(ValidationError)
   })
 })
+
+describe('maintainers (self access)', () => {
+  it('a maintainer reads only themselves', async () => {
+    const res = await payload.find({ collection: 'maintainers', overrideAccess: false, user: maintainerA })
+    expect(res.docs.map((d) => d.id)).toEqual([maintainerA.id])
+  })
+  it('a maintainer cannot change their identity fields', async () => {
+    await payload.update({
+      collection: 'maintainers',
+      id: maintainerA.id,
+      overrideAccess: false,
+      user: maintainerA,
+      data: { login: 'renamed', githubId: 1, name: 'Mallory', avatarUrl: 'https://evil.example/a.png' },
+    })
+    const stored = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: true })
+    expect(stored).toMatchObject({ login: 'octo', githubId: 42 })
+    expect(stored.name ?? null).toBeNull()
+    expect(stored.avatarUrl ?? null).toBeNull()
+  })
+  it('a maintainer cannot write or read the moderation fields', async () => {
+    const past = new Date(0).toISOString()
+    await payload.update({
+      collection: 'maintainers',
+      id: maintainerA.id,
+      overrideAccess: false,
+      user: maintainerA,
+      data: { blocked: true, sessionsValidAfter: past },
+    })
+    const stored = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: true })
+    expect(stored.blocked).toBe(false)
+    expect(stored.sessionsValidAfter ?? null).toBeNull()
+    const self = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: maintainerA })
+    expect(self).not.toHaveProperty('blocked')
+    expect(self).not.toHaveProperty('sessionsValidAfter')
+  })
+  it('a maintainer cannot read another maintainer', async () => {
+    await expect(
+      payload.findByID({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA }),
+    ).rejects.toThrow()
+  })
+  it('a maintainer cannot update another maintainer', async () => {
+    await expect(
+      payload.update({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA, data: {} }),
+    ).rejects.toThrow()
+  })
+  it('a maintainer cannot create or delete maintainers', async () => {
+    await expect(
+      payload.create({ collection: 'maintainers', overrideAccess: false, user: maintainerA, data: { githubId: 77, login: 'x' } }),
+    ).rejects.toThrow(Forbidden)
+    await expect(payload.delete({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA })).rejects.toThrow()
+  })
+  it('a maintainer has no admin-panel access', async () => {
+    const config = payload.config.collections.find((c) => c.slug === 'maintainers')!
+    const access = config.access!.admin as (a: never) => unknown
+    expect(await access({ req: { user: maintainerA, payload } } as never)).toBe(false)
+  })
+  it('admin users keep full access, including the moderation fields', async () => {
+    const adminUser = await payload.create({
+      collection: 'users',
+      overrideAccess: true,
+      data: { email: 'self-access-admin@example.com', password: 'a-long-test-password-123' },
+    })
+    const asAdmin = { ...adminUser, collection: 'users' } as never
+    const all = await payload.find({ collection: 'maintainers', overrideAccess: false, user: asAdmin })
+    expect(all.docs.map((d) => d.id)).toEqual(expect.arrayContaining([maintainerA.id, maintainerB.id]))
+    const updated = await payload.update({
+      collection: 'maintainers',
+      id: maintainerB.id,
+      overrideAccess: false,
+      user: asAdmin,
+      data: { blocked: true },
+    })
+    expect(updated.blocked).toBe(true)
+    await payload.update({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: asAdmin, data: { blocked: false } })
+  })
+  it('authorship is admin-only: stamped by an admin edit, never visible to the maintainer', async () => {
+    const adminUser = await payload.create({
+      collection: 'users',
+      overrideAccess: true,
+      data: { email: 'authorship-admin@example.com', password: 'a-long-test-password-123' },
+    })
+    const asAdmin = { ...adminUser, collection: 'users' } as never
+    await payload.update({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: asAdmin, data: { name: 'Octo Cat' } })
+    const forAdmin = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: asAdmin, depth: 0 })
+    expect(forAdmin).toHaveProperty('updatedBy')
+    const self = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: maintainerA })
+    expect(self.name).toBe('Octo Cat')
+    expect(self).not.toHaveProperty('createdBy')
+    expect(self).not.toHaveProperty('updatedBy')
+  })
+})
