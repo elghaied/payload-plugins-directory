@@ -12,7 +12,7 @@ const DOMAIN =
 const MD_MARKS = /\*\*|__|`+|^\s*#+\s*|^\s*>\s*/gm
 // C0/C1 controls (except tab, LF, CR, which are whitespace), soft hyphen, zero-width characters, bidi marks,
 // overrides and isolates, word joiner, BOM, Arabic letter mark.
-const INVISIBLE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F­؜​-‏‪-‮⁠-⁩﻿]/g
+const INVISIBLE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u00AD\u061C\u200B-\u200F\u202A-\u202E\u2060-\u2069\uFEFF]/g
 // Unpaired surrogates (they cannot be encoded to UTF-8 and break clamping).
 const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g
 

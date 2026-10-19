@@ -115,8 +115,8 @@ describe('cleanText', () => {
     expect(cleanText('Works with Next.js and payload.config.ts', 100)).toBe('Works with Next.js and payload.config.ts')
   })
   it('removes control and bidi characters, and does not let them hide links', () => {
-    expect(cleanText('safe‮txt.exe​\u0000', 100)).toBe('safe txt.exe')
-    expect(cleanText('visit evil​.com now', 100)).toBe('visit now')
+    expect(cleanText('safe\u202Etxt.exe\u200B\u0000', 100)).toBe('safe txt.exe')
+    expect(cleanText('visit evil\u200B.com now', 100)).toBe('visit now')
     expect(cleanText('a\u0007b\tc\r\nd', 100)).toBe('a b c d')
   })
   it('clamps at a word boundary with an ellipsis and handles non-strings', () => {
