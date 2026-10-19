@@ -69,11 +69,14 @@ async function approvedSubmissionRepos(payload: Payload, npm: NpmClient): Promis
   })
   const names: string[] = []
   for (const sub of subs.docs) {
-    if (!sub.url) continue
+    // `repositoryFullName` is set on approval (resolved, or typed by an admin for an npm package the registry cannot
+    // resolve). It is authoritative and needs no registry call; only legacy rows without it fall back to the URL.
+    const stored = sub.repositoryFullName?.trim()
+    if (!sub.url && !stored) continue
     // One bad submission (malformed URL, invalid name, broken registry entry) is skipped, never aborts discovery.
     // Rate limits propagate so the whole run is re-queued.
     try {
-      const fullName = await submissionRepo(sub.url, npm)
+      const fullName = stored || (await submissionRepo(sub.url ?? '', npm))
       if (fullName) names.push(checkFullName(fullName))
     } catch (err) {
       if (!isSkippableSubmissionError(err)) throw err

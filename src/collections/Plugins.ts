@@ -1,6 +1,7 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
+import { linkApprovedSubmissions } from '@/collections/hooks/linkApprovedSubmissions'
 import { restrictMaintainerPluginEdits } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import { revalidatePluginChange, revalidatePluginDelete } from '@/collections/hooks/revalidatePlugin'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
@@ -49,7 +50,7 @@ export const Plugins: CollectionConfig = {
       },
       lockAdminEditedAiFields,
     ],
-    afterChange: [revalidatePluginChange],
+    afterChange: [revalidatePluginChange, linkApprovedSubmissions],
     afterDelete: [revalidatePluginDelete],
   },
   fields: [

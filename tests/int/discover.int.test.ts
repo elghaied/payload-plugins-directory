@@ -39,7 +39,8 @@ describe('runDiscover', () => {
       ['https://github.com/acme/pending', 'pending'],
     ] as const
     for (const [url, status] of subs) {
-      await payload.create({ collection: 'submissions', overrideAccess: true, data: { type: 'listing', url, status, submittedBy: m.id } })
+      // Adapter-level insert: legacy approved rows predate `repositoryFullName`, so discover must still resolve their URL.
+      await payload.db.create({ collection: 'submissions', data: { type: 'listing', url, status, submittedBy: m.id } })
     }
     const r = await discover({ ...search(101, 102), ...npmRoutes('payload-npm-only', { repositoryUrl: 'git+https://github.com/acme/npm-only.git' }) })
     expect(r).toMatchObject({ guardTripped: false, discovered: 5, known: 0, warning: null })
@@ -236,8 +237,8 @@ describe('runDiscover', () => {
 
   it('still propagates a rate limit while resolving an npm submission', async () => {
     const m = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 1, login: 'maint' } })
-    await payload.create({
-      collection: 'submissions', overrideAccess: true,
+    await payload.db.create({
+      collection: 'submissions',
       data: { type: 'listing', url: 'https://www.npmjs.com/package/payload-limited', status: 'approved', submittedBy: m.id },
     })
     const limited = { status: 429, headers: { 'retry-after': '30' } }
@@ -259,7 +260,25 @@ describe('runDiscover', () => {
       data: { type: 'listing', url: 'https://github.com/Acme/Listed', status: 'approved', submittedBy: m.id },
     })
     const r = await discover(search())
-    expect(r.toSync).toContainEqual({ fullName: 'Acme/Listed', githubId: 600, source: 'submission', discovered: true })
+    expect(r.toSync).toContainEqual({ fullName: 'acme/listed', githubId: 600, source: 'submission', discovered: true })
+  })
+
+  it('uses an approved submission\'s repositoryFullName (admin-entered for npm) and never trashes its plugin over 3 runs', async () => {
+    const m = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 1, login: 'maint' } })
+    const repo = await createRepo(payload, { fullName: 'acme/manual' })
+    await createPlugin(payload, repo.id, { slug: 'manual-root' })
+    await payload.create({
+      collection: 'submissions', overrideAccess: true,
+      // No npm route is registered: any registry call would fail the run, so a hit proves the stored name was used.
+      data: { type: 'listing', url: 'https://www.npmjs.com/package/payload-manual', repositoryFullName: 'acme/manual', status: 'approved', submittedBy: m.id },
+    })
+    for (let run = 0; run < 3; run++) {
+      const r = await discover(search())
+      expect(r).toMatchObject({ trashed: [], missed: [] })
+      expect(r.toSync).toContainEqual({ fullName: 'acme/manual', source: 'submission', discovered: true })
+    }
+    const stored = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'manual-root' } }, trash: true })
+    expect(stored.docs[0].deletedAt ?? null).toBeNull()
   })
 
   it('queues stale-renamed rows that still have a listed plugin by their GitHub id, once', async () => {

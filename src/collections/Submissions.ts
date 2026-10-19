@@ -3,6 +3,7 @@ import { ValidationError } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
 import { adminOnlyAuthorship } from '@/fields/authorship'
 import { relationId } from '@/lib/relationId'
+import { applyApproval, resolveApprovedListing } from '@/lib/submissions/approval'
 import { findListingConflict, MAX_PENDING_PER_MAINTAINER } from '@/lib/submissions/duplicates'
 import { MESSAGES } from '@/lib/submissions/messages'
 import { FULL_NAME_RE, parseSubmissionUrl } from '@/lib/submissions/url'
@@ -84,7 +85,7 @@ export const Submissions: CollectionConfig = {
     update: isAdmin,
     delete: isAdmin,
   },
-  hooks: { beforeChange: [enforceOwnership] },
+  hooks: { beforeChange: [enforceOwnership, resolveApprovedListing], afterChange: [applyApproval] },
   fields: [
     { name: 'type', type: 'select', required: true, defaultValue: 'listing', options: ['listing', 'claim'] },
     {
@@ -103,6 +104,8 @@ export const Submissions: CollectionConfig = {
         description: 'owner/repo (lower-case). Filled on approval; enter it by hand when an npm package cannot be resolved.',
       },
       access: { create: adminOnly, update: adminOnly },
+      // Runs before validation, so an admin may type `Owner/Repo` and it is stored as `owner/repo`.
+      hooks: { beforeValidate: [({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value)] },
       validate: (value: unknown) =>
         value == null || value === '' || (typeof value === 'string' && FULL_NAME_RE.test(value)) || 'Use owner/repo in lower case.',
     },
