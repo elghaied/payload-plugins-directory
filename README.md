@@ -282,8 +282,11 @@ The worker queues the scheduled jobs (discover every 6 hours, npm stats at 01:00
 - **Enrichment** runs in the worker:
   - `enrich-all` runs hourly (at minute 20). It finds plugins whose content, category tree, admin instructions or model
     changed. Below 20 stale plugins it queues direct `enrich` jobs (the `enrich` queue runs 2 at a time); at 20 or more
-    it submits one Message Batch (50% cost). It waits 30 minutes after the last category or settings edit, so a burst of
-    edits costs one re-pass.
+    it submits one Message Batch (50% cost). One pass takes at most 500 plugins (`ENRICH_MAX_PER_PASS` overrides); the
+    rest follow on the next pass. While a batch is in flight, `enrich-all` skips entirely and submits nothing.
+  - The 30-minute debounce: `enrich-all` waits until 30 minutes after the last edit, so a burst of edits costs one
+    re-pass. The clock restarts on any save of the Directory settings (any field, not only AI), and on every category
+    create, edit or delete. Tag edits do not restart it (tags are not part of the prompt fingerprint).
   - `sync-repository` re-enriches previously enriched plugins whose README/package.json/description changed.
 - **Model and settings:** Directory settings (System group) → AI. `enabled` is the kill switch; `model` (default
   `claude-sonnet-5-5`), `instructions` (appended to the cached system prompt) and `maxNewTagsPerPlugin` (default 2, max 5)
@@ -293,13 +296,19 @@ The worker queues the scheduled jobs (discover every 6 hours, npm stats at 01:00
 - **Admin views:** the "AI enrichment" dashboard widget, and the plugin list presets "Low confidence", "Uncategorized"
   and "Enrichment failed".
 - **Key:** `ANTHROPIC_API_KEY` is set on the worker only. Without it, enrichment is skipped and plugins keep their author
-  description. Tests never call the API: they use `tests/helpers/fakeEnrichClient.ts`, and `vitest.setup.ts` removes the
+  description.
+- **Local workers never spend money by default:** the real client is only created when `NODE_ENV=production` (the
+  production worker must run with it) or `ENRICH_ALLOW_LOCAL=1`. A local `pnpm worker` loads the real key from `.env`
+  and, after `db:pull`, inherits production's pending jobs; without the opt-in it logs once that enrichment is off and
+  skips every request. Tests never call the API: they use `tests/helpers/fakeEnrichClient.ts`, and `vitest.setup.ts` removes the
   key and stubs `fetch`.
 - **Manual commands:**
   - `pnpm payload enrich --mode preview --limit 5` (also `pnpm enrich:preview`) sizes the requests and estimates token use
-    and cost. It makes no API call and writes nothing. `--slugs a,b` picks plugins; `--limit` defaults to 5 (max 50).
+    and cost. It makes no API call and writes nothing. `--slugs a,b` picks plugins; `--limit` defaults to 5 (max 50) and
+    is ignored when `--slugs` is given.
   - `pnpm payload enrich --mode queue --slugs a,b` queues `enrich` jobs for those plugins.
-  - `pnpm payload enrich --mode all` queues `enrich-all` now, ignoring the edit debounce.
+  - `pnpm payload enrich --mode all` queues `enrich-all` now, ignoring the edit debounce. It does nothing when an
+    `enrich-all` job is already pending.
 
 ### One-time Import of the Legacy Data
 
