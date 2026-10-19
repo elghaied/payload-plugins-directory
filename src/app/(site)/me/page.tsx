@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { requireMaintainer } from '@/lib/auth/current'
 import { formatDate } from '@/lib/formatters'
 import type { Submission } from '@/payload-types'
+import { loadMeData } from '@/lib/maintainers/meData'
 import { BrandingForm } from './BrandingForm'
 
 // Per request and signed-in only: never cached or indexed.
@@ -29,25 +30,14 @@ function pluginLink(s: Submission) {
 export default async function MePage() {
   const maintainer = await requireMaintainer('/me')
   const payload = await getPayload({ config: await config })
-  // Reads as the maintainer (overrideAccess: false); the explicit filters keep the page to this maintainer's own rows.
-  const [plugins, submissions] = await Promise.all([
-    payload.find({
-      collection: 'plugins', overrideAccess: false, user: maintainer, depth: 1, limit: 100, sort: 'name',
-      where: { maintainers: { in: [maintainer.id] } },
-    }),
-    payload.find({
-      collection: 'submissions', overrideAccess: false, user: maintainer, depth: 1, limit: 100, sort: '-createdAt',
-      where: { submittedBy: { equals: maintainer.id } },
-    }),
-  ])
-  const listings = submissions.docs.filter((s) => s.type === 'listing')
-  const claims = submissions.docs.filter((s) => s.type === 'claim')
+  const { plugins, listings, claims, truncated } = await loadMeData(payload, maintainer)
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto max-w-4xl px-4 py-8 space-y-10">
         <header className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3 min-w-0">
+            {/* eslint-disable-next-line @next/next/no-img-element -- external GitHub avatar, rendered at fixed size */}
             {maintainer.avatarUrl && <img src={maintainer.avatarUrl} alt="" className="h-12 w-12 rounded-full ring-2 ring-border" />}
             <div className="min-w-0">
               <h1 className="text-2xl font-bold tracking-tight break-all">@{maintainer.login}</h1>
@@ -60,18 +50,21 @@ export default async function MePage() {
           </div>
         </header>
 
+        {truncated && <p className="text-sm text-muted-foreground">Showing the latest 100.</p>}
+
         <section>
           <h2 className="text-lg font-semibold mb-3">Plugins you maintain</h2>
-          {plugins.docs.length === 0 ? (
+          {plugins.length === 0 ? (
             <p className="text-sm text-muted-foreground">None yet. Use &quot;Claim this plugin&quot; on a plugin page.</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
-              {plugins.docs.map((p) => {
+              {plugins.map((p) => {
                 const logoUrl = typeof p.logo === 'object' && p.logo?.url ? p.logo.url : null
                 return (
                   <Card key={p.id}>
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center gap-3 min-w-0">
+                        {/* eslint-disable-next-line @next/next/no-img-element -- Payload media URL, fixed 32px */}
                         {logoUrl && <img src={logoUrl} alt="" className="h-8 w-8 shrink-0 rounded object-contain" />}
                         <Link href={`/plugins/${encodeURIComponent(p.slug)}`} className="font-medium hover:underline break-words min-w-0">{p.name}</Link>
                       </div>

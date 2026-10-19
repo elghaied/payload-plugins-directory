@@ -1,16 +1,18 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { LOGO_MAX_BYTES, LOGO_MESSAGES } from '@/lib/maintainers/logoLimits'
 import { saveBrandingAction, type BrandingState } from './actions'
 
 const initial: BrandingState = { status: 'idle' }
 
 export function BrandingForm({ slug, customTagline, logoUrl }: { slug: string; customTagline: string; logoUrl: string | null }) {
   const [state, formAction, pending] = useActionState(saveBrandingAction, initial)
+  const [fileError, setFileError] = useState<string | null>(null)
   return (
     <form action={formAction} className="space-y-3">
       <input type="hidden" name="slug" value={slug} />
@@ -20,7 +22,17 @@ export function BrandingForm({ slug, customTagline, logoUrl }: { slug: string; c
       </div>
       <div className="space-y-1.5">
         <label htmlFor={`logo-${slug}`} className="text-xs font-medium text-muted-foreground">Logo (PNG, JPEG or WebP, up to 512 KB)</label>
-        <Input id={`logo-${slug}`} name="logo" type="file" accept="image/png,image/jpeg,image/webp" />
+        <Input id={`logo-${slug}`} name="logo" type="file" accept="image/png,image/jpeg,image/webp"
+          onChange={(e) => {
+            // Checked before upload so a too-big file never reaches the server (which would fail with a generic error).
+            const file = e.target.files?.[0]
+            if (file && file.size > LOGO_MAX_BYTES) {
+              setFileError(LOGO_MESSAGES.tooBig)
+              e.target.value = ''
+            } else setFileError(null)
+          }}
+        />
+        {fileError && <p role="alert" className="text-xs text-destructive">{fileError}</p>}
         {logoUrl && (
           <label className="flex items-center gap-2 text-xs text-muted-foreground">
             <input type="checkbox" name="removeLogo" className="h-3.5 w-3.5" /> Remove current logo

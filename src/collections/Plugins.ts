@@ -5,7 +5,7 @@ import { linkApprovedSubmissions } from '@/collections/hooks/linkApprovedSubmiss
 import { restrictMaintainerPluginEdits } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import { revalidatePluginChange, revalidatePluginDelete } from '@/collections/hooks/revalidatePlugin'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
-import { normalizeTagline } from '@/lib/maintainers/branding'
+import { normalizeTagline } from '@/lib/maintainers/tagline'
 import { DESCRIPTION_MAX_CHARS, README_MAX_CHARS } from '@/sync/limits'
 
 export const listedPluginsWhere: Where = {

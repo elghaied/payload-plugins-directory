@@ -5,7 +5,8 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { getCurrentMaintainer } from '@/lib/auth/current'
 import { isValidSlug, pluginTag } from '@/lib/cacheTags'
-import { LOGO_MAX_BYTES, LOGO_MESSAGES, saveBranding, type BrandingResult } from '@/lib/maintainers/branding'
+import { saveBranding, type BrandingResult } from '@/lib/maintainers/branding'
+import { LOGO_MAX_BYTES, LOGO_MESSAGES } from '@/lib/maintainers/logoLimits'
 
 export type BrandingState = { status: 'idle' } | { status: 'signed_out' } | BrandingResult
 

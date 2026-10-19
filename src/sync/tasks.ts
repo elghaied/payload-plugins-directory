@@ -11,6 +11,7 @@ import { DISCOVER_GUARD_KEY, recordGitHubQuota, recordJobSuccess } from './jobSt
 import { runNpmStats } from './npmStats'
 import { QUEUES } from './queues'
 import { postRevalidate } from './revalidate'
+import { sweepOrphanMedia } from '@/lib/maintainers/mediaCleanup'
 import { runSnapshot } from './snapshot'
 import { runSyncRepository } from './syncRepository'
 import { queueRevalidate, SyncConfigError, track } from './taskKit'
@@ -211,6 +212,8 @@ const snapshotTask: TaskConfig<'snapshot'> = {
       const r = await runSnapshot(payload, at)
       // Trending and stats pages (Phase 3) read the snapshot tables.
       await queueRevalidate(payload, SNAPSHOT_TAGS)
+      // Housekeeping: never fails the snapshot.
+      await sweepOrphanMedia(payload, at).catch((err) => payload.logger.error({ err }, 'media sweep failed'))
       return { status: 'ok', ...r }
     })
     return { output }

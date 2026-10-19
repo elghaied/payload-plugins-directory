@@ -4,59 +4,10 @@ import sharp from 'sharp'
 import { MAINTAINER_BRANDING_CONTEXT_KEY } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import type { CurrentMaintainer } from '@/lib/auth/current'
 import { relationId } from '@/lib/relationId'
-import { clampChars } from '@/sync/limits'
+import { LOGO_MAX_BYTES, LOGO_MAX_DIMENSION, LOGO_MESSAGES } from './logoLimits'
+import { validateTagline } from './tagline'
 
-export const LOGO_MAX_BYTES = 524288
-/** Longest side, in pixels, of an uploaded logo (a small file can still decode to a huge bitmap). */
-export const LOGO_MAX_DIMENSION = 2048
-export const LOGO_MESSAGES = {
-  tooBig: 'The logo must be 512 KB or smaller.',
-  wrongType: 'Upload a PNG, JPEG or WebP image.',
-  tooLarge: `The logo must be at most ${LOGO_MAX_DIMENSION} pixels wide and tall.`,
-} as const
-
-export const CUSTOM_TAGLINE_MAX_CHARS = 120
-
-// Control characters become a space. Written with \u escapes only: literal invisible characters get lost in editors.
-const CONTROL_RE = /[\u0000-\u001f\u007f-\u009f]/g
-// Zero-width, soft hyphen and bidi-control characters are removed outright (U+200D, the joiner, is handled separately):
-// U+00AD, U+061C, U+200B-U+200C, U+200E-U+200F, U+202A-U+202E, U+2060-U+2064, U+2066-U+2069, U+FEFF.
-const INVISIBLE_RE = /[\u00ad\u061c\u200b\u200c\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/g
-const ZWJ = '\u200d'
-
-/** NFKC, invisible characters removed, whitespace collapsed, trimmed. A ZWJ survives only between two visible characters (emoji sequences). */
-function clean(input: string): string {
-  const base = input.normalize('NFKC').replace(CONTROL_RE, ' ').replace(INVISIBLE_RE, '')
-  const joined = base.replace(/\u200d/g, (_m, offset: number) => {
-    const before = base[offset - 1]
-    const after = base[offset + 1]
-    return before && after && /\S/.test(before) && /\S/.test(after) && before !== ZWJ && after !== ZWJ ? ZWJ : ''
-  })
-  return joined.replace(/\s+/g, ' ').trim()
-}
-
-/**
- * Last-line normaliser, used by the `customTagline` field hook so every write path (server action, REST, GraphQL,
- * admin) is normalised. Empty becomes null; over-long input is clamped to 120 characters as a safety net.
- * User-facing input should go through `validateTagline`, which rejects instead of cutting.
- */
-export function normalizeTagline(input: unknown): string | null {
-  if (typeof input !== 'string') return null
-  const cleaned = clean(input)
-  if (!cleaned) return null
-  return clampChars(cleaned, CUSTOM_TAGLINE_MAX_CHARS).trim() || null
-}
-
-export type TaglineValidation = { ok: true; value: string | null } | { ok: false; message: string }
-
-/** For forms and server actions: normalises, and rejects (with a message) a tagline over 120 characters instead of cutting it. */
-export function validateTagline(input: unknown): TaglineValidation {
-  if (typeof input !== 'string') return { ok: true, value: null }
-  const cleaned = clean(input)
-  if (!cleaned) return { ok: true, value: null }
-  if (cleaned.length > CUSTOM_TAGLINE_MAX_CHARS) return { ok: false, message: `Keep the tagline to ${CUSTOM_TAGLINE_MAX_CHARS} characters or fewer.` }
-  return { ok: true, value: cleaned }
-}
+export { LOGO_MAX_BYTES, LOGO_MAX_DIMENSION, LOGO_MESSAGES }
 
 type ImageKind = { mime: 'image/png' | 'image/jpeg' | 'image/webp'; ext: 'png' | 'jpg' | 'webp' }
 const ascii = (buf: Uint8Array, start: number, end: number) => String.fromCharCode(...buf.subarray(start, end))
@@ -71,11 +22,35 @@ export function detectImageType(buf: Uint8Array): ImageKind | null {
 
 export type BrandingResult = { status: 'saved' } | { status: 'forbidden' } | { status: 'invalid'; message: string }
 
+/** Deletes a media row nothing references. Never throws: a failed cleanup is logged and must not mask the real outcome. */
 async function deleteIfUnreferenced(payload: Payload, mediaId: number) {
-  const refs = await payload.find({
-    collection: 'plugins', where: { logo: { equals: mediaId } }, trash: true, limit: 1, depth: 0, overrideAccess: true,
-  })
-  if (refs.totalDocs === 0) await payload.delete({ collection: 'media', id: mediaId, overrideAccess: true })
+  try {
+    const refs = await payload.find({
+      collection: 'plugins', where: { logo: { equals: mediaId } }, trash: true, limit: 1, depth: 0, overrideAccess: true,
+    })
+    if (refs.totalDocs === 0) await payload.delete({ collection: 'media', id: mediaId, overrideAccess: true })
+  } catch (err) {
+    payload.logger.error({ err, mediaId }, 'branding: could not delete unreferenced media')
+  }
+}
+
+type Reencoded = { data: Buffer; kind: ImageKind } | { error: string }
+
+/**
+ * Decodes and re-encodes the upload in its own format. That drops EXIF/GPS/XMP and any bytes after the image, and
+ * proves the file really decodes. EXIF orientation is applied first so the picture does not change.
+ */
+async function reencodeLogo(input: Buffer, kind: ImageKind): Promise<Reencoded> {
+  try {
+    const base = sharp(input, { limitInputPixels: LOGO_MAX_DIMENSION * LOGO_MAX_DIMENSION }).rotate()
+    const pipeline = kind.mime === 'image/png' ? base.png() : kind.mime === 'image/jpeg' ? base.jpeg({ quality: 90 }) : base.webp({ quality: 90 })
+    const { data, info } = await pipeline.toBuffer({ resolveWithObject: true })
+    if (info.width > LOGO_MAX_DIMENSION || info.height > LOGO_MAX_DIMENSION) return { error: LOGO_MESSAGES.tooLarge }
+    if (data.length > LOGO_MAX_BYTES) return { error: LOGO_MESSAGES.tooBig }
+    return { data, kind }
+  } catch (err) {
+    return { error: /pixel limit/i.test(String((err as Error)?.message)) ? LOGO_MESSAGES.tooLarge : LOGO_MESSAGES.wrongType }
+  }
 }
 
 /**
@@ -115,14 +90,8 @@ export async function saveBranding({
     if (logo.data.length > LOGO_MAX_BYTES) return { status: 'invalid', message: LOGO_MESSAGES.tooBig }
     const kind = detectImageType(logo.data)
     if (!kind) return { status: 'invalid', message: LOGO_MESSAGES.wrongType }
-    try {
-      const meta = await sharp(logo.data, { limitInputPixels: LOGO_MAX_DIMENSION * LOGO_MAX_DIMENSION }).metadata()
-      if (!meta.width || !meta.height || meta.width > LOGO_MAX_DIMENSION || meta.height > LOGO_MAX_DIMENSION) {
-        return { status: 'invalid', message: LOGO_MESSAGES.tooLarge }
-      }
-    } catch {
-      return { status: 'invalid', message: LOGO_MESSAGES.wrongType }
-    }
+    const clean = await reencodeLogo(Buffer.from(logo.data), kind)
+    if ('error' in clean) return { status: 'invalid', message: clean.error }
     // System write: `media` create is admin-only (spec 9.1). Ownership was verified above and the bytes were sniffed
     // and capped; the media row created here is the only value `logo` is ever set to.
     const media = await payload.create({
@@ -130,7 +99,7 @@ export async function saveBranding({
       overrideAccess: true,
       depth: 0,
       data: { alt: `${plugin.name} logo` },
-      file: { data: logo.data, mimetype: kind.mime, name: `${plugin.slug}-logo-${Date.now()}.${kind.ext}`, size: logo.data.length },
+      file: { data: clean.data, mimetype: kind.mime, name: `${plugin.slug}-logo-${Date.now()}.${kind.ext}`, size: clean.data.length },
     })
     nextLogo = createdMedia = media.id
   } else if (removeLogo) {
@@ -151,13 +120,25 @@ export async function saveBranding({
       data: { customTagline: normalized.value, ...(nextLogo !== undefined ? { logo: nextLogo } : {}) },
     })
   } catch (err) {
-    if (createdMedia !== undefined) await payload.delete({ collection: 'media', id: createdMedia, overrideAccess: true })
+    if (createdMedia !== undefined) await deleteMediaQuietly(payload, createdMedia)
     if (err instanceof Forbidden) return { status: 'forbidden' }
     throw err
   }
 
+  if (createdMedia !== undefined) {
+    // A parallel save may have replaced our logo already: then ours is unreferenced and must not linger.
+    await deleteIfUnreferenced(payload, createdMedia)
+  }
   if (nextLogo !== undefined && previousLogo !== undefined && previousLogo !== nextLogo) {
     await deleteIfUnreferenced(payload, previousLogo)
   }
   return { status: 'saved' }
+}
+
+async function deleteMediaQuietly(payload: Payload, id: number) {
+  try {
+    await payload.delete({ collection: 'media', id, overrideAccess: true })
+  } catch (err) {
+    payload.logger.error({ err, mediaId: id }, 'branding: could not delete media after a failed save') // the sweep removes it later
+  }
 }

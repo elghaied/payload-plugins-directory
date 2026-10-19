@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { detectImageType, normalizeTagline, validateTagline } from '@/lib/maintainers/branding'
+import { detectImageType } from '@/lib/maintainers/branding'
+import { normalizeTagline, validateTagline } from '@/lib/maintainers/tagline'
 
 // Invisible characters are always written as escapes, never as literals.
 describe('normalizeTagline', () => {
