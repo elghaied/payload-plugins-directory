@@ -9,7 +9,21 @@ const danger = { color: 'var(--theme-error-500)' }
 export async function JobHealthWidget({ req }: WidgetServerProps) {
   // Defence in depth: the admin panel is admin-only already, and the loader is called nowhere else.
   if (!isAdminUser(req.user)) return null
-  const health = await getJobHealth(req.payload, new Date())
+  let health
+  try {
+    health = await getJobHealth(req.payload, new Date())
+  } catch (err) {
+    // A loader failure (e.g. job_status missing before migrations ran) must not break the whole dashboard.
+    req.payload.logger.error({ err, msg: 'Job-health widget: could not load job health' })
+    return (
+      <div className="card">
+        <h3 style={{ margin: 0 }}>Sync jobs</h3>
+        <p role="alert" style={{ margin: '0.75rem 0 0', ...danger }}>
+          Job health could not be loaded. See the server log for details.
+        </p>
+      </div>
+    )
+  }
   const quota = health.githubQuota
   return (
     <div className="card" style={{ display: 'grid', gap: '0.75rem' }}>
