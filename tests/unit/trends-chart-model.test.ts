@@ -29,6 +29,14 @@ describe('insufficientMessage', () => {
   })
 })
 
+describe('insufficientMessage at the boundary', () => {
+  it('does not contradict itself with 7 snapshots spanning 6 days', () => {
+    const days = daily('2026-10-13', [0, 0, 0, 0, 0, 0, 0]).map((p) => p.date)
+    const msg = insufficientMessage(coverage(days))
+    expect(msg).toBe('Trends appear once the first and last snapshots are 7 days apart. Collecting since Oct 13 — 7 daily snapshots so far.')
+  })
+})
+
 describe('niceTicks', () => {
   it('produces clean, integer ticks that enclose the data', () => {
     expect(niceTicks(120, 180)).toEqual([120, 140, 160, 180])
@@ -66,6 +74,20 @@ describe('buildChartModel', () => {
     expect(m.ticks.map((t) => t.value)).toEqual([45000, 45050, 45100])
     expect(m.delta).toBe(70)
     expect(m.label).toBe('Stars: 45,000 on Oct 12, 2026, 45,070 on Oct 19, 2026 (+70 over 7 days).')
+  })
+  it('keeps ticks distinct and ordered for huge values', () => {
+    const m = buildChartModel(daily('2026-10-12', [0, 1, 2, 3, 4, 5, 6, 7].map((n) => 1e12 + n)), 'Stars')
+    if (m.kind !== 'ready') throw new Error('expected ready')
+    const v = m.ticks.map((t) => t.value)
+    expect(new Set(v).size).toBe(v.length)
+    expect(v).toEqual([...v].sort((a, b) => a - b))
+    expect(m.ys[m.ys.length - 1]).toBeLessThan(m.ys[0])
+  })
+  it('handles a flat zero series', () => {
+    const m = buildChartModel(daily('2026-10-12', [0, 0, 0, 0, 0, 0, 0, 0]), 'Stars')
+    if (m.kind !== 'ready') throw new Error('expected ready')
+    expect(m.ticks.map((t) => t.value)).toEqual([0, 1])
+    expect(m.ys.every(Number.isFinite)).toBe(true)
   })
   it('places points by date, so gaps stay visible in x', () => {
     const m = buildChartModel([{ date: '2026-10-11', value: 1 }, { date: '2026-10-13', value: 2 }, { date: '2026-10-19', value: 3 }], 'Stars')

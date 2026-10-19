@@ -2,14 +2,18 @@ import { daysBetween, utcDay, type Day } from './days'
 import { growthOverWindow, type Growth, type Point } from './growth'
 import type { DownloadMover, ListedPluginRef, NewPlugin, PluginLink, RecentRepo, StarMover } from './types'
 
-const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name)
+/** Fastest-growing lists ignore +1 noise: a mover needs at least this many new stars / downloads. */
+export const MIN_GROWTH_DELTA = 2
+
+const cmp = (a: string, b: string) => a.localeCompare(b, 'en')
+const byName = (a: { name: string }, b: { name: string }) => cmp(a.name, b.name)
 
 function compareGrowth(a: Growth, b: Growth, aName: string, bName: string): number {
   if (b.delta !== a.delta) return b.delta - a.delta
   const ap = a.pct ?? -Infinity
   const bp = b.pct ?? -Infinity
   if (bp !== ap) return bp > ap ? 1 : -1
-  return aName.localeCompare(bName)
+  return cmp(aName, bName)
 }
 
 function groupByRepository(refs: ListedPluginRef[]): Map<number, ListedPluginRef[]> {
@@ -36,11 +40,11 @@ export function rankStarGrowth(
   const out: StarMover[] = []
   for (const [repositoryId, plugins] of groupByRepository(refs)) {
     const growth = growthOverWindow(seriesByRepo.get(repositoryId) ?? [], asOf)
-    if (!growth || growth.delta <= 0) continue
+    if (!growth || growth.delta < MIN_GROWTH_DELTA) continue
     const repo = plugins[0].repository
     out.push({ repositoryId, fullName: repo.fullName, owner: repo.owner, ownerAvatar: repo.ownerAvatar, plugins: links(plugins), growth })
   }
-  return out.sort((a, b) => compareGrowth(a.growth, b.growth, a.fullName, b.fullName)).slice(0, limit)
+  return out.sort((a, b) => compareGrowth(a.growth, b.growth, a.fullName, b.fullName) || cmp(a.plugins[0].slug, b.plugins[0].slug)).slice(0, limit)
 }
 
 export function rankDownloadGrowth(
@@ -53,13 +57,13 @@ export function rankDownloadGrowth(
   const out: DownloadMover[] = []
   for (const ref of refs) {
     const growth = growthOverWindow(seriesByPlugin.get(ref.id) ?? [], asOf)
-    if (!growth || growth.delta <= 0) continue
+    if (!growth || growth.delta < MIN_GROWTH_DELTA) continue
     out.push({
       pluginId: ref.id, slug: ref.slug, name: ref.name,
       owner: ref.repository.owner, ownerAvatar: ref.repository.ownerAvatar, growth,
     })
   }
-  return out.sort((a, b) => compareGrowth(a.growth, b.growth, a.name, b.name)).slice(0, limit)
+  return out.sort((a, b) => compareGrowth(a.growth, b.growth, a.name, b.name) || cmp(a.slug, b.slug)).slice(0, limit)
 }
 
 /**

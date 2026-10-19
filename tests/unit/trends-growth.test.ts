@@ -23,6 +23,10 @@ describe('growthOverWindow', () => {
     )
     expect(growthOverWindow([{ date: '2026-10-09', value: 50 }, { date: '2026-10-19', value: 60 }], '2026-10-19')).toBeNull()
   })
+  it('prefers the exact 7-day baseline over an earlier one', () => {
+    const s = [{ date: '2026-10-11', value: 1 }, { date: '2026-10-12', value: 50 }, { date: '2026-10-19', value: 60 }]
+    expect(growthOverWindow(s, '2026-10-19')).toMatchObject({ delta: 10, from: { date: '2026-10-12' } })
+  })
   it('reports negative growth, and a null percentage from a zero base', () => {
     expect(growthOverWindow(pts('2026-10-12', [10, 0, 0, 0, 0, 0, 0, 7]), '2026-10-19')?.delta).toBe(-3)
     expect(growthOverWindow(pts('2026-10-12', [0, 0, 0, 0, 0, 0, 0, 7]), '2026-10-19')?.pct).toBeNull()
@@ -69,6 +73,15 @@ describe('ecosystemSeries', () => {
         { date: '2026-10-18', total: '100', reporting: '10' },
       ]),
     ).toEqual([{ date: '2026-10-18', value: 100 }, { date: '2026-10-19', value: 120 }])
+  })
+  it('skips a day whose downloads are all unknown instead of plotting 0', () => {
+    expect(
+      ecosystemSeries([
+        { date: '2026-10-18', total: null, reporting: 0 },
+        { date: '2026-10-19', total: null, reporting: 10 },
+        { date: '2026-10-20', total: 7, reporting: 10 },
+      ]),
+    ).toEqual([{ date: '2026-10-20', value: 7 }])
   })
   it('drops partial snapshot days instead of plotting a fake dip', () => {
     const out = ecosystemSeries([

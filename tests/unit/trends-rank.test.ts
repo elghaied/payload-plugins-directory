@@ -51,9 +51,23 @@ describe('rankStarGrowth', () => {
     expect(rankStarGrowth([ref(1, 'x', repo(1, 'o/x'))], new Map(), null)).toEqual([])
   })
   it('breaks ties by percentage, then by name, and honours the limit', () => {
-    const refs = [ref(1, 'x', repo(1, 'o/x')), ref(2, 'y', repo(2, 'o/y')), ref(3, 'z', repo(3, 'o/z'))]
+    const refs = [ref(3, 'z', repo(3, 'o/z')), ref(2, 'y', repo(2, 'o/y')), ref(1, 'x', repo(1, 'o/x'))]
     const series = new Map([[1, week(100, 110)], [2, week(10, 20)], [3, week(10, 20)]])
     expect(rankStarGrowth(refs, series, asOf, 2).map((m) => m.fullName)).toEqual(['o/y', 'o/z'])
+  })
+})
+
+describe('growth floor and shrinkage', () => {
+  it('excludes +1 entries and negative growth from both lists', () => {
+    const refs = [ref(1, 'a', repo(1, 'o/a')), ref(2, 'b', repo(2, 'o/b')), ref(3, 'c', repo(3, 'o/c'))]
+    const series = new Map([[1, week(10, 11)], [2, week(10, 12)], [3, week(10, 5)]])
+    expect(rankStarGrowth(refs, series, asOf).map((m) => m.fullName)).toEqual(['o/b'])
+    expect(rankDownloadGrowth(refs, series, asOf).map((m) => m.slug)).toEqual(['b'])
+  })
+  it('breaks a full tie by slug, not input order', () => {
+    const r = repo(1, 'o/r')
+    const refs = [ref(2, 'zed', r, { name: 'same' }), ref(1, 'abc', r, { name: 'same' })]
+    expect(rankDownloadGrowth(refs, new Map([[1, week(1, 11)], [2, week(1, 11)]]), asOf).map((m) => m.slug)).toEqual(['abc', 'zed'])
   })
 })
 

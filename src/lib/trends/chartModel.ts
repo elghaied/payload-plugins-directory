@@ -12,6 +12,10 @@ export function insufficientMessage(cov: Coverage, needed = MIN_CHART_SPAN_DAYS)
   const head = `Trends appear after ${needed} days of data.`
   if (cov.daysCollected === 0 || !cov.firstDay) return `${head} Daily snapshots have not started yet.`
   const n = cov.daysCollected
+  if (n >= needed) {
+    // Enough snapshots but not a full span (e.g. 7 snapshots over 6 days).
+    return `Trends appear once the first and last snapshots are ${needed} days apart. Collecting since ${formatDay(cov.firstDay)} — ${n} daily snapshots so far.`
+  }
   return `${head} Collecting since ${formatDay(cov.firstDay)} — ${n} daily ${n === 1 ? 'snapshot' : 'snapshots'} so far.`
 }
 
@@ -34,7 +38,7 @@ export function niceTicks(min: number, max: number, count = 4): number[] {
   const start = Math.floor(lo / step) * step
   const end = Math.ceil(hi / step) * step
   const ticks: number[] = []
-  for (let v = start; v <= end + step / 2; v += step) ticks.push(Number(v.toPrecision(12)))
+  for (let v = start; v <= end + step / 2; v += step) ticks.push(Math.round(v))
   return ticks
 }
 

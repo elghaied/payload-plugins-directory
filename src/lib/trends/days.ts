@@ -10,7 +10,10 @@ const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 const ms = (day: Day) => Date.parse(`${day}T00:00:00Z`)
 
 export function isDay(value: unknown): value is Day {
-  return typeof value === 'string' && DAY_RE.test(value) && !Number.isNaN(ms(value))
+  if (typeof value !== 'string' || !DAY_RE.test(value)) return false
+  const t = ms(value)
+  // Round-trip rejects impossible dates such as 2026-02-31 (V8 would roll them over).
+  return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === value
 }
 
 /** UTC calendar day of an instant (ISO timestamp or Date). */

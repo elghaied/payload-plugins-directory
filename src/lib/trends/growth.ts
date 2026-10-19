@@ -55,7 +55,7 @@ export function groupSeries(rows: { id: number; date: unknown; value: number | n
 }
 
 /**
- * Per-day totals from `sum(...) / count(*) group by date` rows. A day where noticeably fewer entities
+ * Per-day totals from `sum(col) / count(col) group by date` rows (count the column, not `*`, so NULL rows are not "reporting"). A day where noticeably fewer entities
  * reported than the running peak (a snapshot run that died halfway) is dropped rather than plotted as a dip.
  */
 export function ecosystemSeries(
@@ -63,13 +63,14 @@ export function ecosystemSeries(
   minShare = 0.9,
 ): Point[] {
   const sorted = rows
-    .map((r) => ({ date: asDay(r.date), total: Number(r.total ?? 0), reporting: Number(r.reporting) }))
+    .map((r) => ({ date: asDay(r.date), total: r.total === null ? null : Number(r.total), reporting: Number(r.reporting) }))
     .sort(byDate)
   let peak = 0
   const out: Point[] = []
   for (const r of sorted) {
     peak = Math.max(peak, r.reporting)
-    if (r.reporting > 0 && r.reporting >= peak * minShare) out.push({ date: r.date, value: r.total })
+    // total === null: every value was unknown that day; skip it rather than plot a false 0.
+    if (r.total !== null && r.reporting > 0 && r.reporting >= peak * minShare) out.push({ date: r.date, value: r.total })
   }
   return out
 }

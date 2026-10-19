@@ -24,6 +24,8 @@ describe('UTC day helpers', () => {
   it('accepts only YYYY-MM-DD strings as snapshot days', () => {
     expect(isDay('2026-10-19')).toBe(true)
     expect(isDay('2026-10-19T00:00:00Z')).toBe(false)
+    expect(isDay('2026-02-31')).toBe(false)
+    expect(isDay('2026-02-28')).toBe(true)
     expect(asDay('2026-10-19')).toBe('2026-10-19')
     // node-postgres turns DATE into a *local-midnight* Date; accepting it would shift days in non-UTC zones.
     expect(() => asDay(new Date('2026-10-19T00:00:00Z'))).toThrow(/YYYY-MM-DD/)
