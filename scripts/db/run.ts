@@ -41,6 +41,9 @@ if (!env.containers[target].db) throw new Error(`Set DB_REMOTE_${target.toUpperC
 if (mode === 'push' && !env.containers[target].web) {
   throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_WEB_CONTAINER in .env (push needs it to migrate and revalidate)`)
 }
+if (mode === 'push' && !env.containers[target].worker) {
+  throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_WORKER_CONTAINER in .env (push stops the worker during the restore)`)
+}
 if (!isLocalDatabaseUrl(env.localUrl)) {
   throw new Error('DATABASE_URL must point at the local database')
 }

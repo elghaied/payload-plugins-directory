@@ -53,10 +53,14 @@ describe('planPush', () => {
   it('restores with --clean --if-exists', () => {
     expect(steps.find((s) => s.label === 'restore')!.cmd).toMatch(/pg_restore .*--clean --if-exists .*--single-transaction --exit-on-error/)
   })
-  it('skips worker steps when no worker container is configured', () => {
+  it('throws without a worker container (a restore must never run under a live worker)', () => {
     const noWorker = { ...env, containers: { production: { db: 'prod-db', web: 'prod-web' } } }
-    const l = planPush({ target: 'production', env: noWorker, withMedia: false, stamp: 's' }).map((s) => s.label)
-    expect(l).not.toContain('stop worker')
+    expect(() => planPush({ target: 'production', env: noWorker, withMedia: false, stamp: 's' })).toThrow(/worker container/)
+  })
+  it('always plans the worker stop and start', () => {
+    const steps = planPush({ target: 'production', env, withMedia: false, stamp: 's' })
+    expect(steps.find((s) => s.label === 'stop worker')).toEqual({ label: 'stop worker', where: 'remote', cmd: 'docker stop prod-worker' })
+    expect(steps.find((s) => s.label === 'start worker')).toEqual({ label: 'start worker', where: 'remote', cmd: 'docker start prod-worker' })
   })
   it('adds media sync only when requested', () => {
     expect(labels).not.toContain('sync media')
@@ -185,13 +189,13 @@ describe('shq', () => {
 })
 
 describe('verify target (push pre-flight)', () => {
-  it('is planned first and inspects the target db and web containers by name and label', () => {
+  it('is planned first and inspects the target db, web and worker containers by name and label', () => {
     const steps = planPush({ target: 'production', env, withMedia: false, stamp: 's' })
     expect(steps[0]).toEqual(verifyTargetStep('production', env))
     expect(steps[0]).toEqual({
       label: 'verify target',
       where: 'remote',
-      cmd: `docker inspect -f '{{.Name}}|{{index .Config.Labels "directory.env"}}' 'prod-db' 'prod-web'`,
+      cmd: `docker inspect -f '{{.Name}}|{{index .Config.Labels "directory.env"}}' 'prod-db' 'prod-web' 'prod-worker'`,
     })
   })
 })

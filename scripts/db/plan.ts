@@ -79,10 +79,10 @@ export function recoveryInfo({ target, env, stamp }: Pick<PlanOpts, 'target' | '
 export const ENV_LABEL = 'directory.env'
 const INSPECT_SEP = '|'
 
-/** Pre-flight: print name and environment label of the target's db and web containers, one line each. */
+/** Pre-flight: print name and environment label of the target's db, web and worker containers, one line each. */
 export function verifyTargetStep(target: DbTarget, env: DbEnv): DbStep {
-  const { db, web } = env.containers[target]
-  const names = [db, web].filter(Boolean).map((n) => shq(n!)).join(' ')
+  const { db, web, worker } = env.containers[target]
+  const names = [db, web, worker].filter(Boolean).map((n) => shq(n!)).join(' ')
   return {
     label: 'verify target',
     where: 'remote',
@@ -162,6 +162,8 @@ export function planPull({ target, env, stamp }: PlanOpts): DbStep[] {
 export function planPush({ target, env, withMedia, stamp }: PlanOpts): DbStep[] {
   const { db, worker, web } = env.containers[target]
   if (!web) throw new Error(`A web container is required to push to ${target}`)
+  // The worker writes to the database every minute: a restore under a running worker would race its jobs.
+  if (!worker) throw new Error(`A worker container is required to push to ${target} (it is stopped during the restore)`)
   const localFile = `./.db-dumps/local-${stamp}.dump`
   const remoteFile = dumpFile(stamp, 'local')
   const { backupFile } = recoveryInfo({ target, env, stamp })
@@ -181,14 +183,14 @@ export function planPush({ target, env, withMedia, stamp }: PlanOpts): DbStep[] 
       cmd: `umask 077 && mkdir -p -m 700 /root/directory-backups && docker exec ${db} pg_dump -U ${env.dbUser} -d ${env.dbName} -Fc > ${shq(backupFile)}`,
     },
   ]
-  if (worker) steps.push({ label: 'stop worker', where: 'remote', cmd: `docker stop ${worker}` })
+  steps.push({ label: 'stop worker', where: 'remote', cmd: `docker stop ${worker}` })
   steps.push({
     label: 'restore',
     where: 'remote',
     cmd: `docker exec -i ${db} pg_restore -U ${env.dbUser} -d ${env.dbName} ${RESTORE_FLAGS} < ${shq(remoteFile)}`,
   })
   steps.push({ label: 'migrate', where: 'remote', cmd: `docker exec ${web} sh -c 'cd /app/cli && npx payload migrate'` })
-  if (worker) steps.push({ label: 'start worker', where: 'remote', cmd: `docker start ${worker}` })
+  steps.push({ label: 'start worker', where: 'remote', cmd: `docker start ${worker}` })
   if (withMedia) {
     steps.push({
       label: 'sync media',

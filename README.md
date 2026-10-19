@@ -289,7 +289,7 @@ The seed queues a discover run, so the worker then refreshes every imported repo
 
 ### Database Copies (`db:pull` / `db:push`)
 
-`pnpm db:pull` replaces the local database with a copy of production. `pnpm db:push` does the reverse after a typed `production` confirmation and a fresh backup of the target: it stops the worker during the restore, migrates, and revalidates every page through `/api/revalidate` (falling back to clearing the Next data cache and restarting web if that call fails). Run both from the main checkout, not from a worktree: the local dump runs in the `docker-compose.dev.yml` compose project of the current directory.
+`pnpm db:pull` replaces the local database with a copy of production. `pnpm db:push` does the reverse after a typed `production` confirmation and a fresh backup of the target: it requires `DB_REMOTE_PRODUCTION_CONTAINER`, `DB_REMOTE_PRODUCTION_WEB_CONTAINER` and `DB_REMOTE_PRODUCTION_WORKER_CONTAINER`, always stops the worker during the restore, migrates, and revalidates every page through `/api/revalidate` (falling back to clearing the Next data cache and restarting web if that call fails). Run both from the main checkout, not from a worktree: the local dump runs in the `docker-compose.dev.yml` compose project of the current directory.
 
 ### Path Aliases
 
