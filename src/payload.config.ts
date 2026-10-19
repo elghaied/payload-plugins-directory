@@ -49,7 +49,7 @@ export default buildConfig({
   queryPresets: { access: { read: isAdmin, create: isAdmin, update: isAdmin, delete: isAdmin }, constraints: {} },
   endpoints: [healthEndpoint],
   jobs: jobsConfig,
-  cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand', 'seed-taxonomy': './cli/taxonomy.js#seedTaxonomyCommand' } },
+  cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand', 'seed-taxonomy': './cli/taxonomy.js#seedTaxonomyCommand', enrich: './cli/enrich.js#enrichCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',
   // Runtime value (SERVER_URL): Payload derives CSRF/CORS allowed origins from it.
   serverURL: getServerURL(),

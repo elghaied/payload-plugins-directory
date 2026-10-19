@@ -18,6 +18,7 @@
     "test:int": "vitest run --project int",
     "db:pull": "tsx --env-file=.env scripts/db/run.ts pull",
     "db:push": "tsx --env-file=.env scripts/db/run.ts push",
+    "enrich:preview": "payload enrich --mode preview",
     "parity": "tsx scripts/parity.ts"
   },
   "dependencies": {
