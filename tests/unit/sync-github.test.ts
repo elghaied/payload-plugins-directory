@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createGitHubClient } from '@/sync/github'
+import { createGitHubClient, InvalidGitHubPathError } from '@/sync/github'
 import { HttpError, RateLimitError } from '@/sync/http'
 import { fakeFetch } from '../helpers/fakeFetch'
-import { contents, dirEntry, ghRepo, json, raw, repoById, repoByName, searchPage, searchResult } from '../fixtures/sync/github'
+import { API, RAW, contents, dirEntry, ghRepo, json, raw, repoById, repoByName, searchPage, searchResult } from '../fixtures/sync/github'
 
 const now = () => new Date('2026-10-19T12:00:00Z')
 const coreQuota = { 'x-ratelimit-resource': 'core', 'x-ratelimit-remaining': '4990', 'x-ratelimit-limit': '5000', 'x-ratelimit-reset': '1792411200' }
@@ -87,5 +87,63 @@ describe('getRawFile', () => {
     expect(f.calls[0].init).toBeUndefined()
     expect(await gh.getRawFile('acme/seo', 'main', 'README.md')).toBeNull()
     await expect(gh.getRawFile('acme/seo', 'main', 'LICENSE')).rejects.toBeInstanceOf(HttpError)
+  })
+})
+
+describe('path validation', () => {
+  it('rejects traversal in dir and path without fetching', async () => {
+    const f = fakeFetch({})
+    const gh = createGitHubClient({ fetch: f, token: 't', now })
+    for (const dir of ['../../user', '/abs', 'a//b', 'a/./b', 'a\\b', '%2e%2e/x', 'a/\u0000', '']) {
+      await expect(gh.listDirectory('acme/x', dir, 'main')).rejects.toBeInstanceOf(InvalidGitHubPathError)
+    }
+    await expect(gh.getRawFile('acme/x', 'main', '../../../etc')).rejects.toBeInstanceOf(InvalidGitHubPathError)
+    expect(f.calls).toHaveLength(0)
+  })
+
+  it('rejects malformed full names', async () => {
+    const f = fakeFetch({})
+    const gh = createGitHubClient({ fetch: f, now })
+    for (const name of ['acme/../x', 'acme', 'a/b/c', 'acme/..', '-a/b']) {
+      await expect(gh.getRepo({ fullName: name })).rejects.toBeInstanceOf(InvalidGitHubPathError)
+      await expect(gh.listDirectory(name, 'packages', 'main')).rejects.toBeInstanceOf(InvalidGitHubPathError)
+      await expect(gh.getRawFile(name, 'main', 'package.json')).rejects.toBeInstanceOf(InvalidGitHubPathError)
+    }
+    expect(f.calls).toHaveLength(0)
+  })
+
+  it('builds expected URLs for normal input and encodes refs', async () => {
+    const f = fakeFetch({
+      [contents('acme/x', 'packages/plugin-seo')]: json([]),
+      [raw('acme/x', 'package.json')]: { text: '{}' },
+      [`${API}/repos/acme/x/contents/packages?ref=release%2Fv2`]: json([]),
+      [`${RAW}/acme/x/release%2Fv2/package.json`]: { text: '{}' },
+    })
+    const gh = createGitHubClient({ fetch: f, now })
+    await gh.listDirectory('acme/x', 'packages/plugin-seo', 'main')
+    await gh.getRawFile('acme/x', 'main', 'package.json')
+    await gh.listDirectory('acme/x', 'packages', 'release/v2')
+    await gh.getRawFile('acme/x', 'release/v2', 'package.json')
+    expect(f.calls).toHaveLength(4)
+  })
+})
+
+describe('hardening', () => {
+  it('treats a missing items array as the end of results', async () => {
+    const f = fakeFetch({ [searchPage(1)]: json({ total_count: 0 }) })
+    const result = await createGitHubClient({ fetch: f, now }).searchTopicRepos()
+    expect(result.repos).toEqual([])
+  })
+
+  it('maps a secondary rate limit 403 to RateLimitError at now+60s', async () => {
+    const f = fakeFetch({ [repoById(7)]: { status: 403, text: 'You have exceeded a Secondary Rate Limit.' } })
+    const err = await createGitHubClient({ fetch: f, now }).getRepo({ githubId: 7, fullName: 'acme/seo' }).catch((e) => e)
+    expect(err).toBeInstanceOf(RateLimitError)
+    expect(err.resetAt.toISOString()).toBe('2026-10-19T12:01:00.000Z')
+  })
+
+  it('keeps a plain 403 an HttpError', async () => {
+    const f = fakeFetch({ [repoById(7)]: { status: 403, text: 'Forbidden' } })
+    await expect(createGitHubClient({ fetch: f, now }).getRepo({ githubId: 7, fullName: 'acme/seo' })).rejects.toBeInstanceOf(HttpError)
   })
 })

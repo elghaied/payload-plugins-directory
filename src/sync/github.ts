@@ -40,6 +40,46 @@ export interface GitHubClient {
   readonly quota: GitHubQuota | null
 }
 
+/** Untrusted repo name, directory, file path or ref (they come from search results and other repos' package.json). */
+export class InvalidGitHubPathError extends Error {
+  constructor(what: string, value: string) {
+    super(`Invalid GitHub ${what}: ${JSON.stringify(value)}`)
+    this.name = 'InvalidGitHubPathError'
+  }
+}
+
+const FULL_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9._-]{1,100}$/
+const CONTROL = /[\u0000-\u001f\u007f]/
+
+function checkFullName(fullName: string): string {
+  if (!FULL_NAME.test(fullName)) throw new InvalidGitHubPathError('repository name', fullName)
+  const repo = fullName.split('/')[1]
+  if (repo === '.' || repo === '..') throw new InvalidGitHubPathError('repository name', fullName)
+  return fullName
+}
+
+/** Validates a repo-relative path and encodes it per segment. */
+function encodePath(path: string, what: string): string {
+  if (!path || path.startsWith('/') || path.includes('\\') || path.includes('%') || CONTROL.test(path)) {
+    throw new InvalidGitHubPathError(what, path)
+  }
+  const segments = path.split('/')
+  if (segments.some((seg) => seg === '' || seg === '.' || seg === '..')) throw new InvalidGitHubPathError(what, path)
+  return segments.map(encodeURIComponent).join('/')
+}
+
+function encodeRef(ref: string): string {
+  if (!ref || ref === '.' || ref === '..' || ref.includes('\\') || CONTROL.test(ref)) throw new InvalidGitHubPathError('ref', ref)
+  return encodeURIComponent(ref)
+}
+
+/** Final guard: the URL must stay on the expected host and under the expected path prefix. */
+function assertUrl(url: string, origin: string, prefix: string): string {
+  const u = new URL(url)
+  if (u.origin !== origin || !u.pathname.startsWith(prefix)) throw new InvalidGitHubPathError('URL', url)
+  return url
+}
+
 export const GITHUB_API = 'https://api.github.com'
 export const GITHUB_RAW = 'https://raw.githubusercontent.com'
 const SEARCH_CAP = 1000
@@ -70,6 +110,9 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
     if (headers) noteQuota(res)
     const resetAt = rateLimitResetAt(res, now())
     if (resetAt) throw new RateLimitError('github', resetAt)
+    if (res.status === 403 && /secondary rate limit/i.test(await res.text().catch(() => ''))) {
+      throw new RateLimitError('github', new Date(now().getTime() + 60_000))
+    }
     if (res.status === 404) return null
     if (!res.ok) throw new HttpError(res.status, url)
     return res
@@ -89,8 +132,9 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
         const url = `${GITHUB_API}/search/repositories?${SEARCH_QUERY}&per_page=${PER_PAGE}&page=${page}`
         const res = await request(url, apiHeaders)
         if (!res) throw new HttpError(404, url)
-        const body = (await res.json()) as { total_count: number; incomplete_results: boolean; items: GitHubRepo[] }
-        if (page === 1) totalCount = body.total_count
+        const body = (await res.json()) as { total_count?: number; incomplete_results?: boolean; items?: GitHubRepo[] }
+        if (!Array.isArray(body.items)) break
+        if (page === 1) totalCount = body.total_count ?? 0
         if (body.incomplete_results) complete = false
         // Results are sorted by "updated", so a repo can move between pages mid-pagination: dedupe by id.
         for (const repo of body.items) byId.set(repo.id, repo)
@@ -102,20 +146,31 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
     },
 
     async getRepo({ githubId, fullName }) {
-      const url = githubId ? `${GITHUB_API}/repositories/${githubId}` : `${GITHUB_API}/repos/${fullName}`
+      const url = githubId
+        ? `${GITHUB_API}/repositories/${Number(githubId)}`
+        : assertUrl(`${GITHUB_API}/repos/${checkFullName(fullName)}`, GITHUB_API, '/repos/')
       const res = await request(url, apiHeaders)
       return res ? ((await res.json()) as GitHubRepo) : null
     },
 
     async listDirectory(fullName, dir, ref) {
-      const res = await request(`${GITHUB_API}/repos/${fullName}/contents/${dir}?ref=${encodeURIComponent(ref)}`, apiHeaders)
+      checkFullName(fullName)
+      const url = assertUrl(
+        `${GITHUB_API}/repos/${fullName}/contents/${encodePath(dir, 'directory')}?ref=${encodeRef(ref)}`,
+        GITHUB_API,
+        `/repos/${fullName}/contents/`,
+      )
+      const res = await request(url, apiHeaders)
       if (!res) return null
       const body: unknown = await res.json()
       return Array.isArray(body) ? (body as GitHubContent[]) : null
     },
 
     async getRawFile(fullName, ref, path) {
-      const res = await request(`${GITHUB_RAW}/${fullName}/${ref}/${path}`)
+      checkFullName(fullName)
+      const encRef = encodeRef(ref)
+      const url = assertUrl(`${GITHUB_RAW}/${fullName}/${encRef}/${encodePath(path, 'path')}`, GITHUB_RAW, `/${fullName}/${encRef}/`)
+      const res = await request(url)
       return res ? res.text() : null
     },
   }
