@@ -1,6 +1,7 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
+import { lockAdminEditedAiFields } from '@/enrich/locks'
 
 export const listedPluginsWhere: Where = {
   and: [{ visibility: { equals: 'listed' } }, { deletedAt: { exists: false } }],
@@ -34,6 +35,7 @@ export const Plugins: CollectionConfig = {
         if (Boolean(data.deletedAt) !== Boolean(originalDoc?.deletedAt)) data.syncTrashReason = null
         return data
       },
+      lockAdminEditedAiFields,
     ],
   },
   fields: [
