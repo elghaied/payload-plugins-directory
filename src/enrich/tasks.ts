@@ -1,21 +1,34 @@
 import { JobCancelledError, type Payload, type TaskConfig } from 'payload'
 import { getEnrichClient, getSyncDeps } from '@/sync/deps'
+import { RateLimitError } from '@/sync/http'
 import { QUEUES } from '@/sync/queues'
 import { queueRevalidate, track } from '@/sync/taskKit'
 import { BATCH_POLL_MS, cancelBatchQuietly, clearInflight, runEnrichAll, runEnrichBatch, type EnrichBatchInput } from './batch'
+import { classifyAnthropicError } from './client'
 import { runEnrich } from './enrichPlugin'
 import { queueEnrich } from './queue'
 import type { EnrichClient } from './types'
 
+/** Without an API key a submitted (paid) batch is polled hourly, so its results are collected once the key returns. */
+export const NO_KEY_POLL_MS = 3_600_000
+
 /** A fresh poll job, not a retry: a running batch never uses up enrich-batch's retries (like Phase 1's rate-limit re-queue). */
-async function queueEnrichBatch(payload: Payload, input: EnrichBatchInput, now: Date): Promise<void> {
-  await payload.jobs.queue({
-    task: 'enrich-batch',
-    input,
-    queue: QUEUES.default,
-    waitUntil: new Date(now.getTime() + BATCH_POLL_MS),
-    overrideAccess: true,
-  })
+async function queueEnrichBatch(payload: Payload, input: EnrichBatchInput, waitUntil: Date): Promise<void> {
+  await payload.jobs.queue({ task: 'enrich-batch', input, queue: QUEUES.default, waitUntil, overrideAccess: true })
+}
+
+/**
+ * A transient Anthropic error (429, 5xx, overloaded) that says when to come back (retry-after) becomes a RateLimitError,
+ * so `track` re-queues the job at that time instead of using a retry (Phase 1 pattern). Anything else propagates.
+ */
+async function honourRetryAfter<T>(now: Date, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run()
+  } catch (err) {
+    const c = classifyAnthropicError(err, now)
+    if (c.kind === 'transient' && c.retryAt) throw new RateLimitError('anthropic', c.retryAt)
+    throw err
+  }
 }
 
 const usageFields = [
@@ -35,17 +48,24 @@ const enrichTask: TaskConfig<'enrich'> = {
   handler: async ({ input, req }) => {
     const { payload } = req
     const deps = getSyncDeps()
-    const output = await track(payload, 'enrich', deps.now(), async () => {
-      const r = await runEnrich(payload, input.pluginId, getEnrichClient(deps), deps.now)
-      await queueRevalidate(payload, r.revalidateTags)
-      return {
-        status: r.status,
-        ...(r.reason ? { reason: r.reason } : {}),
-        inputTokens: r.usage.input,
-        outputTokens: r.usage.output,
-        cacheReadTokens: r.usage.cacheRead,
-      }
-    })
+    const at = deps.now()
+    const output = await track(
+      payload,
+      'enrich',
+      at,
+      async () => {
+        const r = await honourRetryAfter(at, () => runEnrich(payload, input.pluginId, getEnrichClient(deps), deps.now))
+        await queueRevalidate(payload, r.revalidateTags)
+        return {
+          status: r.status,
+          ...(r.reason ? { reason: r.reason } : {}),
+          inputTokens: r.usage.input,
+          outputTokens: r.usage.output,
+          cacheReadTokens: r.usage.cacheRead,
+        }
+      },
+      (err) => payload.jobs.queue({ task: 'enrich', input, queue: QUEUES.enrich, waitUntil: err.resetAt, overrideAccess: true }),
+    )
     return { output }
   },
 }
@@ -74,7 +94,7 @@ const enrichAllTask: TaskConfig<'enrich-all'> = {
       const r = await runEnrichAll(payload, getEnrichClient(deps), at, { force: Boolean(input?.force) })
       const queued = await queueEnrich(payload, r.direct)
       // Same run: the poller exists as soon as the batch does (the in-flight marker covers a crash in between).
-      if (r.batch) await queueEnrichBatch(payload, r.batch, at)
+      if (r.batch) await queueEnrichBatch(payload, r.batch, new Date(at.getTime() + BATCH_POLL_MS))
       return {
         status: r.status,
         stale: r.stale,
@@ -135,22 +155,30 @@ const enrichBatchTask: TaskConfig<'enrich-batch'> = {
     const at = deps.now()
     const batch = input as unknown as EnrichBatchInput
     try {
-      const output = await track(payload, 'enrich-batch', at, async () => {
-        const r = await runEnrichBatch(payload, client, batch, at)
-        // Still running: poll again later as a fresh job. `not-found` / `stale-prompt` / `cancelled` cleared the marker.
-        if (r.status === 'processing') await queueEnrichBatch(payload, batch, at)
-        const retried = await queueEnrich(payload, r.retryDirect)
-        await queueRevalidate(payload, r.revalidateTags)
-        return {
-          status: r.status,
-          applied: r.applied,
-          failed: r.failed,
-          retried,
-          inputTokens: r.usage.input,
-          outputTokens: r.usage.output,
-          cacheReadTokens: r.usage.cacheRead,
-        }
-      })
+      const output = await track(
+        payload,
+        'enrich-batch',
+        at,
+        async () => {
+          const r = await honourRetryAfter(at, () => runEnrichBatch(payload, client, batch, at))
+          // Still running: poll again later as a fresh job. `not-found` / `stale-prompt` / `cancelled` cleared the marker.
+          if (r.status === 'processing') await queueEnrichBatch(payload, batch, new Date(at.getTime() + BATCH_POLL_MS))
+          // No key: the batch (already paid) stays; poll hourly so its results are collected once the key returns.
+          if (r.status === 'no-api-key') await queueEnrichBatch(payload, batch, new Date(at.getTime() + NO_KEY_POLL_MS))
+          const retried = await queueEnrich(payload, r.retryDirect)
+          await queueRevalidate(payload, r.revalidateTags)
+          return {
+            status: r.status,
+            applied: r.applied,
+            failed: r.failed,
+            retried,
+            inputTokens: r.usage.input,
+            outputTokens: r.usage.output,
+            cacheReadTokens: r.usage.cacheRead,
+          }
+        },
+        (err) => queueEnrichBatch(payload, batch, err.resetAt),
+      )
       return { output }
     } catch (err) {
       // Cancelled (permanent error) or out of retries: no later run will collect this batch.

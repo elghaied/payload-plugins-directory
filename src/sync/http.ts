@@ -16,7 +16,7 @@ export function withTimeout(fetch: FetchFn, ms: number = FETCH_TIMEOUT_MS): Fetc
   }
 }
 
-export type RateLimitSource = 'github' | 'npm'
+export type RateLimitSource = 'github' | 'npm' | 'anthropic'
 
 /** GitHub or npm said "slow down". Tasks re-queue themselves with `waitUntil` = `resetAt` instead of failing. */
 export class RateLimitError extends Error {

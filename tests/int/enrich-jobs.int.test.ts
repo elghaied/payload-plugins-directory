@@ -4,6 +4,9 @@ import Anthropic from '@anthropic-ai/sdk'
 import { eq } from '@payloadcms/db-postgres/drizzle'
 import { jobStatus } from '@/db/jobStatus'
 import { BATCH_POLL_MS, readInflight, runEnrichAll } from '@/enrich/batch'
+import { failureKey, loadEnrichContext } from '@/enrich/context'
+import { queueEnrichForChanged } from '@/enrich/queue'
+import { NO_KEY_POLL_MS } from '@/enrich/tasks'
 import { setSyncDeps } from '@/sync/deps'
 import { fakeEnrichClient, okMessage, type FakeEnrichClient } from '../helpers/fakeEnrichClient'
 import { fakeFetch, type FakeRoute } from '../helpers/fakeFetch'
@@ -191,5 +194,72 @@ describe('enrich jobs through payload.jobs', () => {
     expect(job).toMatchObject({ hasError: true, error: { cancelled: true } })
     expect(fake.batches.get(batch!.batchId)!.cancelled).toBe(true)
     expect(await readInflight(payload)).toBeNull()
+  })
+
+  it('sync does not re-queue a previously enriched plugin whose current input already failed; new content is queued', async () => {
+    const repo = await createRepo(payload)
+    const p = await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })
+    const { fingerprint } = await loadEnrichContext(payload)
+    await payload.update({
+      collection: 'plugins', id: p.id, overrideAccess: true,
+      data: { ai: { enrichedAt: LATER.toISOString(), enrichedHash: 'h0', failedKey: failureKey('h1', fingerprint) } },
+    })
+    expect(await queueEnrichForChanged(payload, [p.id])).toBe(0)
+    expect(await jobsOf('enrich')).toEqual([])
+
+    await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { contentHash: 'h2' } })
+    expect(await queueEnrichForChanged(payload, [p.id])).toBe(1)
+    expect((await jobsOf('enrich')).map((j) => j.input)).toEqual([{ pluginId: p.id }])
+  })
+
+  it('enrich-batch without an API key polls again in an hour instead of dropping the paid batch', async () => {
+    const repo = await createRepo(payload)
+    await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })
+    const fake = fakeEnrichClient()
+    const { batch } = await runEnrichAll(payload, fake, LATER, { batchMin: 1 })
+    setDeps(null)
+    await payload.jobs.queue({ task: 'enrich-batch', input: batch!, queue: 'default', overrideAccess: true })
+    await payload.jobs.run({ queue: 'default', overrideAccess: true })
+    const pending = await jobsOf('enrich-batch')
+    expect(pending).toHaveLength(1)
+    expect(pending[0]).toMatchObject({ input: batch, totalTried: 0, waitUntil: new Date(LATER.getTime() + NO_KEY_POLL_MS).toISOString() })
+    expect(NO_KEY_POLL_MS).toBe(3_600_000)
+    expect(await status('enrich-batch')).toMatchObject({ details: { status: 'no-api-key' } })
+    expect(await readInflight(payload)).toMatchObject({ batchId: batch!.batchId })
+  })
+
+  it('an Anthropic rate limit with retry-after re-queues enrich at that time without using a retry', async () => {
+    const repo = await createRepo(payload)
+    const p = await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })
+    setDeps(fakeEnrichClient(() => {
+      throw Anthropic.APIError.generate(429, { error: { type: 'rate_limit_error', message: 'slow down' } }, 'slow down', new Headers({ 'retry-after': '30' }))
+    }))
+    await payload.jobs.queue({ task: 'enrich', input: { pluginId: p.id }, queue: 'enrich', overrideAccess: true })
+    await payload.jobs.run({ queue: 'enrich', overrideAccess: true })
+    const jobs = await jobsOf('enrich')
+    expect(jobs).toHaveLength(1)
+    expect(jobs[0]).toMatchObject({ input: { pluginId: p.id }, totalTried: 0, hasError: false })
+    expect(jobs[0].waitUntil).toBe(new Date(LATER.getTime() + 30_000).toISOString())
+    expect(await status('enrich')).toMatchObject({ details: { status: 'rate-limited' } })
+  })
+
+  it('an overloaded API with retry-after-ms re-queues enrich-batch at that time without using a retry', async () => {
+    const repo = await createRepo(payload)
+    await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })
+    const fake = fakeEnrichClient()
+    const { batch } = await runEnrichAll(payload, fake, LATER, { batchMin: 1 })
+    setDeps({
+      ...fake,
+      retrieveBatch: async () => {
+        throw Anthropic.APIError.generate(529, { error: { type: 'overloaded_error', message: 'busy' } }, 'busy', new Headers({ 'retry-after-ms': '90000' }))
+      },
+    })
+    await payload.jobs.queue({ task: 'enrich-batch', input: batch!, queue: 'default', overrideAccess: true })
+    await payload.jobs.run({ queue: 'default', overrideAccess: true })
+    const pending = await jobsOf('enrich-batch')
+    expect(pending).toHaveLength(1)
+    expect(pending[0]).toMatchObject({ input: batch, totalTried: 0, waitUntil: new Date(LATER.getTime() + 90_000).toISOString() })
+    expect(fake.batches.get(batch!.batchId)!.cancelled).toBe(false)
+    expect(await readInflight(payload)).toMatchObject({ batchId: batch!.batchId })
   })
 })

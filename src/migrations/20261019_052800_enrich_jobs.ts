@@ -14,6 +14,11 @@ export async function up({ db, payload, req }: MigrateUpArgs): Promise<void> {
 }
 
 export async function down({ db, payload, req }: MigrateDownArgs): Promise<void> {
+  // Rows using the enrich slugs cannot be cast back to the old enums: delete them first (log rows, then their jobs).
+  await db.execute(sql`
+   DELETE FROM "payload_jobs_log" WHERE "task_slug"::text IN ('enrich', 'enrich-all', 'enrich-batch')
+     OR "parent_task_slug"::text IN ('enrich', 'enrich-all', 'enrich-batch');
+  DELETE FROM "payload_jobs" WHERE "task_slug"::text IN ('enrich', 'enrich-all', 'enrich-batch');`)
   await db.execute(sql`
    ALTER TABLE "payload_jobs_log" ALTER COLUMN "task_slug" SET DATA TYPE text;
   DROP TYPE "public"."enum_payload_jobs_log_task_slug";
