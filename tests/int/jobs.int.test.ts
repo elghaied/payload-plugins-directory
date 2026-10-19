@@ -67,6 +67,16 @@ describe('sync jobs through payload.jobs', () => {
     expect(job.totalTried).toBe(1)
   })
 
+  it('treats a request timeout as transient: the job is left for a retry', async () => {
+    useFetch({ [REVALIDATE_URL]: () => { throw new DOMException('The operation was aborted due to timeout', 'TimeoutError') } })
+    await payload.jobs.queue({ task: 'revalidate', input: { tags: ['plugins'] }, queue: 'default', overrideAccess: true })
+    await runQueue('default')
+    expect(await status('revalidate')).toMatchObject({ lastFailureAt: NOW, lastError: expect.stringContaining('timeout') })
+    const [job] = await jobsOf('revalidate')
+    expect(job.hasError ?? false).toBe(false) // retries remain
+    expect(job.totalTried).toBe(1)
+  })
+
   it('a sync-repository job queues npm-stats for new plugins and one revalidate', async () => {
     useFetch({
       [repoById(7)]: json(ghRepo(7, 'acme/payload-seo')),

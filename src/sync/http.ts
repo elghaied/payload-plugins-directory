@@ -1,6 +1,21 @@
 /** The only way sync code reaches the network: injected so tests can pass a fake. */
 export type FetchFn = (input: string, init?: RequestInit) => Promise<Response>
 
+/** Upper bound for one sync HTTP request, response body included. */
+export const FETCH_TIMEOUT_MS = 30_000
+
+/**
+ * Gives every request a deadline (combined with the caller's own signal, if any). A timeout rejects with a
+ * `TimeoutError` DOMException, which tasks treat as transient: the job is retried, and npm-stats keeps the
+ * package's previous data.
+ */
+export function withTimeout(fetch: FetchFn, ms: number = FETCH_TIMEOUT_MS): FetchFn {
+  return (input, init) => {
+    const timeout = AbortSignal.timeout(ms)
+    return fetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout })
+  }
+}
+
 export type RateLimitSource = 'github' | 'npm'
 
 /** GitHub or npm said "slow down". Tasks re-queue themselves with `waitUntil` = `resetAt` instead of failing. */

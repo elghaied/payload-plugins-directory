@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { HttpError, RateLimitError, rateLimitResetAt } from '@/sync/http'
+import { getSyncDeps, setSyncDeps } from '@/sync/deps'
+import { HttpError, RateLimitError, rateLimitResetAt, withTimeout, type FetchFn } from '@/sync/http'
 import { fakeFetch } from '../helpers/fakeFetch'
 
 const now = new Date('2026-10-19T12:00:00Z')
@@ -56,5 +57,32 @@ describe('fakeFetch', () => {
 describe('global network guard', () => {
   it('blocks the real fetch in tests', async () => {
     await expect(fetch('https://example.com')).rejects.toThrow(/Network access is disabled/)
+  })
+})
+
+describe('withTimeout', () => {
+  const hangs: FetchFn = (_url, init) =>
+    new Promise((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(init.signal!.reason)))
+
+  it('rejects a request that outlives the deadline with a TimeoutError', async () => {
+    const err = await withTimeout(hangs, 10)('https://example.test/').catch((e: unknown) => e)
+    expect((err as Error).name).toBe('TimeoutError')
+  })
+  it('keeps the caller signal working alongside the deadline', async () => {
+    const ctl = new AbortController()
+    const pending = withTimeout(hangs, 60_000)('https://example.test/', { signal: ctl.signal }).catch((e: unknown) => e)
+    ctl.abort(new Error('caller aborted'))
+    expect(((await pending) as Error).message).toBe('caller aborted')
+  })
+  it('is applied to every sync fetch, overrides included', async () => {
+    const f = fakeFetch({ 'https://example.test/': { text: 'ok' } })
+    setSyncDeps({ fetch: f })
+    try {
+      await getSyncDeps().fetch('https://example.test/', { method: 'POST' })
+    } finally {
+      setSyncDeps(null)
+    }
+    expect(f.calls[0].init?.signal).toBeInstanceOf(AbortSignal)
+    expect(f.calls[0].init?.method).toBe('POST')
   })
 })
