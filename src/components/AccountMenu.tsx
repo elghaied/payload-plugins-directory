@@ -20,7 +20,7 @@ const TRIGGER =
   "flex items-center justify-center h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/50 ring-1 ring-border overflow-hidden transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 const SIGNED_OUT_TRIGGER =
-  "flex items-center justify-center gap-1.5 h-8 w-8 sm:w-auto sm:px-3 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/50 ring-1 ring-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "flex items-center justify-center gap-1.5 h-8 w-8 md:w-auto md:px-3 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/50 ring-1 ring-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 const PLACEHOLDER = <div className="h-8 w-8 shrink-0" aria-hidden />
 
@@ -85,7 +85,7 @@ export function AccountMenuView({
           ) : (
             <>
               <LogIn className="h-4 w-4" />
-              <span className="hidden sm:inline text-sm font-medium">Sign in</span>
+              <span className="hidden md:inline text-sm font-medium">Sign in</span>
             </>
           )}
         </DropdownMenuTrigger>

@@ -52,6 +52,9 @@ describe('AccountMenuView session states', () => {
     expect(out).toContain('aria-label="Sign in"')
     expect(out).toContain('Sign in')
     expect(out).not.toContain('<form')
+    // The text pill only appears from md: at 640px it overflowed the navbar (found in the phase 4 smoke).
+    expect(out).toContain('md:inline')
+    expect(out).not.toContain('sm:inline')
   })
   it('signed in: trigger names the account and the logout form is present', () => {
     const out = html({ login: 'octo', avatarUrl: null })
