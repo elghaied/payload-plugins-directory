@@ -1,0 +1,58 @@
+# Production stack for Coolify (pasted into a Docker Compose resource; this file is the source of truth).
+#
+# `directory.env` labels let `pnpm db:push` verify it is about to overwrite the right environment
+# (Coolify container names are UUIDs). Give the separate Postgres resource the same label
+# (`directory.env=production`) or a container name containing the whole word "production".
+#
+# web     serves the site, /admin and /api; runs migrations on start.
+# worker  runs the sync jobs every minute (discover, sync-repository, npm-stats, snapshot, revalidate)
+#         and asks web to revalidate pages via INTERNAL_WEB_URL. Starts once web is healthy (migrated).
+#
+# EXACTLY ONE worker must run. Payload's handleSchedules is not locked across processes, so a second
+# worker (or jobs.autoRun enabled on the web process) would queue every scheduled job twice.
+# Never scale `worker` above 1 and never enable jobs.autoRun in payload.config.ts.
+services:
+  web:
+    image: ghcr.io/elghaied/payload-plugins-directory:latest
+    command: ['web']
+    labels:
+      directory.env: production
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      # Read at runtime (Payload serverURL / allowed origins, noindex decision).
+      # NEXT_PUBLIC_* values are inlined at build time, so they cannot configure a prebuilt image.
+      SERVER_URL: https://payloaddirectory.dev
+    volumes:
+      - media:/app/media
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+  worker:
+    # Same image, `worker` mode. No published ports and no HTTP healthcheck (it serves nothing).
+    image: ghcr.io/elghaied/payload-plugins-directory:latest
+    command: ['worker']
+    restart: unless-stopped
+    # SIGTERM (Coolify redeploy): the worker finishes its current batch (up to 45s) before exiting,
+    # so jobs are not left stuck in `processing`.
+    stop_grace_period: 60s
+    deploy:
+      replicas: 1
+    labels:
+      directory.env: production
+    depends_on:
+      web:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      SERVER_URL: https://payloaddirectory.dev
+      # The web service's internal address (revalidate jobs POST /api/revalidate here).
+      INTERNAL_WEB_URL: http://web:3000
+volumes:
+  media:

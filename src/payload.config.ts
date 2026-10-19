@@ -16,6 +16,7 @@ import { jobStatus } from './db/jobStatus'
 import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
 import { DirectorySettings } from './globals/DirectorySettings'
+import { runtimeEnvWarnings } from './lib/runtimeEnv'
 import { getServerURL } from './lib/serverUrl'
 import { jobsConfig } from './sync/tasks'
 
@@ -30,10 +31,15 @@ export default buildConfig({
   globals: [DirectorySettings],
   endpoints: [healthEndpoint],
   jobs: jobsConfig,
-  cli: { commands: { seed: './cli/seed.js#seedCommand' } },
+  cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',
   // Runtime value (SERVER_URL): Payload derives CSRF/CORS allowed origins from it.
   serverURL: getServerURL(),
+  // Silent production misconfigurations (wrong SERVER_URL noindexes the site) are logged at startup.
+  onInit: (payload) => {
+    const role = process.env.DIRECTORY_ROLE === 'worker' ? 'worker' : 'web'
+    for (const warning of runtimeEnvWarnings(process.env, role)) payload.logger.warn(warning)
+  },
   upload: { transformers: [sharpTransformer()] },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({

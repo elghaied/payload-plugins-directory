@@ -12,6 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "worker": "payload worker --cron \"* * * * *\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --project unit",
     "test:int": "vitest run --project int",

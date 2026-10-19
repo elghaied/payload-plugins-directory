@@ -252,7 +252,17 @@ The app runs at `http://localhost:3000` by default.
 | `pnpm build` | Create a production build |
 | `pnpm start` | Start the production server |
 | `pnpm lint` | Run ESLint |
+| `pnpm worker` | Run the sync worker locally (queues due schedules and runs jobs every minute) |
 | `pnpm fetch-plugins` | Manually refresh plugin data from the GitHub API |
+
+### Production Deployment (web + worker)
+
+`docker/compose.yml` defines two services from the same image: `web` (site, admin, API; runs migrations) and `worker` (`payload worker --cron "* * * * *"`: queues due schedules and runs the sync jobs).
+
+- **Run exactly ONE worker.** Payload's `handleSchedules` is not locked across processes, so a second worker would queue every scheduled job twice. Do not scale `worker` above 1.
+- **Never enable `jobs.autoRun` on the web process** for the same reason; the worker is the only scheduler.
+- The worker shuts down gracefully on SIGTERM (it finishes its current batch, up to 45s), so redeploys do not leave jobs stuck in `processing`.
+- At startup both processes log warnings (never secret values) for production misconfigurations: `SERVER_URL` unset or not `https://payloaddirectory.dev` (the site is served with `noindex`), `REVALIDATE_SECRET` unset or shorter than 32 characters, and, for the worker, `GITHUB_TOKEN` or `INTERNAL_WEB_URL` unset.
 
 ### Refreshing Plugin Data Locally
 

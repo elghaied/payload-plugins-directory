@@ -21,7 +21,7 @@ RUN addgroup -S -g 1001 nodejs && adduser -S -u 1001 -G nodejs nextjs && mkdir -
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-# Full sources + deps for the Payload CLI (migrate now, jobs:run in phase 1)
+# Full sources + deps for the Payload CLI (migrate, seed, worker)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./cli/node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json /app/tsconfig.json ./cli/
 COPY --from=builder --chown=nextjs:nodejs /app/src ./cli/src
