@@ -31,6 +31,9 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      # web runs migrations before it serves; failed checks during this window do not count, so a long
+      # migration does not mark web unhealthy (the worker waits for service_healthy).
+      start_period: 120s
   worker:
     # Same image, `worker` mode. No published ports and no HTTP healthcheck (it serves nothing).
     image: ghcr.io/elghaied/payload-plugins-directory:latest
