@@ -58,6 +58,8 @@ export type RecentRepo = {
 
 export type TrendingData = {
   today: Day
+  /** Latest snapshot day with data (stars or downloads); null when none. Pages say "Data as of <day>"; may be well before `today` if snapshots stopped. */
+  lastSnapshotDay: Day | null
   starsCoverage: Coverage
   downloadsCoverage: Coverage
   stars: StarMover[]
@@ -73,4 +75,9 @@ export type PluginTrends = {
   sharedRepository: { fullName: string; pluginCount: number } | null
 }
 
-export type EcosystemGrowth = { stars: Point[]; downloads: Point[] }
+export type EcosystemGrowth = {
+  stars: Point[]
+  downloads: Point[]
+  /** Latest day present in either series; null when both are empty. */
+  lastSnapshotDay: Day | null
+}

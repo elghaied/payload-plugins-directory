@@ -1,7 +1,8 @@
 /**
  * Cache tag vocabulary (spec §4.1). Every cached query carries LIST_TAG, so revalidating it is a full revalidation.
- * Today: summaries/meta carry `plugins`; detail pages carry `plugins` + `plugin:<slug>`. `home`, `stats`, `trending`
- * and `category:<slug>` are accepted now and attached by the phases that add those cached queries.
+ * Summaries/meta carry `plugins`; detail pages carry `plugins` + `plugin:<slug>`. The trend queries
+ * (src/lib/trends/queries.ts) carry `trending` (SNAPSHOT_TAGS[0]) or `stats` (SNAPSHOT_TAGS[1]) plus `plugins`, and
+ * per-plugin trends also `plugin:<slug>`. `home` and `category:<slug>` are accepted and attached by their own queries.
  */
 export const LIST_TAG = 'plugins'
 export const pluginTag = (slug: string): string => `plugin:${slug}`
