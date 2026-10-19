@@ -6,6 +6,7 @@ export const MESSAGES = {
   unavailable: 'This repository is already known to the directory and cannot be submitted again.',
   pending: 'This plugin has already been submitted and is awaiting review.',
   tooMany: `You have ${MAX_PENDING_PER_MAINTAINER} requests awaiting review. Please wait until some are reviewed.`,
+  submitFailed: 'Something went wrong while saving your submission. Please try again in a moment.',
   claimNotListed: 'A claim must reference a listed plugin.',
   alreadyMaintainer: 'You already maintain this plugin.',
   claimPending: 'You already have a pending claim for this plugin.',
