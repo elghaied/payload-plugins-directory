@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { createPayloadRequest, Forbidden, ValidationError, type Payload } from 'payload'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { createPayloadRequest, Forbidden, NotFound, ValidationError, type Payload } from 'payload'
 import type { Maintainer } from '@/payload-types'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
@@ -250,35 +250,52 @@ describe('submissions', () => {
 })
 
 describe('maintainers (self access)', () => {
+  let asAdmin: never
+  let adminUserId: number
+  beforeAll(async () => {
+    const adminUser = await payload.create({
+      collection: 'users',
+      overrideAccess: true,
+      data: { email: 'self-access-admin@example.com', password: 'a-long-test-password-123' },
+    })
+    adminUserId = adminUser.id
+    asAdmin = { ...adminUser, collection: 'users' } as never
+  })
+  // Every test starts from the same maintainer state, whatever ran before it.
+  beforeEach(async () => {
+    for (const [id, githubId, login] of [[maintainerA.id, 42, 'octo'], [maintainerB.id, 43, 'other']] as const) {
+      await payload.update({
+        collection: 'maintainers',
+        id,
+        overrideAccess: true,
+        data: { githubId, login, name: null, avatarUrl: null, blocked: false, sessionsValidAfter: null },
+      })
+    }
+  })
+
   it('a maintainer reads only themselves', async () => {
     const res = await payload.find({ collection: 'maintainers', overrideAccess: false, user: maintainerA })
     expect(res.docs.map((d) => d.id)).toEqual([maintainerA.id])
   })
-  it('a maintainer cannot change their identity fields', async () => {
-    await payload.update({
-      collection: 'maintainers',
-      id: maintainerA.id,
-      overrideAccess: false,
-      user: maintainerA,
-      data: { login: 'renamed', githubId: 1, name: 'Mallory', avatarUrl: 'https://evil.example/a.png' },
-    })
+  // Maintainer self-update is denied outright until a self-editable field exists: an update that changes
+  // nothing editable would still re-stamp updatedBy. Identity and moderation fields are therefore unreachable.
+  it('a maintainer cannot update their own document (identity and moderation fields stay put)', async () => {
+    await expect(
+      payload.update({
+        collection: 'maintainers',
+        id: maintainerA.id,
+        overrideAccess: false,
+        user: maintainerA,
+        data: { login: 'renamed', githubId: 1, name: 'Mallory', avatarUrl: 'https://evil.example/a.png', blocked: true, sessionsValidAfter: new Date(0).toISOString() },
+      }),
+    ).rejects.toThrow(Forbidden)
     const stored = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: true })
-    expect(stored).toMatchObject({ login: 'octo', githubId: 42 })
+    expect(stored).toMatchObject({ login: 'octo', githubId: 42, blocked: false })
     expect(stored.name ?? null).toBeNull()
     expect(stored.avatarUrl ?? null).toBeNull()
-  })
-  it('a maintainer cannot write or read the moderation fields', async () => {
-    const past = new Date(0).toISOString()
-    await payload.update({
-      collection: 'maintainers',
-      id: maintainerA.id,
-      overrideAccess: false,
-      user: maintainerA,
-      data: { blocked: true, sessionsValidAfter: past },
-    })
-    const stored = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: true })
-    expect(stored.blocked).toBe(false)
     expect(stored.sessionsValidAfter ?? null).toBeNull()
+  })
+  it('a maintainer cannot read the moderation fields of their own document', async () => {
     const self = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: maintainerA })
     expect(self).not.toHaveProperty('blocked')
     expect(self).not.toHaveProperty('sessionsValidAfter')
@@ -286,18 +303,20 @@ describe('maintainers (self access)', () => {
   it('a maintainer cannot read another maintainer', async () => {
     await expect(
       payload.findByID({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA }),
-    ).rejects.toThrow()
+    ).rejects.toThrow(NotFound)
   })
   it('a maintainer cannot update another maintainer', async () => {
     await expect(
       payload.update({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA, data: {} }),
-    ).rejects.toThrow()
+    ).rejects.toThrow(Forbidden)
   })
   it('a maintainer cannot create or delete maintainers', async () => {
     await expect(
       payload.create({ collection: 'maintainers', overrideAccess: false, user: maintainerA, data: { githubId: 77, login: 'x' } }),
     ).rejects.toThrow(Forbidden)
-    await expect(payload.delete({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA })).rejects.toThrow()
+    await expect(
+      payload.delete({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: maintainerA }),
+    ).rejects.toThrow(Forbidden)
   })
   it('a maintainer has no admin-panel access', async () => {
     const config = payload.config.collections.find((c) => c.slug === 'maintainers')!
@@ -305,12 +324,6 @@ describe('maintainers (self access)', () => {
     expect(await access({ req: { user: maintainerA, payload } } as never)).toBe(false)
   })
   it('admin users keep full access, including the moderation fields', async () => {
-    const adminUser = await payload.create({
-      collection: 'users',
-      overrideAccess: true,
-      data: { email: 'self-access-admin@example.com', password: 'a-long-test-password-123' },
-    })
-    const asAdmin = { ...adminUser, collection: 'users' } as never
     const all = await payload.find({ collection: 'maintainers', overrideAccess: false, user: asAdmin })
     expect(all.docs.map((d) => d.id)).toEqual(expect.arrayContaining([maintainerA.id, maintainerB.id]))
     const updated = await payload.update({
@@ -321,18 +334,11 @@ describe('maintainers (self access)', () => {
       data: { blocked: true },
     })
     expect(updated.blocked).toBe(true)
-    await payload.update({ collection: 'maintainers', id: maintainerB.id, overrideAccess: false, user: asAdmin, data: { blocked: false } })
   })
   it('authorship is admin-only: stamped by an admin edit, never visible to the maintainer', async () => {
-    const adminUser = await payload.create({
-      collection: 'users',
-      overrideAccess: true,
-      data: { email: 'authorship-admin@example.com', password: 'a-long-test-password-123' },
-    })
-    const asAdmin = { ...adminUser, collection: 'users' } as never
     await payload.update({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: asAdmin, data: { name: 'Octo Cat' } })
     const forAdmin = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: asAdmin, depth: 0 })
-    expect(forAdmin).toHaveProperty('updatedBy')
+    expect(forAdmin.updatedBy).toEqual({ relationTo: 'users', value: adminUserId })
     const self = await payload.findByID({ collection: 'maintainers', id: maintainerA.id, overrideAccess: false, user: maintainerA })
     expect(self.name).toBe('Octo Cat')
     expect(self).not.toHaveProperty('createdBy')

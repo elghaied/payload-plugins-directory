@@ -1,8 +1,8 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Payload } from 'payload'
 import type { Maintainer } from '@/payload-types'
 import { getSessionSecret, signSessionToken, SESSION_COOKIE } from '@/lib/auth/session'
-import { githubSessionStrategy, isCrossOriginWrite } from '@/lib/auth/strategy'
+import { githubSessionStrategy, isCrossOriginWrite, revokeSessionsNow } from '@/lib/auth/strategy'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
 let payload: Payload
@@ -70,6 +70,7 @@ describe('github-session strategy: revocation (blocked, sessionsValidAfter)', ()
   beforeAll(async () => {
     r = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 5151, login: 'revocable' } })
   })
+  beforeEach(() => set({ blocked: false, sessionsValidAfter: null }))
   const set = (data: Partial<Maintainer>) => payload.update({ collection: 'maintainers', id: r.id, overrideAccess: true, data })
 
   it('rejects a blocked maintainer, and accepts again when unblocked', async () => {
@@ -80,16 +81,29 @@ describe('github-session strategy: revocation (blocked, sessionsValidAfter)', ()
     await set({ blocked: false })
     expect((await payload.auth({ headers: cookie(token) })).user).not.toBeNull()
   })
-  it('rejects a token issued before sessionsValidAfter, accepts one issued at or after it', async () => {
-    const issued = new Date(Date.now() - 60_000)
-    const old = await tokenFor(r.id, 5151, issued)
-    const cutoff = new Date(Date.now() - 30_000)
-    await set({ sessionsValidAfter: cutoff.toISOString() })
+  it('rejects a token issued before sessionsValidAfter, accepts one issued after it', async () => {
+    const old = await tokenFor(r.id, 5151, new Date(Date.now() - 60_000))
+    await set({ sessionsValidAfter: new Date(Date.now() - 30_000).toISOString() })
     expect((await payload.auth({ headers: cookie(old) })).user).toBeNull()
     expect((await payload.auth({ headers: cookie(await tokenFor(r.id, 5151)) })).user).not.toBeNull()
-    // Equal seconds (millisecond noise floored away) still authenticates.
-    const exact = await tokenFor(r.id, 5151, new Date(Math.floor(cutoff.getTime() / 1000) * 1000))
-    expect((await payload.auth({ headers: cookie(exact) })).user).not.toBeNull()
+  })
+  it('revokeSessionsNow rejects a token minted in the same second, accepts one from the next second', async () => {
+    const now = new Date()
+    const sameSecond = await tokenFor(r.id, 5151, now)
+    await set({ sessionsValidAfter: revokeSessionsNow(now).toISOString() })
+    expect((await payload.auth({ headers: cookie(sameSecond) })).user).toBeNull()
+    const nextSecond = await tokenFor(r.id, 5151, revokeSessionsNow(now))
+    expect((await payload.auth({ headers: cookie(nextSecond) })).user).not.toBeNull()
+  })
+  it('a fractional-second cutoff rounds up: a token from the cutoff second is rejected', async () => {
+    const cutoff = new Date(1_800_000_000_500)
+    await set({ sessionsValidAfter: cutoff.toISOString() })
+    const sameSecond = await tokenFor(r.id, 5151, new Date(1_800_000_000_000))
+    expect((await payload.auth({ headers: cookie(sameSecond) })).user).toBeNull()
+  })
+  it('revokeSessionsNow is strictly in the next whole second', () => {
+    expect(revokeSessionsNow(new Date(1_800_000_000_000)).getTime()).toBe(1_800_000_001_000)
+    expect(revokeSessionsNow(new Date(1_800_000_000_999)).getTime()).toBe(1_800_000_001_000)
   })
 })
 

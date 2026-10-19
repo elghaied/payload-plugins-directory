@@ -20,6 +20,20 @@ export function isCrossOriginWrite(method: string | undefined, origin: string | 
 
 const toSeconds = (d: Date) => Math.floor(d.getTime() / 1000)
 
+/**
+ * Value for `maintainers.sessionsValidAfter` that revokes every session issued up to now. It is the start of
+ * the NEXT whole second, so a token minted in the current second (iat has second precision) is also revoked.
+ * A sign-in after revocation gets a later iat once that second begins.
+ */
+export function revokeSessionsNow(now: Date = new Date()): Date {
+  return new Date((toSeconds(now) + 1) * 1000)
+}
+
+// Only the fields req.user needs, plus the two moderation fields the checks read (stripped below).
+const USER_FIELDS = { githubId: true, login: true, name: true, avatarUrl: true, blocked: true, sessionsValidAfter: true, createdAt: true, updatedAt: true } as const
+
+let loggedMissingSecret = false
+
 export const githubSessionStrategy: AuthStrategy = {
   name: GITHUB_SESSION_STRATEGY,
   authenticate: async ({ headers, payload, req }) => {
@@ -31,7 +45,10 @@ export const githubSessionStrategy: AuthStrategy = {
     try {
       secret = getSessionSecret()
     } catch (err) {
-      payload.logger.error({ err }, 'github-session: SESSION_SECRET missing or too short; maintainer sessions disabled')
+      if (!loggedMissingSecret) {
+        loggedMissingSecret = true
+        payload.logger.error({ err }, 'github-session: SESSION_SECRET missing or too short; maintainer sessions disabled')
+      }
       return { user: null }
     }
 
@@ -44,12 +61,13 @@ export const githubSessionStrategy: AuthStrategy = {
       collection: 'maintainers',
       id: session.maintainerId,
       depth: 0,
+      select: USER_FIELDS,
       overrideAccess: true,
       disableErrors: true,
     })
     if (!maintainer || maintainer.githubId !== session.githubId) return { user: null }
     if (maintainer.blocked) return { user: null }
-    if (maintainer.sessionsValidAfter && toSeconds(session.issuedAt) < toSeconds(new Date(maintainer.sessionsValidAfter))) {
+    if (maintainer.sessionsValidAfter && toSeconds(session.issuedAt) < Math.ceil(new Date(maintainer.sessionsValidAfter).getTime() / 1000)) {
       return { user: null }
     }
 
