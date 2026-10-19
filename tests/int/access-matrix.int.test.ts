@@ -75,6 +75,14 @@ describe('access matrix', () => {
     const res = await payload.find({ collection: 'plugins', overrideAccess: false, user: null, trash: true })
     expect(slugs(res.docs)).toEqual(['listed-one'])
   })
+  it('syncTrashReason is readable by admins only', async () => {
+    await payload.update({ collection: 'plugins', id: listedId, overrideAccess: true, data: { syncTrashReason: 'package-removed' } })
+    const anon = await payload.findByID({ collection: 'plugins', id: listedId, overrideAccess: false, user: null, depth: 0 })
+    expect(anon).not.toHaveProperty('syncTrashReason')
+    const asAdmin = await payload.findByID({ collection: 'plugins', id: listedId, overrideAccess: false, user: admin as never, depth: 0 })
+    expect(asAdmin.syncTrashReason).toBe('package-removed')
+    await payload.update({ collection: 'plugins', id: listedId, overrideAccess: true, data: { syncTrashReason: null } })
+  })
   it('anonymous cannot create plugins', async () => {
     await expect(
       payload.create({

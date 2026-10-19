@@ -1,6 +1,6 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
-import { isAdmin, isAdminUser } from '@/access'
+import { adminOnly, isAdmin, isAdminUser } from '@/access'
 
 export const listedPluginsWhere: Where = {
   and: [{ visibility: { equals: 'listed' } }, { deletedAt: { exists: false } }],
@@ -100,6 +100,18 @@ export const Plugins: CollectionConfig = {
       index: true,
       options: ['listed', 'hidden'],
       admin: { position: 'sidebar' },
+    },
+    {
+      name: 'syncTrashReason',
+      type: 'select',
+      options: ['repository-gone', 'package-removed'],
+      access: { read: adminOnly, create: adminOnly, update: adminOnly },
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description:
+          'Set when sync moved this plugin to Trash. Sync restores it when the package reappears; plugins an admin trashed stay trashed (use Visibility to hide a plugin).',
+      },
     },
   ],
 }

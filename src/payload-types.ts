@@ -323,6 +323,10 @@ export interface Plugin {
   customTagline?: string | null;
   logo?: (number | null) | Media;
   visibility: 'listed' | 'hidden';
+  /**
+   * Set when sync moved this plugin to Trash. Sync restores it when the package reappears; plugins an admin trashed stay trashed (use Visibility to hide a plugin).
+   */
+  syncTrashReason?: ('repository-gone' | 'package-removed') | null;
   updatedAt: string;
   createdAt: string;
   deletedAt?: string | null;
@@ -739,6 +743,7 @@ export interface PluginsSelect<T extends boolean = true> {
   customTagline?: T;
   logo?: T;
   visibility?: T;
+  syncTrashReason?: T;
   updatedAt?: T;
   createdAt?: T;
   deletedAt?: T;

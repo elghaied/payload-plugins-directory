@@ -12,6 +12,7 @@ import { Repositories } from './collections/Repositories'
 import { Submissions } from './collections/Submissions'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
+import { jobStatus } from './db/jobStatus'
 import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
 import { DirectorySettings } from './globals/DirectorySettings'
@@ -40,7 +41,12 @@ export default buildConfig({
     beforeSchemaInit: [
       ({ schema }) => ({
         ...schema,
-        tables: { ...schema.tables, repository_snapshots: repositorySnapshots, plugin_snapshots: pluginSnapshots },
+        tables: {
+          ...schema.tables,
+          repository_snapshots: repositorySnapshots,
+          plugin_snapshots: pluginSnapshots,
+          job_status: jobStatus,
+        },
       }),
     ],
   }),
