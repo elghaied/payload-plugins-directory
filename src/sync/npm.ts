@@ -62,8 +62,9 @@ export function createNpmClient(opts: { fetch: FetchFn; now?: () => Date }): Npm
   async function downloads(url: string): Promise<number> {
     const res = await get(url)
     if (!res) return 0
+    const text = await res.text() // body-read (network) errors propagate
     try {
-      const body = (await res.json()) as { downloads?: unknown }
+      const body = JSON.parse(text) as { downloads?: unknown }
       return typeof body?.downloads === 'number' && Number.isFinite(body.downloads) ? body.downloads : 0
     } catch {
       return 0
@@ -79,7 +80,14 @@ export function createNpmClient(opts: { fetch: FetchFn; now?: () => Date }): Npm
         downloads(buildUrl(NPM_DOWNLOADS, `last-month/${id}`)),
       ])
       if (!metaRes) return null
-      const meta = (await metaRes.json()) as RegistryDoc
+      const text = await metaRes.text() // body-read (network) errors propagate
+      let meta: RegistryDoc
+      try {
+        meta = JSON.parse(text) as RegistryDoc
+      } catch {
+        throw new HttpError(metaRes.status, buildUrl(NPM_REGISTRY, id)) // malformed registry JSON
+      }
+      if (!meta || typeof meta !== 'object') throw new HttpError(metaRes.status, buildUrl(NPM_REGISTRY, id))
       const latest = meta['dist-tags']?.latest
       if (!latest) return null
       const version = meta.versions?.[latest]

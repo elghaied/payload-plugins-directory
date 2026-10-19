@@ -117,4 +117,24 @@ describe('createNpmClient().getPackage', () => {
       expect((await createNpmClient({ fetch: f, now }).getPackage(name))?.data.latestVersion).toBe('1.2.0')
     },
   )
+
+  const failingBody = () =>
+    new Response(new ReadableStream({ start: (c) => c.error(new Error('body stream reset')) }), { status: 200 })
+
+  it('propagates a body read error on a 2xx downloads response', async () => {
+    const inner = fakeFetch(npmRoutes('reset'))
+    const f = (url: string, init?: RequestInit) => (url === `${DOWNLOADS}/last-week/reset` ? Promise.resolve(failingBody()) : inner(url, init))
+    await expect(createNpmClient({ fetch: f, now }).getPackage('reset')).rejects.toThrow('body stream reset')
+  })
+
+  it('propagates a body read error on a 2xx registry response', async () => {
+    const inner = fakeFetch(npmRoutes('reset2'))
+    const f = (url: string, init?: RequestInit) => (url === `${REGISTRY}/reset2` ? Promise.resolve(failingBody()) : inner(url, init))
+    await expect(createNpmClient({ fetch: f, now }).getPackage('reset2')).rejects.toThrow('body stream reset')
+  })
+
+  it('throws HttpError for malformed registry JSON', async () => {
+    const f = fakeFetch({ ...npmRoutes('bad'), [`${REGISTRY}/bad`]: { text: '{oops' } })
+    await expect(createNpmClient({ fetch: f, now }).getPackage('bad')).rejects.toBeInstanceOf(HttpError)
+  })
 })
