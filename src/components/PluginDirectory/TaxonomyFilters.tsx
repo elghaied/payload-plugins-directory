@@ -1,7 +1,7 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UNCATEGORIZED, type CategoryOption, type TagOption } from "@/lib/directory/filters";
+import { UNCATEGORIZED, visibleCategoryOptions, type CategoryOption, type TagOption } from "@/lib/directory/filters";
 
 type Props = {
   categories: CategoryOption[];
@@ -18,12 +18,14 @@ type Props = {
 /** Category (subtree) and tag filters. "all" is the no-filter value: updateParams strips it from the URL. */
 export function TaxonomyFilters({ categories, tags, category, tag, uncategorizedCount, onCategoryChange, onTagChange, variant }: Props) {
   const inline = variant === "inline";
-  const usedCategories = categories.filter((c) => c.count > 0);
+  const usedCategories = visibleCategoryOptions(categories);
 
   const categorySelect = (
     <Select value={category} onValueChange={onCategoryChange}>
       <SelectTrigger className={inline ? "hidden sm:flex w-48" : undefined} aria-label="Filter by category">
-        <SelectValue placeholder="All Categories" />
+        <SelectValue placeholder="All Categories">
+          {category === "all" ? "All Categories" : category === UNCATEGORIZED ? "Uncategorized" : usedCategories.find((c) => c.slug === category)?.title}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">All Categories</SelectItem>
@@ -45,7 +47,9 @@ export function TaxonomyFilters({ categories, tags, category, tag, uncategorized
   const tagSelect = (
     <Select value={tag} onValueChange={onTagChange}>
       <SelectTrigger className={inline ? "hidden sm:flex w-40" : undefined} aria-label="Filter by tag">
-        <SelectValue placeholder="All Tags" />
+        <SelectValue placeholder="All Tags">
+          {tag === "all" ? "All Tags" : tags.find((t) => t.slug === tag)?.title}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="all">All Tags</SelectItem>

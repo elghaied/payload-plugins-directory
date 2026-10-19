@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildCategoryOptions, buildTagOptions, categoryPageData, matchesCategory, matchesTag, rankForCategory, UNCATEGORIZED,
+  buildCategoryOptions, buildTagOptions, categoryPageData, matchesCategory, matchesTag, rankForCategory, resolveCategoryParam, resolveTagParam, UNCATEGORIZED,
 } from '@/lib/directory/filters'
 import type { PluginSummary } from '@/lib/directory/types'
 import { categoryFilterHref, categoryHref, tagHref } from '@/lib/taxonomy/links'
@@ -60,5 +60,29 @@ describe('category pages', () => {
     expect(categoryHref('storage-media/cloud-storage')).toBe('/categories/storage-media/cloud-storage')
     expect(tagHref('s3')).toBe('/?tag=s3')
     expect(categoryFilterHref('cloud-storage')).toBe('/?category=cloud-storage')
+  })
+})
+
+describe('URL filter validation', () => {
+  const opts = [
+    { slug: 'storage-media', title: 'Storage & Media', path: 'storage-media', depth: 0, count: 2 },
+    { slug: 'cloud-storage', title: 'Cloud storage', path: 'storage-media/cloud-storage', depth: 1, count: 2 },
+    { slug: 'empty-cat', title: 'Empty', path: 'empty-cat', depth: 0, count: 0 },
+  ]
+  const tagOpts = [{ slug: 's3', title: 'S3', count: 2 }]
+  it('keeps a valid child slug', () => expect(resolveCategoryParam('cloud-storage', opts, 0)).toBe('cloud-storage'))
+  it('resets a known but empty category', () => expect(resolveCategoryParam('empty-cat', opts, 0)).toBe('all'))
+  it('resets unknown categories and missing values', () => {
+    expect(resolveCategoryParam('bogus', opts, 0)).toBe('all')
+    expect(resolveCategoryParam(null, opts, 0)).toBe('all')
+  })
+  it('uncategorized depends on its count', () => {
+    expect(resolveCategoryParam(UNCATEGORIZED, opts, 0)).toBe('all')
+    expect(resolveCategoryParam(UNCATEGORIZED, opts, 3)).toBe(UNCATEGORIZED)
+  })
+  it('tags: keeps known, resets unknown', () => {
+    expect(resolveTagParam('s3', tagOpts)).toBe('s3')
+    expect(resolveTagParam('nope', tagOpts)).toBe('all')
+    expect(resolveTagParam(null, tagOpts)).toBe('all')
   })
 })

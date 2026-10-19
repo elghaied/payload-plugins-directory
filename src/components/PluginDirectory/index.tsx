@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/drawer";
 import type { PluginSummary as Plugin } from "@/lib/directory/types";
 import { SortOption, VersionFilter } from "../../types";
-import { matchesCategory, matchesTag, UNCATEGORIZED, type CategoryOption, type TagOption } from "@/lib/directory/filters";
+import { matchesCategory, matchesTag, resolveCategoryParam, resolveTagParam, UNCATEGORIZED, type CategoryOption, type TagOption } from "@/lib/directory/filters";
 import { TaxonomyFilters } from "./TaxonomyFilters";
 import { PayloadIcon } from "../PayloadIcon";
 import { ComparisonView } from "../ComparisonView";
@@ -360,13 +360,11 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         : "all";
   const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
   const licenseFilter = searchParams.get("license") || "all";
-  // Unknown slugs (renamed or deleted categories/tags in old links) fall back to "all".
-  const rawCategory = searchParams.get("category") || "all";
-  const categoryFilter =
-    rawCategory === UNCATEGORIZED || categories.some((c) => c.slug === rawCategory) ? rawCategory : "all";
-  const rawTag = searchParams.get("tag") || "all";
-  const tagFilter = tags.some((t) => t.slug === rawTag) ? rawTag : "all";
+  // Values the selects do not render (unknown, empty, renamed) fall back to "all".
+  const tagTitles = useMemo(() => new Map(tags.map((t) => [t.slug, t.title])), [tags]);
   const uncategorizedCount = useMemo(() => plugins.filter((p) => !p.categoryPath).length, [plugins]);
+  const categoryFilter = resolveCategoryParam(searchParams.get("category"), categories, uncategorizedCount);
+  const tagFilter = resolveTagParam(searchParams.get("tag"), tags);
 
   // Debounced search: local state for immediate display, URL updates after 300ms
   const [localSearch, setLocalSearch] = useState(searchTerm);
@@ -434,7 +432,11 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           ) ||
           plugin.owner.toLowerCase().includes(searchLower) ||
           (plugin.packageName?.toLowerCase().includes(searchLower) ?? false) ||
-          (plugin.tags?.some((t) => t.includes(searchLower)) ?? false);
+          (plugin.tags?.some(
+            (t) =>
+              t.includes(searchLower) ||
+              (tagTitles.get(t)?.toLowerCase().includes(searchLower) ?? false)
+          ) ?? false);
 
         const matchesVersion =
           versionFilter === "all" ||
@@ -488,7 +490,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             return 0;
         }
       });
-  }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter, categoryFilter, tagFilter, categories]);
+  }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter, categoryFilter, tagFilter, categories, tagTitles]);
 
   // Recently added plugins (last 90 days), shown only on unfiltered view
   const recentlyAdded = useMemo(() => {

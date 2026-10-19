@@ -56,3 +56,17 @@ export function categoryPageData(path: string, nodes: readonly CategoryNode[], p
     plugins: plugins.filter((p) => isInSubtree(p.categoryPath, path)).sort(rankForCategory),
   }
 }
+
+/** Categories the filter Select renders (empty ones are hidden). Shared by rendering and URL validation so they cannot drift. */
+export const visibleCategoryOptions = (options: readonly CategoryOption[]): CategoryOption[] => options.filter((o) => o.count > 0)
+
+/** URL `category` -> a value the Select renders, else 'all'. */
+export function resolveCategoryParam(raw: string | null, options: readonly CategoryOption[], uncategorizedCount: number): string {
+  if (!raw) return 'all'
+  if (raw === UNCATEGORIZED) return uncategorizedCount > 0 ? raw : 'all'
+  return visibleCategoryOptions(options).some((o) => o.slug === raw) ? raw : 'all'
+}
+
+/** URL `tag` -> a value the Select renders, else 'all'. */
+export const resolveTagParam = (raw: string | null, tags: readonly TagOption[]): string =>
+  raw && tags.some((t) => t.slug === raw) ? raw : 'all'
