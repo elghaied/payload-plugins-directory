@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Github, Rss } from "lucide-react"
 import { PayloadIcon } from "./PayloadIcon"
+import { AccountMenu } from "./AccountMenu"
 import { ModeToggle } from "./mode-toggler"
 import { NAV_LINKS, isActiveLink } from "./navLinks"
 
@@ -50,7 +51,7 @@ export function Navbar() {
             href="https://github.com/payloadcms/payload"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden md:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="Payload CMS GitHub"
             title="Payload CMS"
           >
@@ -60,7 +61,7 @@ export function Navbar() {
             href="https://github.com/elghaied/payload-plugins-directory"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden min-[400px]:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="Directory GitHub"
             title="GitHub"
           >
@@ -68,15 +69,23 @@ export function Navbar() {
           </a>
           <a
             href="/feed.xml"
-            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden min-[400px]:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="RSS Feed"
             title="RSS Feed"
           >
             <Rss className="h-4 w-4" />
           </a>
 
+          <Link
+            href="/submit"
+            className="hidden md:flex items-center h-8 px-2.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+          >
+            Submit
+          </Link>
+
           <div className="hidden sm:block w-px h-5 bg-border mx-1" />
 
+          <AccountMenu />
           <ModeToggle />
         </div>
       </div>
