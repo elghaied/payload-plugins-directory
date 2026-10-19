@@ -5,6 +5,9 @@ import { defineCLICommand } from 'payload/cli'
 import { QUEUES } from '@/sync/queues'
 import { mapLegacy, type LegacyPluginsData } from '@/lib/seed/mapLegacy'
 
+/** Ids blocklisted in the legacy data/blocklist.json (removed in Task 14); always applied so a plain `seed --file` never lists them. */
+export const LEGACY_BLOCKLIST_IDS = ['979457999-root']
+
 export async function seedDirectory(payload: Payload, input: ReturnType<typeof mapLegacy>) {
   const counts = { repositoriesCreated: 0, repositoriesUpdated: 0, pluginsCreated: 0, pluginsUpdated: 0 }
   const repoIds = new Map<string, number>()
@@ -74,7 +77,8 @@ export const seedCommand = defineCLICommand({
   handler: async ({ args, getPayload }) => {
     const payload = await getPayload()
     const data = JSON.parse(await readFile(args.file, 'utf8')) as LegacyPluginsData
-    const blocklist = args.blocklist ? (JSON.parse(await readFile(args.blocklist, 'utf8')) as { ids: string[] }).ids : []
+    const extra = args.blocklist ? (JSON.parse(await readFile(args.blocklist, 'utf8')) as { ids: string[] }).ids : []
+    const blocklist = [...new Set([...LEGACY_BLOCKLIST_IDS, ...extra])]
     const result = await seedDirectory(payload, mapLegacy(data, blocklist))
     // Spec §4 `seed`: the import is followed by a full sync (githubIds, full READMEs, fresh stats).
     await payload.jobs.queue({ task: 'discover', input: {}, queue: QUEUES.default, overrideAccess: true })

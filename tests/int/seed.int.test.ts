@@ -1,3 +1,6 @@
+import { mkdtemp, writeFile } from 'fs/promises'
+import { tmpdir } from 'os'
+import path from 'path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import type { Payload } from 'payload'
 import fixture from '../fixtures/legacy-plugins.json'
@@ -95,5 +98,17 @@ describe('seedDirectory', () => {
     expect(repos.totalDocs).toBe(3)
     const jobs = await payload.find({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'discover' } } })
     expect(jobs.totalDocs).toBe(1)
+  })
+
+  it('CLI hides the built-in legacy blocklist ids even when no --blocklist is given', async () => {
+    await resetDatabase(payload)
+    const renamed = JSON.stringify(fixture).replaceAll('829724738-root', '979457999-root')
+    const file = path.join(await mkdtemp(path.join(tmpdir(), 'seed-')), 'plugins.json')
+    await writeFile(file, renamed)
+    await seedCommand.handler({ args: { file }, getPayload: async () => payload } as never)
+    const hidden = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: '979457999-root' } } })
+    expect(hidden.docs[0].visibility).toBe('hidden')
+    const listed = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: '684372049-translator' } } })
+    expect(listed.docs[0].visibility).toBe('listed')
   })
 })
