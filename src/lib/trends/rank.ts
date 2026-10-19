@@ -71,9 +71,17 @@ export function rankDownloadGrowth(
  * New = the GitHub repository was created within `windowDays`, or the plugin was first listed after
  * the directory's first day (the seed day: every seeded plugin shares it, so they are not "new").
  */
+/** A first-seen day with more plugins than this is a bulk import (e.g. a seed straddling UTC midnight), not "new". */
+export const BULK_IMPORT_MIN_PLUGINS = 10
+export const BULK_IMPORT_SHARE = 0.05
+
 export function newThisMonth(refs: ListedPluginRef[], today: Day, windowDays = 30, limit = 12): NewPlugin[] {
   const seenDays = refs.flatMap((r) => (r.firstSeenAt ? [utcDay(r.firstSeenAt)] : [])).sort()
   const seedDay = seenDays[0] ?? null
+  const perDay = new Map<Day, number>()
+  for (const d of seenDays) perDay.set(d, (perDay.get(d) ?? 0) + 1)
+  const bulkLimit = Math.max(BULK_IMPORT_MIN_PLUGINS, BULK_IMPORT_SHARE * refs.length)
+  const isBulkDay = (day: Day) => (perDay.get(day) ?? 0) > bulkLimit
   const inWindow = (day: Day) => {
     const age = daysBetween(day, today)
     return age >= 0 && age <= windowDays
@@ -87,7 +95,7 @@ export function newThisMonth(refs: ListedPluginRef[], today: Day, windowDays = 3
     }
     if (ref.firstSeenAt && seedDay) {
       const day = utcDay(ref.firstSeenAt)
-      if (day > seedDay && inWindow(day)) candidates.push({ day, reason: 'newly-listed' })
+      if (day > seedDay && inWindow(day) && !isBulkDay(day)) candidates.push({ day, reason: 'newly-listed' })
     }
     const best = candidates.sort((a, b) => (a.day < b.day ? 1 : a.day > b.day ? -1 : 0))[0]
     if (!best) continue

@@ -68,12 +68,12 @@ const ADOPTION_COLORS: Record<string, string> = {
 export const dynamic = "force-dynamic";
 
 // A snapshot-query failure must not take down the rest of the stats page.
-async function loadGrowth(): Promise<EcosystemGrowth> {
+async function loadGrowth(): Promise<EcosystemGrowth | null> {
   try {
     return await getEcosystemGrowth();
   } catch (error) {
     console.error("[stats] getEcosystemGrowth failed", error);
-    return { stars: [], downloads: [], lastSnapshotDay: null };
+    return null;
   }
 }
 
@@ -81,7 +81,7 @@ export default async function StatsPage() {
   const [plugins, meta, growth] = await Promise.all([getPluginSummaries(), getDirectoryMeta(), loadGrowth()]);
   const stats = computeStats(plugins);
   const adoption = versionAdoption(plugins);
-  const staleGrowth = growth.lastSnapshotDay !== null && daysBetween(growth.lastSnapshotDay, utcToday()) > 2;
+  const staleGrowth = growth?.lastSnapshotDay != null && daysBetween(growth.lastSnapshotDay, utcToday()) > 2;
 
   const maxLicense = stats.licenseDistribution[0]?.[1] || 1;
   const maxMonth = Math.max(...stats.months.map((m) => m.count), 1);
@@ -127,23 +127,27 @@ export default async function StatsPage() {
           <h2 id="growth-heading" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Ecosystem Growth (last {HISTORY_DAYS} days)
           </h2>
-          <div className="grid gap-6 md:grid-cols-2 mt-4">
-            <TrendChart
-              title="Total GitHub stars"
-              metric="Total stars"
-              tone="stars"
-              series={growth.stars}
-              footnote="Across repositories of listed plugins; a monorepo is counted once."
-            />
-            <TrendChart
-              title="Total npm weekly downloads"
-              metric="Total weekly downloads"
-              tone="downloads"
-              series={growth.downloads}
-              footnote="Sum of npm weekly downloads across listed plugins."
-            />
-          </div>
-          {staleGrowth && growth.lastSnapshotDay && (
+          {growth ? (
+            <div className="grid gap-6 md:grid-cols-2 mt-4">
+              <TrendChart
+                title="Total GitHub stars"
+                metric="Total stars"
+                tone="stars"
+                series={growth.stars}
+                footnote="Across repositories of listed plugins; a monorepo is counted once."
+              />
+              <TrendChart
+                title="Total npm weekly downloads"
+                metric="Total weekly downloads"
+                tone="downloads"
+                series={growth.downloads}
+                footnote="Sum of npm weekly downloads across listed plugins."
+              />
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted-foreground">Growth data is unavailable right now.</p>
+          )}
+          {staleGrowth && growth?.lastSnapshotDay && (
             <p className="mt-2 text-xs text-muted-foreground">Data as of {formatDay(growth.lastSnapshotDay, true)}</p>
           )}
         </section>

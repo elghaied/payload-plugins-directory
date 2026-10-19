@@ -54,14 +54,14 @@ function downloadRow(m: DownloadMover): RankedRow {
   };
 }
 
-function newRow(n: NewPlugin): RankedRow {
+function newRow(n: NewPlugin, today: string): RankedRow {
   return {
     key: n.slug,
     href: `/plugins/${n.slug}`,
     avatar: n.ownerAvatar,
     title: n.name,
     subtitle: `by ${n.owner} · ${n.reason === "new-repository" ? "new repository" : "newly listed"}`,
-    value: formatDay(n.addedOn),
+    value: formatDay(n.addedOn, n.addedOn.slice(0, 4) !== today.slice(0, 4)),
     valueLabel: `added ${formatDay(n.addedOn, true)}`,
   };
 }
@@ -143,7 +143,7 @@ export default async function TrendingPage() {
           </Section>
 
           <Section title="New in the last 30 days" description="New repositories and newly listed plugins.">
-            <RankedList rows={data.newThisMonth.map(newRow)} empty="No new plugins in the last 30 days." />
+            <RankedList rows={data.newThisMonth.map((n) => newRow(n, data.today))} empty="No new plugins in the last 30 days." />
           </Section>
 
           <Section title="Recently updated" description="Latest pushes to plugin repositories.">

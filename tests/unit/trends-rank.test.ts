@@ -142,3 +142,16 @@ describe('recentlyUpdated', () => {
     expect(recentlyUpdated(refs, 2).map((r) => r.fullName)).toEqual(['o/p3', 'o/p2'])
   })
 })
+
+describe('newThisMonth bulk imports', () => {
+  it('ignores a bulk-import day that straddles the seed (300 on D, 40 on D+1)', () => {
+    const seed = Array.from({ length: 300 }, (_, i) => ref(i, `s${i}`, repo(i, `o/s${i}`), { firstSeenAt: '2026-10-10T23:59:00Z' }))
+    const spill = Array.from({ length: 40 }, (_, i) => ref(1000 + i, `t${i}`, repo(1000 + i, `o/t${i}`), { firstSeenAt: '2026-10-11T00:01:00Z' }))
+    expect(newThisMonth([...seed, ...spill], asOf)).toEqual([])
+  })
+  it('still lists a normal day with 3 new plugins after a large seed', () => {
+    const seed = Array.from({ length: 300 }, (_, i) => ref(i, `s${i}`, repo(i, `o/s${i}`), { firstSeenAt: '2026-10-10T12:00:00Z' }))
+    const fresh = [1, 2, 3].map((i) => ref(1000 + i, `n${i}`, repo(1000 + i, `o/n${i}`), { firstSeenAt: '2026-10-15T12:00:00Z' }))
+    expect(newThisMonth([...seed, ...fresh], asOf).map((n) => n.slug)).toEqual(['n1', 'n2', 'n3'])
+  })
+})
