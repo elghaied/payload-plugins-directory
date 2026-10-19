@@ -5,6 +5,12 @@ import { previewEnrichment } from '@/enrich/preview'
 import { queueEnrich } from '@/enrich/queue'
 import { QUEUES } from '@/sync/queues'
 
+/** A positive integer, default 5, at most 50. */
+export const clampLimit = (raw: string): number => {
+  const n = Math.floor(Number(raw))
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, 50) : 5
+}
+
 export type EnrichArgs = { mode: string; slugs: string; limit: string }
 
 /** The command body, separate from Payload's CLI wiring so tests can call it. It never reads the API key. */
@@ -12,6 +18,15 @@ export async function runEnrichCommand(payload: Payload, args: EnrichArgs): Prom
   const slugs = args.slugs.split(',').map((s) => s.trim()).filter(Boolean)
 
   if (args.mode === 'all') {
+    const pending = await payload.count({
+      collection: 'payload-jobs',
+      overrideAccess: true,
+      where: { and: [{ taskSlug: { equals: 'enrich-all' } }, { completedAt: { exists: false } }, { hasError: { not_equals: true } }] },
+    })
+    if (pending.totalDocs > 0) {
+      payload.logger.info('An enrich-all job is already pending; not queueing another.')
+      return
+    }
     await payload.jobs.queue({ task: 'enrich-all', input: { force: true }, queue: QUEUES.default, overrideAccess: true })
     payload.logger.info('Queued enrich-all (force: ignores the edit debounce); the worker runs it on its next tick.')
     return
@@ -25,12 +40,13 @@ export async function runEnrichCommand(payload: Payload, args: EnrichArgs): Prom
   }
   if (args.mode !== 'preview') throw new Error(`Unknown --mode "${args.mode}" (preview | queue | all)`)
 
-  const items = await previewEnrichment(payload, { slugs, limit: Number(args.limit) || 5 })
+  const items = await previewEnrichment(payload, { slugs, limit: clampLimit(args.limit) })
   for (const item of items) payload.logger.info(item, `Preview: ${item.slug}`)
   const total = items.reduce((n, i) => n + i.estCostUsd, 0)
+  if (items.some((i) => !i.priceKnown)) payload.logger.warn('No price table entry for the configured model: costs use Sonnet 5.5 prices and are a guess.')
   payload.logger.info(
     { requests: items.length, estTotalUsd: Number(total.toFixed(4)) },
-    'Preview finished: no API call was made and nothing was written. Token counts are estimates (about 4 characters per token).',
+    'Preview finished: no API call was made and nothing was written. Estimates only: about 4 characters per token; adaptive-thinking tokens bill as output and add to the cost.',
   )
 }
 

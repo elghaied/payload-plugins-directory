@@ -6,8 +6,13 @@ import { buildRequest } from './prompt'
 const CHARS_PER_TOKEN = 4
 /** The answer is about 1k tokens (adaptive thinking at effort "low" adds a little). */
 const EST_OUTPUT_TOKENS = 1_000
-/** Assumed list price in USD per million tokens. An estimate to judge order of magnitude, not a quote; adjust if pricing changes. */
-const PRICE_PER_MTOK = { input: 3, output: 15, cacheRead: 0.3 }
+type Prices = { input: number; output: number; cacheRead: number; cacheWrite: number }
+/** USD per million tokens, per model. cacheWrite is 1.25x input. */
+export const PRICES: Record<string, Prices> = {
+  'claude-sonnet-5-5': { input: 2, output: 10, cacheRead: 0.2, cacheWrite: 2.5 },
+  'claude-haiku-5-5': { input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125 },
+}
+const FALLBACK_MODEL = 'claude-sonnet-5-5'
 
 export type PreviewItem = {
   slug: string
@@ -16,7 +21,9 @@ export type PreviewItem = {
   userChars: number
   estInputTokens: number
   estOutputTokens: number
-  /** Estimated cost of this request when its system prompt is not yet cached. */
+  /** False when the model has no price entry: the estimate then uses Sonnet 5.5 prices and is a guess. */
+  priceKnown: boolean
+  /** Estimated cost of the first request of a pass: the system prompt is written to the cache (write premium). */
   estCostUsd: number
   /** Estimated cost once the system prompt is a cache read (every request after the first in a pass). */
   estCostCachedUsd: number
@@ -50,8 +57,9 @@ export async function previewEnrichment(payload: Payload, opts: { slugs?: string
     const schemaTokens = tokensOf(JSON.stringify(request.output_config.format.schema).length)
     const systemTokens = tokensOf(systemChars)
     const rest = tokensOf(userChars) + schemaTokens
-    const cost = (systemRate: number) =>
-      (systemTokens * systemRate + rest * PRICE_PER_MTOK.input + EST_OUTPUT_TOKENS * PRICE_PER_MTOK.output) / 1e6
+    const known = request.model in PRICES
+    const price = PRICES[known ? request.model : FALLBACK_MODEL]
+    const cost = (systemRate: number) => (systemTokens * systemRate + rest * price.input + EST_OUTPUT_TOKENS * price.output) / 1e6
     return {
       slug: plugin.slug,
       model: request.model,
@@ -59,8 +67,9 @@ export async function previewEnrichment(payload: Payload, opts: { slugs?: string
       userChars,
       estInputTokens: systemTokens + rest,
       estOutputTokens: EST_OUTPUT_TOKENS,
-      estCostUsd: cost(PRICE_PER_MTOK.input),
-      estCostCachedUsd: cost(PRICE_PER_MTOK.cacheRead),
+      priceKnown: known,
+      estCostUsd: cost(price.cacheWrite),
+      estCostCachedUsd: cost(price.cacheRead),
     }
   })
 }

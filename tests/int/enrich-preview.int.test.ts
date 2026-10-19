@@ -1,10 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Payload } from 'payload'
-import { runEnrichCommand } from '@/cli/enrich'
-import { previewEnrichment } from '@/enrich/preview'
+import { jobStatus } from '@/db/jobStatus'
+import { clampLimit, runEnrichCommand } from '@/cli/enrich'
+import { PRICES, previewEnrichment } from '@/enrich/preview'
 import { createPlugin, createRepo } from './helpers/directory'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createTestTaxonomy } from './helpers/taxonomy'
+import { createTestTaxonomy, setAiSettings } from './helpers/taxonomy'
 
 let payload: Payload
 
@@ -35,6 +36,21 @@ describe('previewEnrichment', () => {
     expect(await payload.count({ collection: 'plugins', overrideAccess: true, where: { 'ai.enrichedAt': { exists: true } } })).toMatchObject({ totalDocs: 0 })
     expect(await payload.count({ collection: 'tags', overrideAccess: true, where: { createdBy: { equals: 'ai' } } })).toMatchObject({ totalDocs: 0 })
     expect((await jobs('enrich')).totalDocs).toBe(0)
+    expect((await jobs('enrich-all')).totalDocs).toBe(0)
+    expect((await payload.db.drizzle.select().from(jobStatus)).length).toBe(0)
+  })
+
+  it('prices the default model from the table; an unknown model is flagged', async () => {
+    const [a] = await previewEnrichment(payload, { limit: 1 })
+    const p = PRICES['claude-sonnet-5-5']
+    const sys = Math.ceil(a.systemChars / 4)
+    const rest = a.estInputTokens - sys
+    expect(a.priceKnown).toBe(true)
+    expect(a.estCostUsd).toBeCloseTo((sys * p.cacheWrite + rest * p.input + 1000 * p.output) / 1e6, 8)
+    expect(a.estCostCachedUsd).toBeCloseTo((sys * p.cacheRead + rest * p.input + 1000 * p.output) / 1e6, 8)
+    await setAiSettings(payload, { model: 'claude-mystery-9' })
+    const [b] = await previewEnrichment(payload, { limit: 1 })
+    expect(b).toMatchObject({ priceKnown: false, model: 'claude-mystery-9' })
   })
 
   it('previews exactly the requested slugs', async () => {
@@ -54,6 +70,16 @@ describe('enrich CLI handler', () => {
     const res = await payload.find({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'enrich-all' } } })
     expect(res.docs).toHaveLength(1)
     expect(res.docs[0]).toMatchObject({ queue: 'default', input: { force: true } })
+  })
+
+  it('all mode does not queue a second enrich-all while one is pending', async () => {
+    await runEnrichCommand(payload, { mode: 'all', slugs: '', limit: '5' })
+    await runEnrichCommand(payload, { mode: 'all', slugs: '', limit: '5' })
+    expect((await jobs('enrich-all')).totalDocs).toBe(1)
+  })
+
+  it('clamps the limit to 1..50, default 5', () => {
+    expect([clampLimit('0'), clampLimit('-3'), clampLimit('abc'), clampLimit('2.9'), clampLimit('500')]).toEqual([5, 5, 5, 2, 50])
   })
 
   it('preview mode writes nothing and unknown modes are rejected', async () => {
