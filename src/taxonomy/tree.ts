@@ -23,16 +23,22 @@ export type CategoryDocLike = {
 
 export function toCategoryNodes(docs: readonly CategoryDocLike[]): CategoryNode[] {
   return docs
-    .map((d) => ({
+    .map((d) => {
+      const parentId = d.parent == null ? null : typeof d.parent === 'object' ? d.parent.id : d.parent
+      if (parentId !== null && !d._h_slugPath) {
+        throw new Error(`Category "${d.slug}" has a parent but no _h_slugPath: request _h_slugPath (select, or context computeHierarchyPaths) when reading categories`)
+      }
+      return {
       id: d.id,
       slug: d.slug,
       title: d.title,
       intro: d.intro ?? null,
       icon: d.icon ?? null,
-      parentId: d.parent == null ? null : typeof d.parent === 'object' ? d.parent.id : d.parent,
+      parentId,
       path: d._h_slugPath || d.slug,
-    }))
-    .sort((a, b) => a.path.localeCompare(b.path))
+      }
+    })
+    .sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0))
 }
 
 export function childrenOf(nodes: readonly CategoryNode[], parentId: number | null): CategoryNode[] {

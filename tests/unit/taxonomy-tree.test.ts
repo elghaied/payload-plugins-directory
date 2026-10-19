@@ -48,6 +48,7 @@ describe('starter taxonomy', () => {
       for (const a of t.aliases) expect(a).toBe(a.toLowerCase())
     }
     expect(aliases).not.toContain('payload-plugin')
+    for (const a of ['image', 'images', 'color', 'preview', 'queue', 'jobs', 'audit', 'wp', 'ai', 'mail']) expect(aliases).not.toContain(a)
   })
 })
 
@@ -64,6 +65,10 @@ describe('tree utilities', () => {
       ['other', null], ['storage-media', null], ['storage-media/cloud-storage', 1], ['storage-media/media-management', 1],
     ])
     expect(nodes[0]).toMatchObject({ intro: 'Everything else.', icon: null })
+  })
+  it('fails loudly when a child category has no _h_slugPath', () => {
+    expect(() => toCategoryNodes([{ id: 2, slug: 'child', title: 'Child', parent: 1 }])).toThrow(/child.*_h_slugPath/)
+    expect(() => toCategoryNodes([{ id: 1, slug: 'root', title: 'Root' }])).not.toThrow()
   })
   it('finds children, leaves, trails and title paths', () => {
     expect(childrenOf(nodes, 1).map((n) => n.slug)).toEqual(['cloud-storage', 'media-management'])
