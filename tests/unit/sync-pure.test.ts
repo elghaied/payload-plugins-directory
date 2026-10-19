@@ -105,19 +105,27 @@ describe('computeHealthScore (legacy formula)', () => {
 })
 
 describe('computeContentHash', () => {
-  const base = { readme: '# A', packageJsonText: '{}', description: 'x' }
+  const base = { packageName: 'payload-seo', description: 'x', keywords: ['seo', 'meta'], payloadVersionRange: '^3.0.0', readme: '# A' }
   it('is a stable sha256 hex digest', () => {
     expect(computeContentHash(base)).toMatch(/^[0-9a-f]{64}$/)
     expect(computeContentHash({ ...base })).toBe(computeContentHash(base))
   })
-  it('changes with any input and treats missing values as empty', () => {
+  it('changes with any enrichment-relevant field and treats missing values as empty', () => {
     const h = computeContentHash(base)
     expect(computeContentHash({ ...base, readme: '# B' })).not.toBe(h)
-    expect(computeContentHash({ ...base, packageJsonText: '{"a":1}' })).not.toBe(h)
+    expect(computeContentHash({ ...base, packageName: 'other' })).not.toBe(h)
     expect(computeContentHash({ ...base, description: 'y' })).not.toBe(h)
-    expect(computeContentHash({ readme: undefined, packageJsonText: '', description: null })).toBe(
-      computeContentHash({ readme: '', packageJsonText: '', description: '' }),
+    expect(computeContentHash({ ...base, keywords: ['seo'] })).not.toBe(h)
+    expect(computeContentHash({ ...base, payloadVersionRange: '^4.0.0' })).not.toBe(h)
+    expect(computeContentHash({ readme: undefined, packageName: undefined, description: null, keywords: undefined, payloadVersionRange: null })).toBe(
+      computeContentHash({ readme: '', packageName: '', description: '', keywords: [], payloadVersionRange: '' }),
     )
+  })
+  it('ignores keyword order and every other package.json field (version bumps, dependency updates)', () => {
+    const h = computeContentHash(base)
+    expect(computeContentHash({ ...base, keywords: ['meta', 'seo'] })).toBe(h)
+    const extracted = { ...base, slug: '7-root', version: '9.9.9', dependencies: { lodash: '^5' } }
+    expect(computeContentHash(extracted)).toBe(h)
   })
 })
 

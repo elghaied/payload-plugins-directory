@@ -205,6 +205,21 @@ describe('runSyncRepository', () => {
     expect((await sync(seoRoutes({ ...SEO, pushed_at: '2026-10-19T11:00:00Z' }, '# New'))).contentChanged).toEqual([doc.id])
   })
 
+  it('keeps contentHash across version bumps and dependency updates, but not keyword changes', async () => {
+    await sync(seoRoutes())
+    const doc = await plugin('7-root')
+    await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, data: { ai: { enrichedHash: doc.contentHash } } })
+    const pushed = (at: string, pkgJson: Record<string, unknown>) => ({
+      ...seoRoutes({ ...SEO, pushed_at: at }),
+      [raw(SEO.full_name, 'package.json')]: pkg(pkgJson),
+    })
+    const bumped = { ...SEO_PKG, version: '2.0.0', dependencies: { lodash: '^4.17.21' } }
+    const r = await sync(pushed('2026-10-19T09:00:00Z', bumped))
+    expect(r).toMatchObject({ contentReRead: true, contentChanged: [] })
+    expect((await plugin('7-root')).contentHash).toBe(doc.contentHash)
+    expect((await sync(pushed('2026-10-19T10:00:00Z', { ...bumped, keywords: ['metadata', 'og'] }))).contentChanged).toEqual([doc.id])
+  })
+
   it('syncs the official monorepo, resolving workspace:* majors from npm', async () => {
     const PAYLOAD = ghRepo(100, 'payloadcms/payload', { open_issues_count: 900 })
     const r = await sync(

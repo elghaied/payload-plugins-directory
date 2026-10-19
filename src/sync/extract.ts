@@ -13,14 +13,13 @@ export type ExtractedPlugin = {
   description: string
   payloadVersionRange: string | null
   readme?: string
-  packageJsonText: string
   keywords: string[]
   isOfficial: boolean
 }
 
 export type Extraction = { plugins: ExtractedPlugin[]; isMonorepo: boolean }
 
-type ReadPackage = { json: PackageJson; text: string }
+type ReadPackage = { json: PackageJson }
 
 const README_NAMES = ['README.md', 'readme.md', 'Readme.md']
 const NO_DESCRIPTION = 'No description available'
@@ -34,7 +33,7 @@ async function readPackageJson(gh: GitHubClient, fullName: string, ref: string, 
   if (text === null) return null
   try {
     const parsed: unknown = JSON.parse(text)
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? { json: parsed as PackageJson, text } : null
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? { json: parsed as PackageJson } : null
   } catch {
     return null // unparseable package.json: treated as absent, like the legacy script
   }
@@ -62,7 +61,6 @@ async function rootPlugin(repo: GitHubRepo, gh: GitHubClient, pkg: ReadPackage |
     description: pkg?.json.description || repo.description || NO_DESCRIPTION,
     payloadVersionRange,
     readme: await readReadme(gh, repo.full_name, repo.default_branch),
-    packageJsonText: pkg?.text ?? '',
     keywords: keywordsOf(pkg?.json),
     isOfficial: ownedByPayload(repo),
   }
@@ -103,7 +101,6 @@ async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Pro
             description: pkg.json.description || NO_DESCRIPTION,
             payloadVersionRange: getPayloadVersion(pkg.json),
             readme: await readReadme(gh, repo.full_name, ref, path),
-            packageJsonText: pkg.text,
             keywords: keywordsOf(pkg.json),
             isOfficial: ownedByPayload(repo),
           }
@@ -171,7 +168,6 @@ export async function extractOfficialPlugins(repo: GitHubRepo, gh: GitHubClient)
           description: pkg.json.description || `Official Payload CMS ${displayName} plugin`,
           payloadVersionRange: getPayloadVersion(pkg.json),
           readme: await readReadme(gh, repo.full_name, ref, path),
-          packageJsonText: pkg.text,
           keywords: keywordsOf(pkg.json),
           isOfficial: true,
         }

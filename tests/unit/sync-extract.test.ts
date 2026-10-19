@@ -20,7 +20,7 @@ describe('extractPlugins', () => {
       plugins: [{
         slug: '11-root', name: 'payload seo', packageName: 'payload-seo', url: 'https://github.com/acme/payload-seo',
         description: 'SEO tools', payloadVersionRange: '^3.0.0', readme: '# SEO\n\nFull readme',
-        packageJsonText: expect.stringContaining('"payload-seo"'), keywords: ['seo', 'payload'], isOfficial: false,
+        keywords: ['seo', 'payload'], isOfficial: false,
       }],
     })
   })
@@ -28,7 +28,7 @@ describe('extractPlugins', () => {
   it('lists a repository without package.json with an unknown version', async () => {
     const result = await extractPlugins(ghRepo(12, 'acme/tool'), gh({}))
     expect(result.plugins).toEqual([expect.objectContaining({
-      slug: '12-root', description: 'tool for Payload', payloadVersionRange: null, packageName: undefined, packageJsonText: '',
+      slug: '12-root', description: 'tool for Payload', payloadVersionRange: null, packageName: undefined,
     })])
   })
 
@@ -49,7 +49,7 @@ describe('extractPlugins', () => {
       plugins: [{
         slug: '21-seo', name: 'seo', packageName: '@acme/payload-seo', path: 'packages/seo',
         url: 'https://github.com/acme/mono/tree/main/packages/seo', description: 'SEO', payloadVersionRange: '^3.0.0',
-        readme: '# SEO package', packageJsonText: expect.any(String), keywords: ['seo'], isOfficial: false,
+        readme: '# SEO package', keywords: ['seo'], isOfficial: false,
       }],
     })
   })
