@@ -211,10 +211,12 @@ const npmStatsTask: TaskConfig<'npm-stats'> = {
     const { payload } = req
     const deps = getSyncDeps()
     const ctx = createSyncContext(deps)
-    const output = await track(
+    const at = deps.now()
+    // npm-stats calls GitHub to resolve renamed / transferred registry repositories: record the quota it saw.
+    const output = await withQuota(payload, ctx.github, at, () => track(
       payload,
       'npm-stats',
-      deps.now(),
+      at,
       async () => {
         const r = await runNpmStats(payload, input, ctx)
         await queueRevalidate(payload, r.revalidateTags)
@@ -235,7 +237,7 @@ const npmStatsTask: TaskConfig<'npm-stats'> = {
           waitUntil: err.resetAt,
           overrideAccess: true,
         }),
-    )
+    ))
     return { output }
   },
 }

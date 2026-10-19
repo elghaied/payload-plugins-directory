@@ -3,6 +3,7 @@ import type { Plugin } from '@/payload-types'
 import { revalidationTagsFor } from '@/lib/cacheTags'
 import { payloadMajorsFromRange } from '@/lib/versions'
 import type { SyncContext } from './context'
+import { InvalidGitHubPathError } from './github'
 import { scoreFor } from './health'
 import { HttpError, RateLimitError } from './http'
 import { InvalidNpmPackageNameError, type NpmPackageInfo } from './npm'
@@ -62,6 +63,8 @@ const isTransient = (err: unknown): boolean =>
   (err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError'))
 
 type Fetched = { info: NpmPackageInfo | null; failed: boolean }
+/** GitHub id a registry `owner/repo` resolves to; null = no such repository (404, invalid name); 'error' = lookup failed. */
+type RegistryRepoId = number | null | 'error'
 
 export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: SyncContext): Promise<NpmStatsResult> {
   const now = ctx.now()
@@ -90,6 +93,23 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
       : [],
   )
   const names = [...new Set(targets.map(key))]
+  const repoOf = (p: (typeof targets)[number]) => repos.get(relId(p.repository) ?? -1)
+
+  // The registry may still name a repository's old full name (renamed or transferred): resolve it on GitHub and
+  // compare GitHub ids. One lookup per name per run; a RateLimitError propagates (the run is re-queued).
+  const registryIds = new Map<string, RegistryRepoId>()
+  async function resolveRegistryRepo(fullName: string): Promise<void> {
+    if (registryIds.has(fullName)) return
+    let id: RegistryRepoId
+    try {
+      id = (await ctx.github.getRepo({ fullName }))?.id ?? null
+    } catch (err) {
+      if (err instanceof InvalidGitHubPathError) id = null
+      else if (isTransient(err)) id = 'error'
+      else throw err
+    }
+    registryIds.set(fullName, id)
+  }
   const result: NpmStatsResult = { checked: 0, updated: [], errors: 0, failed: [], mismatched: [], revalidateTags: [] }
   // A package name was set but is not a valid npm name: nothing can be fetched, so report it.
   for (const p of inScope) {
@@ -112,6 +132,13 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
           }
         }),
       )
+      // Ownership lookups for this batch, before any write, so a rate limit re-queues it unchanged.
+      for (const [name, { info }] of fetched) {
+        const registryRepo = normalizeGitHubUrl(info?.repositoryUrl)
+        if (!registryRepo) continue
+        const needsLookup = targets.some((t) => key(t) === name && repoOf(t)?.githubId != null && repoOf(t)?.fullName.toLowerCase() !== registryRepo)
+        if (needsLookup) await resolveRegistryRepo(registryRepo)
+      }
     } catch (err) {
       if (err instanceof RateLimitError) {
         const remaining = new Set(names.slice(i))
@@ -129,15 +156,26 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
         continue
       }
       for (const p of group) {
-        const repo = repos.get(relId(p.repository) ?? -1)
+        const repo = repoOf(p)
         let fresh: StoredNpm | null = null
         if (info) {
           const declared = Boolean(info.repositoryUrl?.trim())
           const registryRepo = normalizeGitHubUrl(info.repositoryUrl)
-          // Data belongs to the plugin only if the registry says the package lives in this plugin's repository.
+          // Data belongs to the plugin only if the registry says the package lives in this plugin's repository:
+          // same full name, or (renamed / transferred repository) a full name GitHub resolves to the same id.
           // Without a repository field it is accepted only when no other plugin uses the name (legacy behaviour).
           // A declared non-GitHub repository can never be a listed plugin's.
-          const owns = declared ? registryRepo !== null && registryRepo === repo?.fullName.toLowerCase() : (shared.get(name) ?? 0) <= 1
+          const registryId = registryRepo !== null && registryRepo !== repo?.fullName.toLowerCase() ? registryIds.get(registryRepo) : undefined
+          if (registryId === 'error') {
+            // Ownership unknown (transient GitHub failure): keep the previous data.
+            result.errors++
+            result.failed.push(p.slug)
+            continue
+          }
+          const owns = declared
+            ? registryRepo !== null &&
+              (registryRepo === repo?.fullName.toLowerCase() || (repo?.githubId != null && registryId === repo.githubId))
+            : (shared.get(name) ?? 0) <= 1
           if (owns) fresh = toStoredNpm(info)
           else {
             fresh = { ...EMPTY_NPM } // an impostor must not keep numbers it was given earlier

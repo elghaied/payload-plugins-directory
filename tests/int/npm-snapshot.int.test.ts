@@ -8,7 +8,7 @@ import { runNpmStats } from '@/sync/npmStats'
 import { runSnapshot } from '@/sync/snapshot'
 import { trashPlugins } from '@/sync/trash'
 import { fakeFetch, type FakeRoute } from '../helpers/fakeFetch'
-import { DOWNLOADS, npmRoutes, REGISTRY } from '../fixtures/sync/github'
+import { DOWNLOADS, ghRepo, json, npmRoutes, REGISTRY, repoByName } from '../fixtures/sync/github'
 import { createPlugin, createRepo } from './helpers/directory'
 import { syncContext } from './helpers/syncContext'
 import { getTestPayload, resetDatabase } from './helpers/payload'
@@ -133,6 +133,48 @@ describe('runNpmStats', () => {
     const r2 = await runNpmStats(payload, { slugs: ['owner'] }, ctx(npmRoutes('popular-pkg2', { repositoryUrl: 'https://github.com/Acme/Popular' })))
     expect(r2.mismatched).toEqual([])
     expect((await bySlug('owner')).npm?.latestVersion).toBe('1.2.0')
+  })
+
+  it('keeps npm data of a renamed or transferred repository, resolving the registry name by GitHub id (cached per run)', async () => {
+    const repo = await createRepo(payload, { fullName: 'newowner/kit', githubId: 55 })
+    await createPlugin(payload, repo.id, { slug: 'kit-a', packageName: 'kit-a' })
+    await createPlugin(payload, repo.id, { slug: 'kit-b', packageName: 'kit-b' })
+    const f = fakeFetch({
+      ...npmRoutes('kit-a', { repositoryUrl: 'git+https://github.com/oldowner/kit.git' }),
+      ...npmRoutes('kit-b', { repositoryUrl: 'https://github.com/OldOwner/kit' }),
+      [repoByName('oldowner/kit')]: json(ghRepo(55, 'newowner/kit')),
+    })
+    const r = await runNpmStats(payload, {}, syncContext(f, NOW))
+    expect(r.mismatched).toEqual([])
+    expect((await bySlug('kit-a')).npm?.latestVersion).toBe('1.2.0')
+    expect((await bySlug('kit-b')).npm?.latestVersion).toBe('1.2.0')
+    expect(f.calls.filter((c) => c.url === repoByName('oldowner/kit'))).toHaveLength(1)
+  })
+
+  it('treats a registry repository that resolves to another GitHub id, or to nothing, as a mismatch', async () => {
+    const repo = await createRepo(payload, { fullName: 'acme/mine', githubId: 56 })
+    await createPlugin(payload, repo.id, { slug: 'other', packageName: 'other-pkg', npm: { latestVersion: '9.9.9', weeklyDownloads: 1 } })
+    await createPlugin(payload, repo.id, { slug: 'gone', packageName: 'gone-pkg', npm: { latestVersion: '9.9.9', weeklyDownloads: 1 } })
+    const r = await runNpmStats(payload, {}, ctx({
+      ...npmRoutes('other-pkg', { repositoryUrl: 'https://github.com/acme/other' }),
+      ...npmRoutes('gone-pkg', { repositoryUrl: 'https://github.com/acme/vanished' }),
+      [repoByName('acme/other')]: json(ghRepo(77, 'acme/other')),
+      [repoByName('acme/vanished')]: { status: 404 },
+    }))
+    expect([...r.mismatched].sort()).toEqual(['gone', 'other'])
+    expect(await bySlug('other')).toMatchObject({ npm: { latestVersion: null, weeklyDownloads: null } })
+  })
+
+  it('re-queues the remaining slugs when the GitHub ownership lookup is rate limited', async () => {
+    const repo = await createRepo(payload, { fullName: 'newowner/kit', githubId: 55 })
+    await createPlugin(payload, repo.id, { slug: 'kit-a', packageName: 'kit-a', npm: { latestVersion: '0.1.0' } })
+    const err = await runNpmStats(payload, {}, ctx({
+      ...npmRoutes('kit-a', { repositoryUrl: 'https://github.com/oldowner/kit' }),
+      [repoByName('oldowner/kit')]: { status: 429, headers: { 'retry-after': '60' } },
+    })).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(RateLimitError)
+    expect((err as RateLimitError).requeueInput).toEqual({ slugs: ['kit-a'] })
+    expect((await bySlug('kit-a')).npm?.latestVersion).toBe('0.1.0') // nothing written
   })
 
   it('treats a non-GitHub registry repository as a mismatch', async () => {
