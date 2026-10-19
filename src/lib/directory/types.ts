@@ -4,6 +4,7 @@ export type PluginSummary = {
   slug: string
   name: string
   packageName?: string
+  /** Display tagline: customTagline → ai.tagline → author description (spec §3.1). */
   description: string
   owner: string
   ownerAvatar: string
@@ -24,10 +25,22 @@ export type PluginSummary = {
   latestVersion?: string
   unpackedSize?: number | null
   healthScore?: number
+  /** `_h_slugPath` of the plugin's category ("parent/child"); absent = Uncategorized. */
+  categoryPath?: string
+  /** Tag slugs; absent when the plugin has none. */
+  tags?: string[]
 }
 
 export type PluginDetail = PluginSummary & {
+  /** The author's own description (GitHub/npm), shown below the AI overview. */
+  authorDescription: string
   readme?: string
+  /** Full README for the "Full README" disclosure; `readme` stays the short preview. */
+  readmeFull?: string
+  /** Plain strings only: render as text, never as HTML or markdown. */
+  ai?: { summary?: string; features: string[]; useCases: string[]; generated: boolean }
+  category?: { slug: string; title: string; path: string }
+  tagList: { slug: string; title: string }[]
   payloadVersionRange: string | null
   npm?: {
     weeklyDownloads?: number | null

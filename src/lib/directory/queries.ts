@@ -8,6 +8,7 @@ import type { PluginDetail, PluginSummary } from './types'
 const SUMMARY_SELECT = {
   slug: true, name: true, packageName: true, description: true, url: true, isOfficial: true,
   payloadMajors: true, healthScore: true, npm: true, repository: true,
+  customTagline: true, ai: { tagline: true }, category: true, _h_tags: true,
 } as const
 
 async function payload() {
@@ -25,6 +26,8 @@ export const getPluginSummaries = unstable_cache(
       limit: 0,
       pagination: false,
       select: SUMMARY_SELECT,
+      populate: { categories: { slug: true, _h_slugPath: true }, tags: { slug: true } },
+      context: { computeHierarchyPaths: true },
       sort: '-healthScore',
     })
     return res.docs.map((doc) => toSummary(doc as never))
@@ -48,6 +51,7 @@ export async function getPluginDetail(slug: string): Promise<PluginDetail | null
         depth: 1,
         limit: 1,
         where: { slug: { equals: slug } },
+        context: { computeHierarchyPaths: true },
       })
       return res.docs[0] ? toDetail(res.docs[0]) : null
     },
