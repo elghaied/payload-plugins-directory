@@ -26,6 +26,20 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
+    dashboard: {
+      widgets: [
+        {
+          slug: 'job-health',
+          label: 'Job health',
+          Component: './components/admin/JobHealthWidget.tsx#JobHealthWidget',
+          minWidth: 'medium',
+        },
+      ],
+      defaultLayout: [
+        { widgetSlug: 'job-health', width: 'full' },
+        { widgetSlug: 'collections', width: 'full' },
+      ],
+    },
   },
   collections: [Users, Maintainers, Repositories, Plugins, Categories, Tags, Submissions, Media],
   globals: [DirectorySettings],
