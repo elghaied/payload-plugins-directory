@@ -274,6 +274,33 @@ The app runs at `http://localhost:3000` by default.
 
 The worker queues the scheduled jobs (discover every 6 hours, npm stats at 01:00 UTC, snapshots at 00:30 UTC) and runs queued jobs every minute. Job health is shown on the admin dashboard.
 
+### Taxonomy and AI Enrichment
+
+- **Categories and tags** are curated in the admin (Taxonomy group). The starter tree, alias tags and the admin
+  presets are created once by the `20261019_050500_seed_taxonomy` migration. Afterwards `pnpm payload seed-taxonomy`
+  only adds missing starter items, applies alias tags to all plugins and lists common GitHub topics no alias covers.
+- **Enrichment** runs in the worker:
+  - `enrich-all` runs hourly (at minute 20). It finds plugins whose content, category tree, admin instructions or model
+    changed. Below 20 stale plugins it queues direct `enrich` jobs (the `enrich` queue runs 2 at a time); at 20 or more
+    it submits one Message Batch (50% cost). It waits 30 minutes after the last category or settings edit, so a burst of
+    edits costs one re-pass.
+  - `sync-repository` re-enriches previously enriched plugins whose README/package.json/description changed.
+- **Model and settings:** Directory settings (System group) → AI. `enabled` is the kill switch; `model` (default
+  `claude-sonnet-5-5`), `instructions` (appended to the cached system prompt) and `maxNewTagsPerPlugin` (default 2, max 5)
+  tune it.
+- **Locks:** when an admin edits an AI field (category, tags, tagline, summary, features, use cases) on a plugin, that
+  field is locked and enrichment never overwrites it. Untick the lock to hand it back.
+- **Admin views:** the "AI enrichment" dashboard widget, and the plugin list presets "Low confidence", "Uncategorized"
+  and "Enrichment failed".
+- **Key:** `ANTHROPIC_API_KEY` is set on the worker only. Without it, enrichment is skipped and plugins keep their author
+  description. Tests never call the API: they use `tests/helpers/fakeEnrichClient.ts`, and `vitest.setup.ts` removes the
+  key and stubs `fetch`.
+- **Manual commands:**
+  - `pnpm payload enrich --mode preview --limit 5` (also `pnpm enrich:preview`) sizes the requests and estimates token use
+    and cost. It makes no API call and writes nothing. `--slugs a,b` picks plugins; `--limit` defaults to 5 (max 50).
+  - `pnpm payload enrich --mode queue --slugs a,b` queues `enrich` jobs for those plugins.
+  - `pnpm payload enrich --mode all` queues `enrich-all` now, ignoring the edit debounce.
+
 ### One-time Import of the Legacy Data
 
 The JSON files the old GitHub Action produced are no longer in the repository. To import them once (slugs preserved, blocklisted plugins hidden), recover them from git history and pass their paths:
