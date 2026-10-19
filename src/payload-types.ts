@@ -117,6 +117,7 @@ export interface Config {
   locale: null;
   widgets: {
     'job-health': JobHealthWidget;
+    enrichment: EnrichmentWidget;
     welcome: WelcomeWidget;
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
@@ -1285,6 +1286,16 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
  * via the `definition` "job-health_widget".
  */
 export interface JobHealthWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enrichment_widget".
+ */
+export interface EnrichmentWidget {
   data?: {
     [k: string]: unknown;
   };

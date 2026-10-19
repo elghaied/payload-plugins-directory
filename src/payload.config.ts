@@ -35,9 +35,16 @@ export default buildConfig({
           Component: './components/admin/JobHealthWidget.tsx#JobHealthWidget',
           minWidth: 'medium',
         },
+        {
+          slug: 'enrichment',
+          label: 'AI enrichment',
+          Component: './components/admin/EnrichmentWidget.tsx#EnrichmentWidget',
+          minWidth: 'medium',
+        },
       ],
       defaultLayout: [
         { widgetSlug: 'job-health', width: 'full' },
+        { widgetSlug: 'enrichment', width: 'full' },
         { widgetSlug: 'collections', width: 'full' },
       ],
     },

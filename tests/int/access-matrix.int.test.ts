@@ -131,6 +131,7 @@ describe('access matrix', () => {
       collection: 'categories',
       overrideAccess: false,
       user: editorUser,
+      context: { skipRevalidate: true }, // this test is about authorship, not the job queue it later counts
       data: { title: 'Auth', slug: 'auth' },
     })
     const anon = await payload.findByID({ collection: 'categories', id: created.id, overrideAccess: false, user: null, depth: 0 })
@@ -138,7 +139,7 @@ describe('access matrix', () => {
     expect(anon).not.toHaveProperty('updatedBy')
     const asAdmin = await payload.findByID({ collection: 'categories', id: created.id, overrideAccess: false, user: admin as never, depth: 0 })
     expect(asAdmin.createdBy).toEqual({ relationTo: 'users', value: editor.id })
-    await payload.delete({ collection: 'categories', id: created.id, overrideAccess: true })
+    await payload.delete({ collection: 'categories', id: created.id, overrideAccess: true, context: { skipRevalidate: true } })
     await payload.delete({ collection: 'users', id: editor.id, overrideAccess: true })
   })
   it('anonymous cannot read the settings global authorship', async () => {

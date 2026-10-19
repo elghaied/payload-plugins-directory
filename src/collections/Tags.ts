@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
 import { adminOnlyUpdatedBy } from '@/fields/authorship'
+import { revalidateTagChange, revalidateTagDelete } from '@/taxonomy/hooks'
 import { validateTaxonomySlug } from '@/taxonomy/slugs'
 
 export const Tags: CollectionConfig = {
@@ -8,6 +9,7 @@ export const Tags: CollectionConfig = {
   admin: { useAsTitle: 'title', group: 'Taxonomy' },
   access: { read: anyone, create: isAdmin, update: isAdmin, delete: isAdmin },
   tags: true,
+  hooks: { afterChange: [revalidateTagChange], afterDelete: [revalidateTagDelete] },
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'slug', type: 'text', required: true, unique: true, index: true, validate: (value: unknown) => validateTaxonomySlug(value) },
