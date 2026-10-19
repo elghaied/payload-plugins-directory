@@ -90,14 +90,17 @@ async function ensureAiTag(payload: Payload, tag: { slug: string; title: string 
   return { id: doc.id, created: true }
 }
 
-/** Refusal / max_tokens / invalid output: keep every value, remember what failed (spec §5.2). Nothing when AI is off. */
+/**
+ * Refusal / max_tokens / invalid output: keep every value, remember what failed (spec §5.2). Nothing when AI is off
+ * (re-read here) or when the plugin's content changed since the request was built (the failure is for old input).
+ */
 export async function recordEnrichmentFailure(
   payload: Payload,
-  args: { pluginId: number; reason: string; key: string; now: Date },
+  args: { pluginId: number; contentHash: string | null; reason: string; key: string; now: Date },
 ): Promise<void> {
   if (!(await loadSettings(payload)).enabled) return
   const plugin = await findActivePlugin(payload, args.pluginId)
-  if (!plugin) return
+  if (!plugin || (plugin.contentHash ?? null) !== args.contentHash) return
   await payload.update({
     collection: 'plugins',
     id: plugin.id,

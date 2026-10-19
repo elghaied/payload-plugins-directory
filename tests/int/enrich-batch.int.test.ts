@@ -1,6 +1,20 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
-import { cancelBatchQuietly, customIdFor, DEFAULT_MAX_PER_PASS, findStalePlugins, maxPerPassFromEnv, runEnrichAll, runEnrichBatch, type EnrichBatchInput } from '@/enrich/batch'
+import Anthropic from '@anthropic-ai/sdk'
+import { recordEnrichmentFailure } from '@/enrich/apply'
+import {
+  cancelBatchQuietly,
+  clearInflight,
+  customIdFor,
+  DEFAULT_MAX_PER_PASS,
+  DIRECT_MAX,
+  findStalePlugins,
+  maxPerPassFromEnv,
+  readInflight,
+  runEnrichAll,
+  runEnrichBatch,
+  type EnrichBatchInput,
+} from '@/enrich/batch'
 import { failureKey, loadEnrichContext } from '@/enrich/context'
 import type { BatchResultEntry } from '@/enrich/types'
 import type { Plugin } from '@/payload-types'
@@ -200,5 +214,119 @@ describe('taxonomy snapshot per pass', () => {
     expect(out).toMatchObject({ status: 'done', applied: 6, failed: 0, retryDirect: [] })
     const created = await payload.find({ collection: 'tags', overrideAccess: true, where: { slug: { equals: 'presigned-uploads' } } })
     expect(created.totalDocs).toBe(1)
+  })
+})
+
+// Fix round 1: durable in-flight marker, retry cap, failure-recording guard, empty batch.
+describe('durable in-flight batch marker', () => {
+  const at = (base: Date, minutes: number) => new Date(base.getTime() + minutes * 60_000)
+  const jobs = async () => (await payload.find({ collection: 'payload-jobs', overrideAccess: true, limit: 0 })).totalDocs
+
+  it('blocks a second enrich-all while the batch runs, even with no enrich-batch job queued (crash before queueing)', async () => {
+    const fake = fakeEnrichClient()
+    const t = LATER()
+    const first = await runEnrichAll(payload, fake, t, { batchMin: 1 })
+    expect(await readInflight(payload)).toEqual({ state: 'submitted', batchId: first.batch!.batchId, at: t.toISOString() })
+    expect(await jobs()).toBe(0) // nothing queued the poller: only the marker guards
+    expect((await runEnrichAll(payload, fake, at(t, 60), { batchMin: 1 })).status).toBe('batch-in-flight')
+    expect((await runEnrichAll(payload, fake, at(t, 24 * 60), { batchMin: 1, force: true })).status).toBe('batch-in-flight')
+    expect(fake.batches.size).toBe(1)
+  })
+
+  it('a create that failed after the submitting marker blocks for 1 h, then is cleared with a warning', async () => {
+    const t = LATER()
+    const broken = { ...fakeEnrichClient(), createBatch: async () => { throw new Error('response lost') } }
+    await expect(runEnrichAll(payload, broken, t, { batchMin: 1 })).rejects.toThrow('response lost')
+    expect(await readInflight(payload)).toEqual({ state: 'submitting', at: t.toISOString() })
+    const fake = fakeEnrichClient()
+    expect((await runEnrichAll(payload, fake, at(t, 59), { batchMin: 1 })).status).toBe('batch-in-flight')
+    const r = await runEnrichAll(payload, fake, at(t, 61), { batchMin: 1 })
+    expect(r.status).toBe('batch')
+    expect(r.warning).toMatch(/submitting/)
+    expect((await readInflight(payload))?.batchId).toBe(r.batch!.batchId)
+  })
+
+  it('a submitted marker older than 25 h is cleared with a warning', async () => {
+    const fake = fakeEnrichClient()
+    const t = LATER()
+    await runEnrichAll(payload, fake, t, { batchMin: 1 })
+    const r = await runEnrichAll(payload, fake, at(t, 25 * 60 + 1), { batchMin: 1 })
+    expect(r).toMatchObject({ status: 'batch', batch: { batchId: 'msgbatch_2' } })
+    expect(r.warning).toMatch(/older than 25 h/)
+  })
+
+  it('is cleared after collection, on cancel and when the batch 404s, but never for another batch', async () => {
+    const fake = fakeEnrichClient()
+    const input = (await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })).batch!
+    expect(await runEnrichBatch(payload, fake, input, LATER())).toMatchObject({ status: 'processing' })
+    expect(await readInflight(payload)).not.toBeNull()
+    await clearInflight(payload, 'msgbatch_other')
+    expect(await readInflight(payload)).not.toBeNull()
+    endBatch(fake, input.batchId, plugins.map((p) => ok(p.id)))
+    expect(await runEnrichBatch(payload, fake, input, LATER())).toMatchObject({ status: 'done', applied: 6 })
+    expect(await readInflight(payload)).toBeNull()
+
+    await setAiSettings(payload, { instructions: 'Re-run everything.' })
+    const second = (await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })).batch!
+    await setAiSettings(payload, { enabled: false })
+    expect(await runEnrichBatch(payload, fake, second, LATER())).toMatchObject({ status: 'cancelled' })
+    expect(await readInflight(payload)).toBeNull()
+
+    await setAiSettings(payload, { enabled: true })
+    const third = (await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })).batch!
+    const gone = {
+      ...fake,
+      retrieveBatch: async () => {
+        throw Anthropic.APIError.generate(404, { error: { type: 'not_found_error', message: 'x' } }, 'x', new Headers())
+      },
+    }
+    expect(await runEnrichBatch(payload, gone, third, LATER())).toMatchObject({ status: 'not-found', applied: 0, retryDirect: [] })
+    expect(await readInflight(payload)).toBeNull()
+  })
+})
+
+describe('fix round 1: retry cap, failure guard, empty batch', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('caps direct retries at DIRECT_MAX in submission order; the rest stay stale', async () => {
+    const fake = fakeEnrichClient()
+    const { fingerprint } = await loadEnrichContext(payload)
+    const { id: batchId } = await fake.createBatch([])
+    const items = Array.from({ length: DIRECT_MAX + 10 }, (_, i) => ({ id: 1000 + i, contentHash: `x${i}` }))
+    endBatch(fake, batchId, [...items].reverse().map((i) => ({ custom_id: customIdFor(i.id), result: { type: 'expired' as const } })))
+    const r = await runEnrichBatch(payload, fake, { batchId, fingerprint, model: 'claude-sonnet-5-5', items }, LATER())
+    expect(r.retryDirect).toEqual(items.slice(0, DIRECT_MAX).map((i) => i.id))
+  })
+
+  it('records no failure for content that changed since submission, nor when AI is off', async () => {
+    const fake = fakeEnrichClient()
+    const input = (await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })).batch!
+    const [p0, p1] = plugins
+    await payload.update({ collection: 'plugins', id: p0.id, overrideAccess: true, data: { contentHash: 'h0-new' } })
+    endBatch(fake, input.batchId, [
+      { custom_id: customIdFor(p0.id), result: { type: 'succeeded', message: maxTokensMessage() } },
+      { custom_id: customIdFor(p1.id), result: { type: 'succeeded', message: maxTokensMessage() } },
+    ])
+    await runEnrichBatch(payload, fake, input, LATER())
+    expect((await reload(p0.id)).ai?.failure ?? null).toBeNull()
+    expect((await reload(p1.id)).ai).toMatchObject({ failure: 'max_tokens' }) // control: unchanged content records it
+
+    const now = new Date()
+    await setAiSettings(payload, { enabled: false })
+    await recordEnrichmentFailure(payload, { pluginId: plugins[2].id, contentHash: 'h2', reason: 'x', key: 'k', now })
+    expect((await reload(plugins[2].id)).ai?.failure ?? null).toBeNull()
+  })
+
+  it('returns nothing-stale and creates no batch when every stale plugin vanished before its request was built', async () => {
+    const fake = fakeEnrichClient()
+    const find = payload.find.bind(payload)
+    vi.spyOn(payload, 'find').mockImplementation(((args: Parameters<Payload['find']>[0]) =>
+      args.collection === 'plugins' && args.depth === 1
+        ? Promise.resolve({ docs: [], totalDocs: 0 })
+        : find(args)) as never)
+    const r = await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })
+    expect(r).toMatchObject({ status: 'nothing-stale', batch: null })
+    expect(fake.batches.size).toBe(0)
+    expect(await readInflight(payload)).toBeNull()
   })
 })

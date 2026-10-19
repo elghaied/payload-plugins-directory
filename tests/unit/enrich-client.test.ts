@@ -26,7 +26,7 @@ function stubSdk() {
     beta: { messages: { create: vi.fn<(body: Record<string, unknown>) => Promise<unknown>>(async () => okMessage({ a: 1 })) } },
     messages: {
       batches: {
-        create: vi.fn<(body: { requests: BatchItem[] }) => Promise<Info>>(async () => ({ id: 'msgbatch_1', processing_status: 'in_progress' })),
+        create: vi.fn<(body: { requests: BatchItem[] }, options?: { maxRetries?: number }) => Promise<Info>>(async () => ({ id: 'msgbatch_1', processing_status: 'in_progress' })),
         retrieve: vi.fn<(id: string) => Promise<Info>>(async () => ({ id: 'msgbatch_1', processing_status: 'ended' })),
         results: vi.fn<(id: string) => Promise<AsyncIterable<unknown>>>(async () =>
           (async function* () {
@@ -58,6 +58,7 @@ describe('createEnrichClient', () => {
     const body = sdk.messages.batches.create.mock.calls[0][0]
     expect(body).toEqual({ requests: [{ custom_id: 'plugin-1', params: request }] })
     expect(JSON.stringify(body)).not.toMatch(/fallbacks|betas/)
+    expect(sdk.messages.batches.create.mock.calls[0][1]).toEqual({ maxRetries: 0 }) // no idempotency key: never retry the POST
     expect(await client.retrieveBatch('msgbatch_1')).toEqual({ id: 'msgbatch_1', processing_status: 'ended' })
     const results: unknown[] = []
     for await (const r of client.batchResults('msgbatch_1')) results.push(r)

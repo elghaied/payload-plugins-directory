@@ -40,7 +40,7 @@ export async function settleMessage(
 ): Promise<Settled> {
   const key = failureKey(args.contentHash, ctx.fingerprint)
   const fail = async (reason: string): Promise<Settled> => {
-    await recordEnrichmentFailure(payload, { pluginId: args.pluginId, reason, key, now: args.now })
+    await recordEnrichmentFailure(payload, { pluginId: args.pluginId, contentHash: args.contentHash, reason, key, now: args.now })
     return { status: 'failed', reason, revalidateTags: [] }
   }
   const read = interpretMessage(args.message)

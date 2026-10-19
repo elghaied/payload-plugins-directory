@@ -13,7 +13,7 @@ export type AnthropicLike = {
   beta: { messages: { create: (body: Record<string, unknown>) => Promise<unknown> } }
   messages: {
     batches: {
-      create: (body: { requests: BatchItem[] }) => Promise<{ id: string; processing_status: string }>
+      create: (body: { requests: BatchItem[] }, options?: { maxRetries?: number }) => Promise<{ id: string; processing_status: string }>
       retrieve: (id: string) => Promise<{ id: string; processing_status: string }>
       results: (id: string) => Promise<AsyncIterable<unknown>>
       cancel: (id: string) => Promise<unknown>
@@ -38,7 +38,10 @@ export function createEnrichClient(sdk: AnthropicLike): EnrichClient {
     // Batches reject `fallbacks`; refused batch items are re-run as direct requests (src/enrich/batch.ts).
     async createBatch(items: BatchItem[]) {
       const body = { requests: items } satisfies Anthropic.Messages.BatchCreateParams
-      return toInfo(await sdk.messages.batches.create(body))
+      // No SDK retries: batch creation carries no idempotency key, so a retried POST after a lost response could
+      // create (and bill) a second batch. A failed create surfaces; the in-flight marker (batch.ts) guards the rest.
+      const options = { maxRetries: 0 } satisfies Parameters<Anthropic['messages']['batches']['create']>[1]
+      return toInfo(await sdk.messages.batches.create(body, options))
     },
     async retrieveBatch(id: string) {
       return toInfo(await sdk.messages.batches.retrieve(id))
@@ -99,5 +102,8 @@ export function classifyAnthropicError(err: unknown, now: Date = new Date()): An
   }
   return { kind: 'other' }
 }
+
+/** The batch id is unknown to the API (404): there is nothing left to poll or collect. */
+export const isBatchNotFound = (err: unknown): boolean => err instanceof Anthropic.NotFoundError
 
 export const isPermanentAnthropicError = (err: unknown): boolean => classifyAnthropicError(err).kind === 'permanent'
