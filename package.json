@@ -21,6 +21,7 @@
     "parity": "tsx scripts/parity.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.135.0",
     "@next/env": "^16.4.2",
     "@payloadcms/db-postgres": "4.0.0-beta.2",
     "@payloadcms/next": "4.0.0-beta.2",

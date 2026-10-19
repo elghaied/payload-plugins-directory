@@ -12,6 +12,7 @@ import { Repositories } from './collections/Repositories'
 import { Submissions } from './collections/Submissions'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
+import { isAdmin } from './access'
 import { jobStatus } from './db/jobStatus'
 import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
@@ -43,6 +44,9 @@ export default buildConfig({
   },
   collections: [Users, Maintainers, Repositories, Plugins, Categories, Tags, Submissions, Media],
   globals: [DirectorySettings],
+  // Admin presets (Low confidence, Uncategorized, Enrichment failed). v4 would allow any authenticated user,
+  // which includes maintainers once Phase 4 adds their login.
+  queryPresets: { access: { read: isAdmin, create: isAdmin, update: isAdmin, delete: isAdmin }, constraints: {} },
   endpoints: [healthEndpoint],
   jobs: jobsConfig,
   cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand' } },

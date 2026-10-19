@@ -221,6 +221,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         url: p.url,
         isOfficial: p.isOfficial,
         description: p.description,
+        keywords: p.keywords,
         readme: p.readme ?? null,
         contentHash,
         payloadVersionRange: p.payloadVersionRange,

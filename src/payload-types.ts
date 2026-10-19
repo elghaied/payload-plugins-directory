@@ -81,6 +81,7 @@ export interface Config {
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
+    'payload-query-presets': PayloadQueryPreset;
     'payload-llm-instructions': PayloadLlmInstruction;
   };
   collectionsJoins: {};
@@ -98,6 +99,7 @@ export interface Config {
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
+    'payload-query-presets': PayloadQueryPresetsSelect<false> | PayloadQueryPresetsSelect<true>;
     'payload-llm-instructions': PayloadLlmInstructionsSelect<false> | PayloadLlmInstructionsSelect<true>;
   };
   db: {
@@ -298,6 +300,10 @@ export interface Plugin {
   source: 'topic' | 'official' | 'submission';
   firstSeenAt?: string | null;
   description?: string | null;
+  /**
+   * npm keywords (written by sync).
+   */
+  keywords?: string[] | null;
   readme?: string | null;
   contentHash?: string | null;
   payloadVersionRange?: string | null;
@@ -314,7 +320,7 @@ export interface Plugin {
   category?: (number | null) | Category;
   _h_tags?: (number | Tag)[] | null;
   /**
-   * Generated from the README. Lock a field to stop it being overwritten.
+   * Generated from the README by Claude. Editing a field here locks it (see Locks), so enrichment never overwrites it; untick the lock to hand it back.
    */
   ai?: {
     tagline?: string | null;
@@ -325,6 +331,10 @@ export interface Plugin {
     model?: string | null;
     enrichedAt?: string | null;
     enrichedHash?: string | null;
+    promptHash?: string | null;
+    failure?: string | null;
+    failedAt?: string | null;
+    failedKey?: string | null;
   };
   locks?: {
     category?: boolean | null;
@@ -715,6 +725,55 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-query-presets".
+ */
+export interface PayloadQueryPreset {
+  id: number;
+  title: string;
+  groupBy?: string | null;
+  columns?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  where?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  isShared?: boolean | null;
+  access?: {
+    read?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (number | User)[] | null;
+    };
+    update?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (number | User)[] | null;
+    };
+    delete?: {
+      constraint?: ('everyone' | 'onlyMe' | 'specificUsers') | null;
+      users?: (number | User)[] | null;
+    };
+  };
+  relatedCollection: 'plugins';
+  /**
+   * This is a temporary field used to determine if updating the preset would remove the user's access to it. When `true`, this record will be deleted after running the preset's `validate` function.
+   */
+  isTemp?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-llm-instructions".
  */
 export interface PayloadLlmInstruction {
@@ -825,6 +884,7 @@ export interface PluginsSelect<T extends boolean = true> {
   source?: T;
   firstSeenAt?: T;
   description?: T;
+  keywords?: T;
   readme?: T;
   contentHash?: T;
   payloadVersionRange?: T;
@@ -853,6 +913,10 @@ export interface PluginsSelect<T extends boolean = true> {
         model?: T;
         enrichedAt?: T;
         enrichedHash?: T;
+        promptHash?: T;
+        failure?: T;
+        failedAt?: T;
+        failedKey?: T;
       };
   locks?:
     | T
@@ -1032,6 +1096,43 @@ export interface PayloadPreferencesSelect<T extends boolean = true> {
 export interface PayloadMigrationsSelect<T extends boolean = true> {
   name?: T;
   batch?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-query-presets_select".
+ */
+export interface PayloadQueryPresetsSelect<T extends boolean = true> {
+  title?: T;
+  groupBy?: T;
+  columns?: T;
+  where?: T;
+  isShared?: T;
+  access?:
+    | T
+    | {
+        read?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+        update?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+        delete?:
+          | T
+          | {
+              constraint?: T;
+              users?: T;
+            };
+      };
+  relatedCollection?: T;
+  isTemp?: T;
   updatedAt?: T;
   createdAt?: T;
 }

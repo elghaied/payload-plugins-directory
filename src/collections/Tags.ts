@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
 import { adminOnlyUpdatedBy } from '@/fields/authorship'
+import { validateTaxonomySlug } from '@/taxonomy/slugs'
 
 export const Tags: CollectionConfig = {
   slug: 'tags',
@@ -9,7 +10,7 @@ export const Tags: CollectionConfig = {
   tags: true,
   fields: [
     { name: 'title', type: 'text', required: true },
-    { name: 'slug', type: 'text', required: true, unique: true, index: true },
+    { name: 'slug', type: 'text', required: true, unique: true, index: true, validate: (value: unknown) => validateTaxonomySlug(value) },
     {
       name: 'aliases',
       type: 'text',

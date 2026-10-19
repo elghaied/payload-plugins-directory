@@ -18,6 +18,7 @@ export const Plugins: CollectionConfig = {
   versions: false,
   authorship: false, // system-synced; no per-user attribution to track (or leak)
   trash: true,
+  enableQueryPresets: true,
   access: {
     read: ({ req }) => (isAdminUser(req.user) ? true : listedPluginsWhere),
     create: isAdmin,
@@ -48,6 +49,7 @@ export const Plugins: CollectionConfig = {
     { name: 'firstSeenAt', type: 'date' },
     // Source content
     { name: 'description', type: 'textarea' },
+    { name: 'keywords', type: 'text', hasMany: true, admin: { readOnly: true, description: 'npm keywords (written by sync).' } },
     { name: 'readme', type: 'textarea' },
     { name: 'contentHash', type: 'text', admin: { readOnly: true } },
     // Compatibility
@@ -80,16 +82,25 @@ export const Plugins: CollectionConfig = {
     {
       name: 'ai',
       type: 'group',
-      admin: { description: 'Generated from the README. Lock a field to stop it being overwritten.' },
+      admin: {
+        description:
+          'Generated from the README by Claude. Editing a field here locks it (see Locks), so enrichment never overwrites it; untick the lock to hand it back.',
+      },
       fields: [
         { name: 'tagline', type: 'text', maxLength: 120 },
         { name: 'summary', type: 'textarea', maxLength: 600 },
         { name: 'features', type: 'text', hasMany: true },
         { name: 'useCases', type: 'text', hasMany: true },
-        { name: 'confidence', type: 'number', min: 0, max: 1 },
-        { name: 'model', type: 'text' },
-        { name: 'enrichedAt', type: 'date' },
-        { name: 'enrichedHash', type: 'text' },
+        { name: 'confidence', type: 'number', min: 0, max: 1, admin: { readOnly: true } },
+        { name: 'model', type: 'text', admin: { readOnly: true } },
+        { name: 'enrichedAt', type: 'date', admin: { readOnly: true } },
+        { name: 'enrichedHash', type: 'text', admin: { readOnly: true } },
+        // Fingerprint of prompt version + model + admin instructions + category tree (src/enrich/prompt.ts).
+        { name: 'promptHash', type: 'text', admin: { readOnly: true } },
+        // Last failed attempt (refusal, max_tokens, invalid output). Cleared by the next success. Admin-only.
+        { name: 'failure', type: 'text', access: { read: adminOnly }, admin: { readOnly: true } },
+        { name: 'failedAt', type: 'date', access: { read: adminOnly }, admin: { readOnly: true } },
+        { name: 'failedKey', type: 'text', access: { read: adminOnly }, admin: { hidden: true } },
       ],
     },
     {
