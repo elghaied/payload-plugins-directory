@@ -143,6 +143,18 @@ describe('runNpmStats', () => {
     expect(await bySlug('solo')).toMatchObject({ npm: { latestVersion: null, weeklyDownloads: null } })
   })
 
+  it('assigns data for an official monorepo registry entry with a directory', async () => {
+    const { official } = await fixture()
+    const r = routes()
+    const key = `${REGISTRY}/${encodeURIComponent('@payloadcms/plugin-seo')}`
+    const doc = (r[key] as { json: { versions: Record<string, Record<string, unknown>> } }).json
+    doc.versions['4.0.0-beta.2'].repository = { type: 'git', url: 'https://github.com/payloadcms/payload.git', directory: 'packages/plugin-seo' }
+    const res = await runNpmStats(payload, { slugs: ['official-plugin-seo'] }, ctx(r))
+    expect(official.fullName).toBe('payloadcms/payload')
+    expect(res.mismatched).toEqual([])
+    expect((await bySlug('official-plugin-seo')).npm?.weeklyDownloads).toBe(20_000)
+  })
+
   it('assigns data when the registry has no repository and one plugin uses the name', async () => {
     await fixture()
     const r = await runNpmStats(payload, { slugs: ['s1'] }, ctx(npmRoutes('payload-seo')))

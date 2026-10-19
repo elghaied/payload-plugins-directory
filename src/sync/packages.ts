@@ -48,14 +48,21 @@ export function isLikelyPlugin(dirName: string, pkg: PackageJson): boolean {
   return Boolean(pkg.peerDependencies?.payload || pkg.dependencies?.payload)
 }
 
-/** "owner/repo" (lower case) from the URL forms npm stores; null when it is not a GitHub URL. */
+const SLUG = String.raw`([\w.-]+)\/([\w.-]+?)(?:\.git)?(?=[/#?]|$)`
+const URL_FORM = new RegExp(String.raw`^(?:(?:https?|git|ssh):\/\/)?(?:[^@/\s]+@)?(?:www\.)?github\.com(?::\d+)?[/:]` + SLUG, 'i')
+const SCP_FORM = new RegExp(String.raw`^[^@/\s]+@(?:www\.)?github\.com:` + SLUG, 'i')
+const SHORTHAND = /^(?:github:)?([\w-]+)\/([\w.-]+?)(?:\.git)?$/i // exactly one slash, whole string
+
+/**
+ * "owner/repo" (lower case) from the forms npm stores in `repository`: https/git/ssh URLs and scp-style
+ * (`git@github.com:o/r`) on host github.com or www.github.com only, `github:o/r`, and the bare `o/r` shorthand.
+ * A trailing `.git`, `/`, `#fragment` or `?query` is dropped. Any other host (gitlab.com, notgithub.com) is null.
+ */
 export function normalizeGitHubUrl(url: string | null | undefined): string | null {
   if (!url) return null
-  const cleaned = url.replace(/^git\+/, '').replace(/\.git$/, '').trim()
-  const full = cleaned.match(/github\.com[/:]([\w.-]+\/[\w.-]+)/i)
-  if (full) return full[1].toLowerCase()
-  const short = cleaned.match(/^github:([\w.-]+\/[\w.-]+)/i)
-  return short ? short[1].toLowerCase() : null
+  const cleaned = url.trim().replace(/^git\+/, '')
+  const m = cleaned.match(URL_FORM) ?? cleaned.match(SCP_FORM) ?? cleaned.match(SHORTHAND)
+  return m ? `${m[1]}/${m[2]}`.toLowerCase() : null
 }
 
 /** "owner/repo" from a github.com URL, case kept (GitHub resolves case-insensitively); null otherwise. */

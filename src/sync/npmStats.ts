@@ -13,7 +13,7 @@ export type NpmStatsInput = { slugs?: string[] | null }
 export type NpmStatsResult = {
   checked: number
   updated: string[]
-  /** Number of package lookups that failed transiently. */
+  /** Failed package lookups, invalid package names and failed plugin updates (one per slug or package). */
   errors: number
   /** Slugs whose lookup failed; they keep their previous npm fields and health. */
   failed: string[]
@@ -140,7 +140,7 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
           const owns = declared ? registryRepo !== null && registryRepo === repo?.fullName.toLowerCase() : (shared.get(name) ?? 0) <= 1
           if (owns) fresh = toStoredNpm(info)
           else {
-            fresh = EMPTY_NPM // an impostor must not keep numbers it was given earlier
+            fresh = { ...EMPTY_NPM } // an impostor must not keep numbers it was given earlier
             result.mismatched.push(p.slug)
           }
         }

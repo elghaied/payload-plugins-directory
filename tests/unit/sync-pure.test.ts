@@ -46,6 +46,16 @@ describe('package helpers (ported from scripts/fetch-plugins.ts)', () => {
     expect(normalizeGitHubUrl('https://gitlab.com/acme/seo')).toBeNull()
     expect(normalizeGitHubUrl(null)).toBeNull()
   })
+
+  it('normalizes every GitHub URL form npm stores', () => {
+    for (const u of [
+      'git+https://github.com/o/r.git', 'git+ssh://git@github.com/o/r.git', 'git@github.com:o/r.git', 'github:o/r', 'o/r',
+      'https://www.github.com/O/R/', 'https://github.com/o/r.git#readme', 'https://github.com/o/r/tree/main/packages/x',
+    ]) expect(normalizeGitHubUrl(u), u).toBe('o/r')
+    expect(normalizeGitHubUrl('https://notgithub.com/o/r')).toBeNull()
+    expect(normalizeGitHubUrl('https://gitlab.com/o/r')).toBeNull()
+    expect(normalizeGitHubUrl('gitlab.com/o/r')).toBeNull()
+  })
   it('parses submission URLs', () => {
     expect(parseGitHubFullName('https://github.com/Acme/payload-seo')).toBe('Acme/payload-seo')
     expect(parseGitHubFullName('https://github.com/acme/mono/tree/main/packages/seo')).toBe('acme/mono')
