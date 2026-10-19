@@ -18,12 +18,16 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
 
 const hasLink = (s: string) => new RegExp(`${EMAIL.source}|${URL.source}|${DOMAIN.source}`, 'i').test(s)
 
-const SCHEME = /\b(?:java\s*script|vbscript|data)\s*:/gi
+// Scheme-shaped only: prose such as "user data: name" or "JavaScript: the language" is left alone.
+const SCHEME = /\b(?:java\s*script|vbscript)\s*:(?=\S)|\bdata\s*:\s*[a-z]+\/[a-z0-9.+-]+\S*/gi
 
 function stripOnce(s: string): string {
   return s
     .replace(MD_LINK, '$1')
     .replace(HTML_TAG, '')
+    .replace(HTML_TAG, '')
+    // Before the link filters, so "evil<>.com" cannot reassemble after they ran.
+    .replace(/[<>]/g, '')
     .replace(EMAIL, '')
     .replace(URL, '')
     .replace(MD_MARKS, '')

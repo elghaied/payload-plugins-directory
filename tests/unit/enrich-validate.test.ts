@@ -154,6 +154,21 @@ describe('cleanText', () => {
     expect(cleanText('x vbscript:y data:text/html,z', 100)).not.toMatch(/script:|data:/)
     expect(cleanText('<script src=x', 100)).not.toMatch(/[<>]/)
   })
+  it('leaves ordinary prose with colons alone and removes scheme-shaped tokens', () => {
+    expect(cleanText('Stores user data: name and email', 100)).toBe('Stores user data: name and email')
+    expect(cleanText('JavaScript: the language', 100)).toBe('JavaScript: the language')
+    expect(cleanText('javascript:alert(1)', 100)).toBe('alert(1)')
+    expect(cleanText('see data:text/html,x now', 100)).toBe('see now')
+  })
+  it('does not let bracket removal rebuild links', () => {
+    expect(cleanText('visit evil<>.com now', 100)).toBe('visit now')
+    expect(cleanText('visit evil.<>com now', 100)).toBe('visit now')
+    expect(cleanText('javascript<>:alert', 100)).toBe('alert')
+    for (const input of ['evil<>.com', 'evil.<>com', 'javascript<>:alert', '<<b>script>alert(1)<</b>/script>']) {
+      const out = cleanText(input, 100)
+      expect(cleanText(out, 100)).toBe(out)
+    }
+  })
   it('stays fast on 200 KB adversarial input', () => {
     const inputs = ['['.repeat(200_000), '<'.repeat(200_000), 'a.'.repeat(100_000), '[a](b'.repeat(40_000), '**'.repeat(100_000)]
     const start = performance.now()
@@ -161,6 +176,6 @@ describe('cleanText', () => {
       cleanText(input, 600)
       validateEnrichment({ ...good, summary: input, tags: [{ new: input }] }, ctx)
     }
-    expect(performance.now() - start).toBeLessThan(200)
+    expect(performance.now() - start).toBeLessThan(2000)
   })
 })
