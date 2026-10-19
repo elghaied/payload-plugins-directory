@@ -1,8 +1,10 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
+import { restrictMaintainerPluginEdits, skipUnchangedBrandingRevalidate } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import { revalidatePluginChange, revalidatePluginDelete } from '@/collections/hooks/revalidatePlugin'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
+import { normalizeTagline } from '@/lib/maintainers/branding'
 import { DESCRIPTION_MAX_CHARS, README_MAX_CHARS } from '@/sync/limits'
 
 export const listedPluginsWhere: Where = {
@@ -25,10 +27,18 @@ export const Plugins: CollectionConfig = {
   access: {
     read: ({ req }) => (isAdminUser(req.user) ? true : listedPluginsWhere),
     create: isAdmin,
-    update: isAdmin, // phase 4 adds claimed-maintainer updates of customTagline/logo
+    // Maintainers: only listed plugins they maintain. Which fields is enforced by restrictMaintainerPluginEdits.
+    update: ({ req }) => {
+      if (isAdminUser(req.user)) return true
+      if (req.user?.collection === 'maintainers') {
+        return { and: [listedPluginsWhere, { maintainers: { in: [req.user.id] } }] }
+      }
+      return false
+    },
     delete: isAdmin,
   },
   hooks: {
+    beforeOperation: [restrictMaintainerPluginEdits],
     beforeChange: [
       // A trash/restore that does not come from the sync trash helper is an admin decision: drop sync's
       // reason so sync never treats an admin-trashed plugin as its own (and restores it).
@@ -38,6 +48,7 @@ export const Plugins: CollectionConfig = {
         return data
       },
       lockAdminEditedAiFields,
+      skipUnchangedBrandingRevalidate,
     ],
     afterChange: [revalidatePluginChange],
     afterDelete: [revalidatePluginDelete],
@@ -117,7 +128,13 @@ export const Plugins: CollectionConfig = {
     },
     // Maintainer
     { name: 'maintainers', type: 'relationship', relationTo: 'maintainers', hasMany: true },
-    { name: 'customTagline', type: 'text', maxLength: 120 },
+    {
+      name: 'customTagline',
+      type: 'text',
+      maxLength: 120,
+      // Every write path is normalised here (NFKC, invisible characters stripped, trimmed, clamped; empty -> null).
+      hooks: { beforeValidate: [({ value }) => (value === undefined ? value : normalizeTagline(value))] },
+    },
     { name: 'logo', type: 'upload', relationTo: 'media' },
     // Visibility
     {

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { createPayloadRequest, Forbidden, NotFound, ValidationError, type Payload } from 'payload'
+import { createPayloadRequest, Forbidden, handleEndpoints, NotFound, ValidationError, type Payload } from 'payload'
 import type { Maintainer } from '@/payload-types'
+import { getSessionSecret, signSessionToken, SESSION_COOKIE } from '@/lib/auth/session'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
 let payload: Payload
@@ -343,5 +344,178 @@ describe('maintainers (self access)', () => {
     expect(self.name).toBe('Octo Cat')
     expect(self).not.toHaveProperty('createdBy')
     expect(self).not.toHaveProperty('updatedBy')
+  })
+})
+
+const PNG_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+)
+const revalidateJobs = async () =>
+  (await payload.find({ collection: 'payload-jobs', overrideAccess: true, limit: 0, sort: 'createdAt', where: { taskSlug: { equals: 'revalidate' } } })).docs.map(
+    (j) => j.input,
+  )
+
+describe('plugins (maintainer edits)', () => {
+  beforeAll(async () => {
+    for (const id of [listedId, hiddenId]) {
+      await payload.update({ collection: 'plugins', id, overrideAccess: true, data: { maintainers: [maintainerA.id] } })
+    }
+  })
+  const edit = (user: unknown, id: number, data: Record<string, unknown>, context?: Record<string, unknown>) =>
+    payload.update({ collection: 'plugins', id, overrideAccess: false, user: user as never, data, depth: 0, context })
+
+  it('a maintainer can set customTagline on a plugin they maintain', async () => {
+    const doc = await edit(maintainerA, listedId, { customTagline: 'Fast forms' })
+    expect(doc.customTagline).toBe('Fast forms')
+  })
+  it('a maintainer cannot change any other field, even alongside an allowed one', async () => {
+    for (const data of [
+      { name: 'pwned' },
+      { customTagline: 'ok', visibility: 'hidden' },
+      { maintainers: [maintainerA.id, maintainerB.id] },
+      { healthScore: 100 },
+      { ai: { summary: 'x' } },
+      { locks: { summary: true } },
+      { category: 1 },
+      { tags: [1] },
+      { slug: 'stolen' },
+    ]) {
+      await expect(edit(maintainerA, listedId, data)).rejects.toThrow(Forbidden)
+    }
+    const stored = await payload.findByID({ collection: 'plugins', id: listedId, overrideAccess: true, depth: 0 })
+    expect(stored).toMatchObject({ name: 'listed-one', visibility: 'listed', customTagline: 'Fast forms', slug: 'listed-one' })
+    expect(stored.maintainers).toEqual([maintainerA.id])
+  })
+  it('a maintainer cannot trash a plugin they maintain', async () => {
+    await expect(edit(maintainerA, listedId, { deletedAt: new Date().toISOString() })).rejects.toThrow(Forbidden)
+  })
+  it('a maintainer cannot edit a plugin they do not maintain', async () => {
+    await expect(edit(maintainerB, listedId, { customTagline: 'hijack' })).rejects.toThrow(Forbidden)
+  })
+  it('a maintainer cannot edit a hidden plugin, even one they maintain', async () => {
+    await expect(edit(maintainerA, hiddenId, { customTagline: 'x' })).rejects.toThrow(Forbidden)
+  })
+  it('a bulk update by a maintainer touches only plugins they maintain', async () => {
+    const res = await payload.update({
+      collection: 'plugins',
+      where: { slug: { exists: true } },
+      overrideAccess: false,
+      user: maintainerB,
+      data: { customTagline: 'bulk' },
+    })
+    expect(res.docs).toHaveLength(0)
+  })
+  it('anonymous cannot set customTagline', async () => {
+    await expect(edit(null, listedId, { customTagline: 'anon' })).rejects.toThrow(Forbidden)
+  })
+  it('admins can still edit every field', async () => {
+    const doc = await edit(admin, listedId, { name: 'listed-one', customTagline: 'Admin tagline' })
+    expect(doc.customTagline).toBe('Admin tagline')
+  })
+
+  it('normalises customTagline on every path (NFKC, invisible characters, trim, clamp, empty -> null)', async () => {
+    const doc = await edit(maintainerA, listedId, { customTagline: '  ‮Fａst​   forms\u0007  ' })
+    expect(doc.customTagline).toBe('Fast forms')
+    const clamped = await edit(admin, listedId, { customTagline: 'x'.repeat(500) })
+    expect(clamped.customTagline).toHaveLength(120)
+    const cleared = await edit(maintainerA, listedId, { customTagline: '  ​ ' })
+    expect(cleared.customTagline).toBeNull()
+  })
+
+  it('logo needs the branding context: a REST-style write cannot set it, the server action can', async () => {
+    const media = await payload.create({
+      collection: 'media',
+      overrideAccess: true,
+      data: { alt: 'logo' },
+      file: { data: PNG_1X1, mimetype: 'image/png', name: 'logo.png', size: PNG_1X1.length },
+    })
+    await expect(edit(maintainerA, listedId, { logo: media.id })).rejects.toThrow(Forbidden)
+    const ok = await edit(maintainerA, listedId, { logo: media.id }, { brandingWrite: true })
+    expect(relId(ok.logo)).toBe(media.id)
+    const cleared = await edit(maintainerA, listedId, { logo: null }, { brandingWrite: true })
+    expect(cleared.logo ?? null).toBeNull()
+  })
+
+  describe('over REST', () => {
+    const patch = async (maintainerId: number, githubId: number, body: Record<string, unknown>, id = listedId) => {
+      const token = await signSessionToken({ maintainerId, githubId }, getSessionSecret())
+      const res = await handleEndpoints({
+        config: payload.config,
+        request: new Request(`http://localhost/api/plugins/${id}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', cookie: `${SESSION_COOKIE}=${token}` },
+          body: JSON.stringify(body),
+        }),
+      })
+      return res.status
+    }
+    it('PATCH of customTagline by the maintainer succeeds; any other field or logo is refused', async () => {
+      expect(await patch(maintainerA.id, 42, { customTagline: 'Via REST' })).toBe(200)
+      for (const body of [{ name: 'x' }, { visibility: 'hidden' }, { logo: 1 }, { locks: { summary: true } }, { deletedAt: '2026-01-01T00:00:00.000Z' }]) {
+        expect(await patch(maintainerA.id, 42, body)).toBe(403)
+      }
+      expect(await patch(maintainerB.id, 43, { customTagline: 'nope' })).toBe(403)
+    })
+  })
+
+  describe('phase 2 AI locks and revalidation', () => {
+    it('a maintainer edit neither locks nor changes AI fields', async () => {
+      await payload.update({
+        collection: 'plugins',
+        id: listedId,
+        overrideAccess: true,
+        context: { skipRevalidate: true },
+        data: { ai: { tagline: 'AI tagline', summary: 'AI summary' } },
+      })
+      await edit(maintainerA, listedId, { customTagline: 'Maintainer tagline' })
+      const stored = await payload.findByID({ collection: 'plugins', id: listedId, overrideAccess: true, depth: 0 })
+      expect(stored.ai).toMatchObject({ tagline: 'AI tagline', summary: 'AI summary' })
+      expect(stored.locks).toMatchObject({ tagline: false, summary: false, category: false, tags: false })
+      expect(stored.customTagline).toBe('Maintainer tagline')
+    })
+    it('an admin edit of customTagline does not lock AI fields either', async () => {
+      await edit(admin, listedId, { customTagline: 'Admin again' })
+      const stored = await payload.findByID({ collection: 'plugins', id: listedId, overrideAccess: true, depth: 0 })
+      expect(stored.locks).toMatchObject({ tagline: false, summary: false })
+    })
+    it('a branding edit queues exactly one revalidate job for the list and plugin tags', async () => {
+      const before = (await revalidateJobs()).length
+      await edit(maintainerA, listedId, { customTagline: 'Brand new tagline' })
+      const jobs = await revalidateJobs()
+      expect(jobs).toHaveLength(before + 1)
+      expect(jobs.at(-1)).toEqual({ tags: ['plugins', 'plugin:listed-one'] })
+    })
+    it('an unchanged maintainer save queues no revalidate job', async () => {
+      await edit(maintainerA, listedId, { customTagline: 'Same tagline' })
+      const before = (await revalidateJobs()).length
+      await edit(maintainerA, listedId, { customTagline: ' Same tagline ' })
+      expect(await revalidateJobs()).toHaveLength(before)
+    })
+  })
+})
+
+describe('media', () => {
+  it('maintainers cannot upload media directly', async () => {
+    await expect(
+      payload.create({
+        collection: 'media',
+        overrideAccess: false,
+        user: maintainerA,
+        data: { alt: 'x' },
+        file: { data: PNG_1X1, mimetype: 'image/png', name: 'x.png', size: PNG_1X1.length },
+      }),
+    ).rejects.toThrow(Forbidden)
+  })
+  it('media rejects SVG uploads even for admins', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>')
+    await expect(
+      payload.create({
+        collection: 'media',
+        overrideAccess: true,
+        data: { alt: 'x' },
+        file: { data: svg, mimetype: 'image/svg+xml', name: 'x.svg', size: svg.length },
+      }),
+    ).rejects.toThrow()
   })
 })
