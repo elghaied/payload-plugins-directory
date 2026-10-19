@@ -1,5 +1,5 @@
 export const BADGE_LABEL = 'Payload Directory'
-export const BADGE_CACHE_CONTROL = 'public, max-age=21600, s-maxage=21600, stale-while-revalidate=86400'
+export const BADGE_CACHE_CONTROL = 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=3600'
 const MISS_CACHE_CONTROL = 'public, max-age=300, s-maxage=300'
 const GREY = '#9f9f9f'
 
@@ -61,7 +61,7 @@ export function badgeResponse({
   const headers = {
     'Content-Type': 'image/svg+xml; charset=utf-8',
     'X-Content-Type-Options': 'nosniff',
-    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+    'Content-Security-Policy': "default-src 'none'",
   }
   if (!plugin) {
     return new Response(buildBadgeSvg({ message: 'not found', color: GREY }), {

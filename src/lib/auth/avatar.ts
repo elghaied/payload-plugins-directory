@@ -11,8 +11,9 @@ export function safeAvatarUrl(value: unknown): string | null {
   }
 }
 
-/** Sign-in link for the navbar; the server re-sanitises returnTo (same-site relative paths only). */
-export function signInHref(pathname: string | null): string {
-  const path = pathname && pathname.startsWith('/') && !pathname.startsWith('//') && !pathname.startsWith('/auth') ? pathname : null
-  return path ? `/auth/github?returnTo=${encodeURIComponent(path)}` : '/auth/github'
+/** Sign-in link for the navbar; keeps path and query (the server re-sanitises returnTo: same-site relative paths only). */
+export function signInHref(pathname: string | null, search = ''): string {
+  if (!pathname || !pathname.startsWith('/') || pathname.startsWith('//') || pathname.startsWith('/auth')) return '/auth/github'
+  const query = search && search !== '?' ? (search.startsWith('?') ? search : `?${search}`) : ''
+  return `/auth/github?returnTo=${encodeURIComponent(pathname + query)}`
 }

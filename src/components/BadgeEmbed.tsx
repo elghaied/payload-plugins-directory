@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
 function Snippet({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false)
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle')
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -16,15 +16,25 @@ function Snippet({ label, value }: { label: string; value: string }) {
           variant="ghost"
           size="sm"
           onClick={async () => {
-            await navigator.clipboard.writeText(value)
-            setCopied(true)
-            setTimeout(() => setCopied(false), 1500)
+            let next: 'copied' | 'failed' = 'copied'
+            try {
+              await navigator.clipboard.writeText(value)
+            } catch {
+              next = 'failed'
+            }
+            setState(next)
+            setTimeout(() => setState('idle'), next === 'failed' ? 4000 : 1500)
           }}
         >
-          {copied ? <Check /> : <Copy />}
-          {copied ? 'Copied' : 'Copy'}
+          {state === 'copied' ? <Check /> : <Copy />}
+          {state === 'copied' ? 'Copied' : 'Copy'}
         </Button>
       </div>
+      {state === 'failed' && (
+        <p role="status" className="text-xs text-destructive">
+          Copy failed — select and copy manually
+        </p>
+      )}
       <code className="block overflow-x-auto whitespace-pre rounded-lg bg-secondary/50 px-3 py-2 font-mono text-xs">{value}</code>
     </div>
   )

@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Github, LogIn, LogOut, Package, Plus } from "lucide-react"
+import { usePathname, useSearchParams } from "next/navigation"
+import { LogIn, LogOut, Package, Plus, User } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,14 +14,20 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { safeAvatarUrl, signInHref } from "@/lib/auth/avatar"
 
-type SessionInfo = { login: string; avatarUrl: string | null } | null
+export type SessionInfo = { login: string; avatarUrl: string | null } | null
 
 const TRIGGER =
   "flex items-center justify-center h-8 w-8 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/50 ring-1 ring-border overflow-hidden transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
+const SIGNED_OUT_TRIGGER =
+  "flex items-center justify-center gap-1.5 h-8 w-8 sm:w-auto sm:px-3 shrink-0 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent/50 ring-1 ring-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
+const PLACEHOLDER = <div className="h-8 w-8 shrink-0" aria-hidden />
+
 /** Session state is fetched client-side so cached public HTML never contains a maintainer's identity. */
-export function AccountMenu() {
+function AccountMenuInner() {
   const pathname = usePathname()
+  const search = useSearchParams().toString()
   const logoutForm = useRef<HTMLFormElement>(null)
   const [session, setSession] = useState<SessionInfo | undefined>(undefined)
 
@@ -38,20 +44,49 @@ export function AccountMenu() {
     return () => { cancelled = true }
   }, [])
 
-  if (session === undefined) return <div className="h-8 w-8 shrink-0" aria-hidden />
+  return <AccountMenuView session={session} pathname={pathname} search={search ? `?${search}` : ""} logoutFormRef={logoutForm} />
+}
+
+export function AccountMenu() {
+  // useSearchParams needs a Suspense boundary in statically rendered layouts; the fallback is the same placeholder.
+  return (
+    <Suspense fallback={PLACEHOLDER}>
+      <AccountMenuInner />
+    </Suspense>
+  )
+}
+
+/** Pure view over the session state: undefined = loading, null = signed out. */
+export function AccountMenuView({
+  session,
+  pathname,
+  search,
+  logoutFormRef,
+}: {
+  session: SessionInfo | undefined
+  pathname: string | null
+  search: string
+  logoutFormRef: RefObject<HTMLFormElement | null> | null
+}) {
+  if (session === undefined) return PLACEHOLDER
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className={TRIGGER}
-          aria-label={session ? `Account menu for @${session.login}` : "Account menu"}
+          className={session ? TRIGGER : SIGNED_OUT_TRIGGER}
+          aria-label={session ? `Account menu for @${session.login}` : "Sign in"}
         >
           {session?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote avatar from avatars.githubusercontent.com only (safeAvatarUrl); not in next/image's allow-list
             <img src={session.avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+          ) : session ? (
+            <User className="h-4 w-4" />
           ) : (
-            <Github className="h-4 w-4" />
+            <>
+              <LogIn className="h-4 w-4" />
+              <span className="hidden sm:inline text-sm font-medium">Sign in</span>
+            </>
           )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
@@ -65,7 +100,7 @@ export function AccountMenu() {
             </>
           ) : (
             <DropdownMenuItem asChild>
-              <a href={signInHref(pathname)}><LogIn className="h-4 w-4" /> Sign in with GitHub</a>
+              <a href={signInHref(pathname, search)}><LogIn className="h-4 w-4" /> Sign in with GitHub</a>
             </DropdownMenuItem>
           )}
           <DropdownMenuItem asChild>
@@ -75,7 +110,7 @@ export function AccountMenu() {
             <>
               <DropdownMenuSeparator />
               {/* onSelect + requestSubmit: a submit button inside the item can unmount before it submits. */}
-              <DropdownMenuItem onSelect={() => logoutForm.current?.requestSubmit()}>
+              <DropdownMenuItem onSelect={() => logoutFormRef?.current?.requestSubmit()}>
                 <LogOut className="h-4 w-4" /> Sign out
               </DropdownMenuItem>
             </>
@@ -83,7 +118,7 @@ export function AccountMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
       {/* Lives outside the menu content so it stays mounted when the menu closes. */}
-      <form ref={logoutForm} method="post" action="/auth/logout" className="hidden" />
+      {session && <form ref={logoutFormRef} method="post" action="/auth/logout" className="hidden" />}
     </>
   )
 }
