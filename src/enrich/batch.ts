@@ -2,6 +2,7 @@ import { and, eq, isNull, sql } from '@payloadcms/db-postgres/drizzle'
 import { randomUUID } from 'node:crypto'
 import type { Payload, Where } from 'payload'
 import { jobStatus } from '@/db/jobStatus'
+import { TAXONOMY_EDITED_KEY } from '@/taxonomy/hooks'
 import { isBatchNotFound, isDefiniteCreateFailure } from './client'
 import { allLocked, failureKey, findActivePlugin, loadEnrichContext, toPluginInput } from './context'
 import { settleSafely } from './enrichPlugin'
@@ -178,12 +179,18 @@ async function pendingJobs(payload: Payload, task: 'enrich' | 'enrich-batch') {
   return res.docs
 }
 
+/** Latest category create/update/delete or settings save (deletes leave no updatedAt: see markTaxonomyEdited). */
 async function lastTaxonomyEdit(payload: Payload): Promise<number> {
-  const [latest, settings] = await Promise.all([
+  const [latest, settings, deleted] = await Promise.all([
     payload.find({ collection: 'categories', overrideAccess: true, depth: 0, limit: 1, sort: '-updatedAt' }),
     payload.findGlobal({ slug: 'directory-settings', overrideAccess: true, depth: 0 }),
+    payload.db.drizzle.select().from(jobStatus).where(eq(jobStatus.key, TAXONOMY_EDITED_KEY)),
   ])
-  return Math.max(Date.parse(latest.docs[0]?.updatedAt ?? '') || 0, Date.parse(settings.updatedAt ?? '') || 0)
+  return Math.max(
+    Date.parse(latest.docs[0]?.updatedAt ?? '') || 0,
+    Date.parse(settings.updatedAt ?? '') || 0,
+    deleted[0]?.lastSuccessAt?.getTime() ?? 0,
+  )
 }
 
 /**

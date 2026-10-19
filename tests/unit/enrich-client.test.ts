@@ -24,7 +24,7 @@ const request: EnrichRequest = {
 function stubSdk() {
   type Info = { id: string; processing_status: string }
   return {
-    beta: { messages: { create: vi.fn<(body: Record<string, unknown>) => Promise<unknown>>(async () => okMessage({ a: 1 })) } },
+    beta: { messages: { create: vi.fn<(body: Record<string, unknown>, options?: { maxRetries?: number }) => Promise<unknown>>(async () => okMessage({ a: 1 })) } },
     messages: {
       batches: {
         create: vi.fn<(body: { requests: BatchItem[] }, options?: { maxRetries?: number }) => Promise<Info>>(async () => ({ id: 'msgbatch_1', processing_status: 'in_progress' })),
@@ -45,7 +45,7 @@ describe('createEnrichClient', () => {
     const sdk = stubSdk()
     const message = await createEnrichClient(sdk as unknown as AnthropicLike).createMessage(request)
     expect(FALLBACK_BETA).toBe('server-side-fallback-2026-07-01')
-    expect(sdk.beta.messages.create).toHaveBeenCalledWith({ ...request, betas: [FALLBACK_BETA], fallbacks: 'default' })
+    expect(sdk.beta.messages.create).toHaveBeenCalledWith({ ...request, betas: [FALLBACK_BETA], fallbacks: 'default' }, { maxRetries: 0 })
     const body = sdk.beta.messages.create.mock.calls[0][0]
     expect(body).not.toHaveProperty('thinking')
     expect(body).not.toHaveProperty('tool_choice')
@@ -72,7 +72,7 @@ describe('createEnrichClient', () => {
     expect(process.env.ANTHROPIC_API_KEY).toBeUndefined()
     expect(enrichClientFromEnv({})).toBeNull()
     expect(enrichClientFromEnv({ ANTHROPIC_API_KEY: '' })).toBeNull()
-    expect(enrichClientFromEnv({ ANTHROPIC_API_KEY: 'sk-test' })).not.toBeNull() // constructs only; sends nothing
+    expect(enrichClientFromEnv({ ANTHROPIC_API_KEY: 'sk-test', NODE_ENV: 'production' })).not.toBeNull() // constructs only; sends nothing
   })
 })
 
@@ -168,5 +168,20 @@ describe('interpretMessage', () => {
     const u = usageOf(okMessage({}))
     expect(u).toEqual({ input: 6000, output: 800, cacheRead: 2500, cacheWrite: 0 })
     expect(addUsage(addUsage(ZERO_USAGE, u), u)).toEqual({ input: 12000, output: 1600, cacheRead: 5000, cacheWrite: 0 })
+  })
+})
+
+describe('B6: a local worker never spends real money', () => {
+  it('has no client outside production unless ENRICH_ALLOW_LOCAL=1, and says so once', () => {
+    const log = vi.fn()
+    const key = { ANTHROPIC_API_KEY: 'sk-test' }
+    expect(enrichClientFromEnv({ ...key, NODE_ENV: 'development' }, log)).toBeNull()
+    expect(enrichClientFromEnv({ ...key }, log)).toBeNull()
+    expect(log).toHaveBeenCalledTimes(1)
+    expect(log.mock.calls[0][0]).toMatch(/ENRICH_ALLOW_LOCAL/)
+    expect(enrichClientFromEnv({ ...key, NODE_ENV: 'development', ENRICH_ALLOW_LOCAL: '1' }, log)).not.toBeNull()
+    expect(enrichClientFromEnv({ ...key, NODE_ENV: 'development', ENRICH_ALLOW_LOCAL: 'true' }, log)).toBeNull()
+    expect(enrichClientFromEnv({ ...key, NODE_ENV: 'production' }, log)).not.toBeNull()
+    expect(log).toHaveBeenCalledTimes(1)
   })
 })

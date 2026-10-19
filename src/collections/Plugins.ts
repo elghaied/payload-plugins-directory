@@ -98,7 +98,7 @@ export const Plugins: CollectionConfig = {
         { name: 'enrichedAt', type: 'date', admin: { readOnly: true } },
         { name: 'enrichedHash', type: 'text', admin: { readOnly: true } },
         // Fingerprint of prompt version + model + admin instructions + category tree (src/enrich/prompt.ts).
-        { name: 'promptHash', type: 'text', admin: { readOnly: true } },
+        { name: 'promptHash', type: 'text', access: { read: adminOnly }, admin: { readOnly: true } },
         // Last failed attempt (refusal, max_tokens, invalid output). Cleared by the next success. Admin-only.
         { name: 'failure', type: 'text', access: { read: adminOnly }, admin: { readOnly: true } },
         { name: 'failedAt', type: 'date', access: { read: adminOnly }, admin: { readOnly: true } },

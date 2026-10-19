@@ -52,7 +52,7 @@ export async function applyEnrichment(payload: Payload, ctx: EnrichContext, args
     }
     const input = toPluginInput(plugin)
     for (const id of aliasTagIds([...input.topics, ...input.keywords], ctx.tags)) tagIds.add(id)
-    data._h_tags = [...tagIds].sort((a, b) => a - b)
+    data._h_tags = await existingTagIds(payload, tagIds)
   }
 
   data.ai = {
@@ -77,17 +77,45 @@ export async function applyEnrichment(payload: Payload, ctx: EnrichContext, args
   return { status: 'applied', revalidateTags: tags, createdTags }
 }
 
-async function ensureAiTag(payload: Payload, tag: { slug: string; title: string }): Promise<{ id: number; created: boolean }> {
-  const found = await payload.find({ collection: 'tags', overrideAccess: true, depth: 0, limit: 1, where: { slug: { equals: tag.slug } } })
-  if (found.docs[0]) return { id: found.docs[0].id, created: false }
-  const doc = await payload.create({
+/**
+ * Tags deleted since the context was loaded (an admin, or a category/tag cleanup while the model answered) are
+ * dropped: writing their ids would fail the whole (paid) result on the relationship.
+ */
+async function existingTagIds(payload: Payload, ids: ReadonlySet<number>): Promise<number[]> {
+  if (ids.size === 0) return []
+  const found = await payload.find({
     collection: 'tags',
     overrideAccess: true,
     depth: 0,
-    context: { skipRevalidate: true },
-    data: { title: tag.title, slug: tag.slug, createdBy: 'ai' },
+    limit: 0,
+    pagination: false,
+    where: { id: { in: [...ids] } },
+    select: {},
   })
-  return { id: doc.id, created: true }
+  return found.docs.map((t) => t.id).sort((a, b) => a - b)
+}
+
+const findTagBySlug = async (payload: Payload, slug: string) =>
+  (await payload.find({ collection: 'tags', overrideAccess: true, depth: 0, limit: 1, where: { slug: { equals: slug } } })).docs[0]
+
+/** Finds or creates an AI tag. Two runs creating the same new tag at once: the loser (unique slug) uses the winner's. */
+export async function ensureAiTag(payload: Payload, tag: { slug: string; title: string }): Promise<{ id: number; created: boolean }> {
+  const found = await findTagBySlug(payload, tag.slug)
+  if (found) return { id: found.id, created: false }
+  try {
+    const doc = await payload.create({
+      collection: 'tags',
+      overrideAccess: true,
+      depth: 0,
+      context: { skipRevalidate: true },
+      data: { title: tag.title, slug: tag.slug, createdBy: 'ai' },
+    })
+    return { id: doc.id, created: true }
+  } catch (err) {
+    const winner = await findTagBySlug(payload, tag.slug)
+    if (winner) return { id: winner.id, created: false }
+    throw err
+  }
 }
 
 /**

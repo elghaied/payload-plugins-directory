@@ -1,5 +1,6 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
+import { ensureAiTag } from '@/enrich/apply'
 import { loadEnrichContext } from '@/enrich/context'
 import { runEnrich } from '@/enrich/enrichPlugin'
 import type { Plugin } from '@/payload-types'
@@ -27,6 +28,7 @@ beforeEach(async () => {
     readme: '# S3\nUploads to S3.', healthScore: 42,
   })
 })
+afterEach(() => vi.restoreAllMocks())
 afterAll(async () => resetDatabase(payload))
 
 describe('runEnrich', () => {
@@ -206,5 +208,31 @@ describe('runEnrich', () => {
     await runEnrich(payload, plugin.id, fakeEnrichClient(() => refusalMessage()), now)
     await runEnrich(payload, plugin.id, answer(), now)
     expect((await reload(plugin.id)).ai).toMatchObject({ failure: null, failedAt: null, failedKey: null, enrichedHash: 'hash-1' })
+  })
+
+  it('B1: uses the tag another run created between its lookup and its create (unique slug race)', async () => {
+    const other = await payload.create({ collection: 'tags', overrideAccess: true, context: { skipRevalidate: true }, data: { title: 'Race', slug: 'race', createdBy: 'ai' } })
+    const find = payload.find.bind(payload)
+    let first = true
+    vi.spyOn(payload, 'find').mockImplementation(((args: { collection: string }) => {
+      if (args.collection === 'tags' && first) {
+        first = false
+        return Promise.resolve({ docs: [], totalDocs: 0 }) // the lookup ran before the other run's insert committed
+      }
+      return find(args as never)
+    }) as never)
+    expect(await ensureAiTag(payload, { slug: 'race', title: 'Race' })).toEqual({ id: other.id, created: false })
+  })
+
+  it('B2: drops a tag deleted while the request was in flight instead of failing the write', async () => {
+    const fake = fakeEnrichClient(async () => {
+      await payload.delete({ collection: 'tags', id: tax.s3.id, overrideAccess: true, context: { skipRevalidate: true } })
+      return okMessage(goodOutput())
+    })
+    expect((await runEnrich(payload, plugin.id, fake, now)).status).toBe('applied')
+    const doc = await reload(plugin.id)
+    expect(ids(doc._h_tags)).not.toContain(tax.s3.id)
+    expect(ids(doc._h_tags)).toContain(tax.seo.id)
+    expect(doc.ai?.enrichedHash).toBe('hash-1')
   })
 })

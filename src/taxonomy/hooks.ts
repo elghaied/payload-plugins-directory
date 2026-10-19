@@ -1,4 +1,5 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
+import { jobStatus } from '@/db/jobStatus'
 import { categoryTag, LIST_TAG } from '@/lib/cacheTags'
 import { QUEUES } from '@/sync/queues'
 
@@ -24,6 +25,21 @@ export const revalidateCategoryChange: CollectionAfterChangeHook = async ({ doc,
 
 export const revalidateCategoryDelete: CollectionAfterDeleteHook = async ({ doc, req, context }) => {
   if (!skip(context)) await queueRevalidation(req, [LIST_TAG, categoryTag(doc.slug)])
+  return doc
+}
+
+/**
+ * job_status row stamped when a category is deleted. A delete (also a hierarchy cascade) changes the prompt
+ * fingerprint without bumping any updatedAt, so enrich-all's 30-minute edit debounce reads this row as well.
+ */
+export const TAXONOMY_EDITED_KEY = 'taxonomy-edited-at'
+
+export const markTaxonomyEdited: CollectionAfterDeleteHook = async ({ doc, req }) => {
+  const now = new Date()
+  await req.payload.db.drizzle
+    .insert(jobStatus)
+    .values({ key: TAXONOMY_EDITED_KEY, lastSuccessAt: now, updatedAt: now })
+    .onConflictDoUpdate({ target: jobStatus.key, set: { lastSuccessAt: now, updatedAt: now } })
   return doc
 }
 

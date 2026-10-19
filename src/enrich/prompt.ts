@@ -5,7 +5,7 @@ import { LIMITS } from './schema'
 import type { EnrichRequest, PluginInput, TagRef } from './types'
 
 /** Bump when the wording below changes meaningfully: every plugin becomes stale and is re-enriched (via Batches). */
-export const PROMPT_VERSION = 1
+export const PROMPT_VERSION = 2
 export const DEFAULT_MODEL = 'claude-sonnet-5-5'
 /** ~6k tokens of README keeps a request near the spec's 6k-input estimate. */
 export const MAX_README_CHARS = 24_000
@@ -62,6 +62,7 @@ export function buildSystemPrompt(t: PromptTaxonomy, s: { instructions: string; 
     `- features: ${LIMITS.featuresMin} to ${LIMITS.featuresMax} concrete capabilities, each at most ${LIMITS.featureLength} characters.`,
     `- useCases: ${LIMITS.useCasesMin} to ${LIMITS.useCasesMax} situations where it helps, each at most ${LIMITS.useCaseLength} characters, starting with a verb.`,
     '- Plain text only: no markdown, HTML, emoji, URLs, email addresses or code. State only what the plugin data supports.',
+    '- Never comment on the documentation, the README, its quality or missing information. State only what is known; when little is known, keep the answer short.',
     `- category: exactly one slug from the category list${hasOther ? `; use "${OTHER_CATEGORY_SLUG}" when none fits well` : ''}.`,
     `- tags: at most ${LIMITS.tagsMax}. Prefer existing tag slugs from the tag list.${newTagRule}`,
     '- confidence: 0 to 1, how well the plugin data supports your answer; below 0.6 when the README is missing, very short or unclear.',

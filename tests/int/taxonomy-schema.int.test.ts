@@ -42,8 +42,10 @@ describe('taxonomy and enrichment schema', () => {
     expect(anon.docs[0].ai?.tagline).toBe('Visible')
     expect(anon.docs[0].ai?.failure).toBeUndefined()
     expect(anon.docs[0].ai?.failedKey).toBeUndefined()
+    expect(anon.docs[0].ai?.failedAt).toBeUndefined()
+    expect(anon.docs[0].ai?.promptHash).toBeUndefined()
     const admin = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'p1' } } })
-    expect(admin.docs[0].ai).toMatchObject({ failure: 'refusal:cyber', failedKey: 'h:f' })
+    expect(admin.docs[0].ai).toMatchObject({ failure: 'refusal:cyber', failedKey: 'h:f', failedAt: NOW.toISOString(), promptHash: 'f' })
   })
 
   it('keeps query presets admin-only', async () => {

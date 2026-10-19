@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildRequest, buildSystemPrompt, MAX_INSTRUCTIONS_CHARS, buildUserContent, MAX_FIELD_CHARS, MAX_README_CHARS, neutralizeDelimiters, promptFingerprint,
+  buildRequest, buildSystemPrompt, PROMPT_VERSION, MAX_INSTRUCTIONS_CHARS, buildUserContent, MAX_FIELD_CHARS, MAX_README_CHARS, neutralizeDelimiters, promptFingerprint,
 } from '@/enrich/prompt'
 import { buildOutputSchema, TAG_ENUM_MAX } from '@/enrich/schema'
 import type { PluginInput, TagRef } from '@/enrich/types'
@@ -206,5 +206,15 @@ describe('buildOutputSchema and buildRequest', () => {
     expect(req).not.toHaveProperty('thinking')
     expect(req).not.toHaveProperty('tool_choice')
     expect(req).not.toHaveProperty('tools')
+  })
+})
+
+describe('B8: no meta-commentary', () => {
+  it('tells the model never to comment on the documentation, and re-enriches with the new wording', () => {
+    const prompt = buildSystemPrompt({ nodes, leaves, tags }, settings)
+    expect(prompt).toContain(
+      '- Never comment on the documentation, the README, its quality or missing information. State only what is known; when little is known, keep the answer short.',
+    )
+    expect(PROMPT_VERSION).toBe(2)
   })
 })

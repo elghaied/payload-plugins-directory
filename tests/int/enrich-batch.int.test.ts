@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import Anthropic from '@anthropic-ai/sdk'
+import { sql } from '@payloadcms/db-postgres/drizzle'
 import { jobStatus } from '@/db/jobStatus'
 import { recordEnrichmentFailure } from '@/enrich/apply'
 import {
@@ -373,5 +374,18 @@ describe('fix round 1: retry cap, failure guard, empty batch', () => {
     expect(r).toMatchObject({ status: 'nothing-stale', batch: null })
     expect(fake.batches.size).toBe(0)
     expect(await readInflight(payload)).toBeNull()
+  })
+})
+
+describe('B5: a category delete counts as a taxonomy edit for the debounce', () => {
+  it('restarts the 30-minute debounce, like a create or an update', async () => {
+    const old = new Date(Date.now() - 2 * 3_600_000).toISOString()
+    await payload.db.drizzle.execute(sql`update categories set updated_at = ${old}`)
+    await payload.db.drizzle.execute(sql`update directory_settings set updated_at = ${old}`)
+    expect((await runEnrichAll(payload, fakeEnrichClient(), new Date())).status).toBe('direct')
+    const media = (await payload.find({ collection: 'categories', overrideAccess: true, where: { slug: { equals: 'media-management' } } })).docs[0]
+    await payload.delete({ collection: 'categories', id: media.id, overrideAccess: true, context: { skipRevalidate: true } })
+    expect((await runEnrichAll(payload, fakeEnrichClient(), new Date())).status).toBe('debounced')
+    expect((await runEnrichAll(payload, fakeEnrichClient(), new Date(Date.now() + 31 * 60_000))).status).toBe('direct')
   })
 })

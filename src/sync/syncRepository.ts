@@ -107,6 +107,18 @@ async function loadAliasTags(payload: Payload): Promise<AliasTag[]> {
   return res.docs.map((t) => ({ id: t.id, aliases: t.aliases }))
 }
 
+/**
+ * The alias tags merged into the plugin's tags as they are right now, or `null` when an admin locked its tags
+ * (sync leaves them exactly as they are). Read just before the write, not at the start of the sync: an
+ * enrichment applied in between would otherwise lose its AI tags (final review Minor 1).
+ */
+async function mergedTagsNow(payload: Payload, id: number, add: readonly number[]): Promise<number[] | null> {
+  const now = await payload.findByID({
+    collection: 'plugins', id, overrideAccess: true, trash: true, depth: 0, select: { _h_tags: true, locks: true },
+  })
+  return now.locks?.tags ? null : mergeTagIds(now._h_tags, add)
+}
+
 async function officialPackageNames(payload: Payload): Promise<Set<string>> {
   const docs = await findPlugins(payload, { source: { equals: 'official' } })
   return new Set(docs.flatMap((d) => (d.packageName ? [d.packageName.toLowerCase()] : [])))
@@ -227,16 +239,17 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         payloadVersionRange: p.payloadVersionRange,
         payloadMajors: payloadMajorsFromRange(p.payloadVersionRange, prev?.npm?.latestVersion ?? latestVersions.get(p.slug) ?? null),
         healthScore: scoreFor(repoData, { isOfficial: p.isOfficial, npm: prev?.npm, ignoreIssues: official }, now),
-        // Locked tags belong to the admin: sync leaves them exactly as they are (an admin may have removed one).
-        ...(prev?.locks?.tags ? {} : { _h_tags: mergeTagIds(prev?._h_tags, aliasTagIds([...repoData.topics, ...p.keywords], aliasTags)) }),
       }
+      const aliasIds = aliasTagIds([...repoData.topics, ...p.keywords], aliasTags)
       if (!prev) {
         // Only creation sets visibility; admins own it afterwards (updates never write it).
         const doc = await payload.create({
           collection: 'plugins',
           overrideAccess: true,
           depth: 0,
-          data: { ...data, slug: p.slug, source: sourceFor(official, input.source), visibility: 'listed', firstSeenAt: now.toISOString() },
+          data: {
+            ...data, _h_tags: aliasIds, slug: p.slug, source: sourceFor(official, input.source), visibility: 'listed', firstSeenAt: now.toISOString(),
+          },
         })
         result.created.push(p.slug)
         result.contentChanged.push(doc.id)
@@ -244,13 +257,14 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       }
       // Only sync-trashed plugins come back, and only when discovery really found the repository again.
       const restore = discovered && Boolean(prev.deletedAt) && Boolean(prev.syncTrashReason)
+      const tags = await mergedTagsNow(payload, prev.id, aliasIds)
       await payload.update({
         collection: 'plugins',
         id: prev.id,
         overrideAccess: true,
         trash: true,
         depth: 0,
-        data: restore ? { ...data, deletedAt: null, syncTrashReason: null } : data,
+        data: { ...data, ...(tags ? { _h_tags: tags } : {}), ...(restore ? { deletedAt: null, syncTrashReason: null } : {}) },
       })
       ;(restore ? result.restored : result.updated).push(p.slug)
       const active = restore || !prev.deletedAt
@@ -270,9 +284,12 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     for (const p of known) {
       if (p.deletedAt) continue
       const healthScore = scoreFor(repoData, { isOfficial: p.isOfficial, npm: p.npm, ignoreIssues: p.source === 'official' }, now)
-      const tags = p.locks?.tags ? null : mergeTagIds(p._h_tags, topicTagIds) // locked: never touched
-      const tagsChanged = tags !== null && !sameIds(tags, p._h_tags)
-      if (healthScore === p.healthScore && !tagsChanged) continue
+      const stale = p.locks?.tags ? null : mergeTagIds(p._h_tags, topicTagIds) // locked: never touched
+      const staleChanged = stale !== null && !sameIds(stale, p._h_tags)
+      if (healthScore === p.healthScore && !staleChanged) continue
+      // Writing tags: merge into the stored set as it is now (an enrichment may have added AI tags since `known`).
+      const tags = staleChanged ? await mergedTagsNow(payload, p.id, topicTagIds) : null
+      const tagsChanged = tags !== null
       await payload.update({
         collection: 'plugins', id: p.id, overrideAccess: true, depth: 0,
         data: { healthScore, ...(tagsChanged ? { _h_tags: tags } : {}) },

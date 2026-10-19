@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CollectionBeforeChangeHook, Payload } from 'payload'
 import { RateLimitError } from '@/sync/http'
 import { runSyncRepository } from '@/sync/syncRepository'
@@ -40,6 +40,7 @@ beforeEach(async () => {
   payload = await getTestPayload()
   await resetDatabase(payload)
 })
+afterEach(() => vi.restoreAllMocks())
 afterAll(async () => resetDatabase(payload))
 
 describe('runSyncRepository', () => {
@@ -177,6 +178,35 @@ describe('runSyncRepository', () => {
     // Metadata-only sync (same push).
     expect((await sync({ [repoById(7)]: json({ ...SEO, pushed_at: '2026-10-19T09:00:00Z', stargazers_count: 99 }) })).contentReRead).toBe(false)
     expect(await ids()).toEqual([])
+  })
+
+  it('B3: keeps AI tags an enrichment wrote while the sync was fetching (no lost read-modify-write)', async () => {
+    const seoTag = await payload.create({ collection: 'tags', overrideAccess: true, data: { title: 'SEO', slug: 'seo', aliases: ['seo'] } })
+    const aiTag = await payload.create({ collection: 'tags', overrideAccess: true, data: { title: 'Sitemaps', slug: 'sitemaps', createdBy: 'ai' } })
+    await sync(seoRoutes())
+    const doc = await plugin('7-root')
+    const ids = async () => ((await plugin('7-root'))._h_tags ?? []).map((t) => (typeof t === 'object' ? t.id : t)).sort((a, b) => a - b)
+    /** An enrichment lands after sync read the plugin and before it writes (here: while it loads the alias tags). */
+    const enrichDuringNextSync = () => {
+      const find = payload.find.bind(payload)
+      const spy = vi.spyOn(payload, 'find').mockImplementation((async (args: { collection: string }) => {
+        if (args.collection === 'tags') {
+          spy.mockRestore()
+          await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, context: { enrichment: true }, data: { _h_tags: [seoTag.id, aiTag.id] } })
+        }
+        return find(args as never)
+      }) as never)
+    }
+    const pushed = { ...SEO, pushed_at: '2026-10-19T10:00:00Z' }
+    enrichDuringNextSync()
+    expect((await sync(seoRoutes(pushed, '# Changed'))).contentReRead).toBe(true)
+    expect(await ids()).toEqual([seoTag.id, aiTag.id].sort((a, b) => a - b))
+
+    // Metadata-only sync (same push, more stars): the same race.
+    await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, data: { _h_tags: [seoTag.id] } })
+    enrichDuringNextSync()
+    expect((await sync({ [repoById(7)]: json({ ...pushed, stargazers_count: 7 }) })).contentReRead).toBe(false)
+    expect(await ids()).toEqual([seoTag.id, aiTag.id].sort((a, b) => a - b))
   })
 
   it('matches a seeded repository by full name and fills its githubId', async () => {
