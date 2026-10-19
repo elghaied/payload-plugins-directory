@@ -1,3 +1,5 @@
+import { README_MAX_CHARS } from '@/sync/limits'
+
 /**
  * First ~500 characters of a README, cut at the last sentence or paragraph break past 200 characters —
  * the preview the legacy fetch script stored. Sync now stores the full README; the detail page keeps
@@ -12,7 +14,7 @@ export function readmePreview(readme: string | null | undefined): string | undef
 }
 
 /** Longest README the detail page renders (characters); longer ones end with a link to the full file on GitHub. */
-export const README_RENDER_MAX = 100_000
+export const README_RENDER_MAX = README_MAX_CHARS
 
 /** The README as rendered: capped at README_RENDER_MAX without splitting a surrogate pair. */
 export function capReadme(readme: string): { text: string; truncated: boolean } {

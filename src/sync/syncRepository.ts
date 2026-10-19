@@ -8,6 +8,7 @@ import type { SyncContext } from './context'
 import { extractOfficialPlugins, extractPlugins, OFFICIAL_REPO, type ExtractedPlugin } from './extract'
 import type { GitHubRepo } from './github'
 import { scoreFor } from './health'
+import { clampExtracted, clampChars, DESCRIPTION_MAX_CHARS } from './limits'
 import { InvalidNpmPackageNameError, type NpmClient } from './npm'
 import { trashPlugins } from './trash'
 import { sameIds, sameInstant } from './util'
@@ -46,7 +47,7 @@ export function toRepositoryData(meta: GitHubRepo, isMonorepo: boolean, now: Dat
     owner: meta.owner.login,
     ownerAvatar: meta.owner.avatar_url,
     url: meta.html_url,
-    description: meta.description,
+    description: typeof meta.description === 'string' ? clampChars(meta.description, DESCRIPTION_MAX_CHARS) : null,
     stars: meta.stargazers_count,
     forks: meta.forks_count,
     openIssues: meta.open_issues_count,
@@ -220,7 +221,8 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     const officialNames = official ? new Set<string>() : await officialPackageNames(payload)
     const kept: string[] = []
 
-    for (const p of extraction.plugins) {
+    for (const extracted of extraction.plugins) {
+      const p = clampExtracted(extracted)
       if (!official && p.packageName && officialNames.has(p.packageName.toLowerCase())) continue
       kept.push(p.slug)
       const prev = bySlug.get(p.slug)

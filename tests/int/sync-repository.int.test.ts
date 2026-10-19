@@ -59,6 +59,37 @@ describe('runSyncRepository', () => {
     expect(r.contentChanged).toEqual([doc.id])
   })
 
+  it('stores a 75,000-character README (above the Payload default text limit)', async () => {
+    const readme = `# Big\n${'word '.repeat(15_000)}`.slice(0, 75_000)
+    const r = await sync(seoRoutes(SEO, readme))
+    expect(r.created).toEqual(['7-root'])
+    expect((await plugin('7-root')).readme).toBe(readme)
+  })
+
+  it('truncates a 150,000-character README to 100,000 characters with a stable contentHash', async () => {
+    const readme = `# Huge\n${'line of text\n'.repeat(12_000)}`
+    expect(readme.length).toBeGreaterThan(150_000)
+    await sync(seoRoutes(SEO, readme))
+    const doc = await plugin('7-root')
+    expect(doc.readme!.length).toBeLessThanOrEqual(100_000)
+    expect(doc.readme!.length).toBeGreaterThan(98_000)
+    expect(readme.startsWith(doc.readme!)).toBe(true)
+    await sync(seoRoutes({ ...SEO, pushed_at: '2026-10-19T09:00:00Z' }, readme), input)
+    expect((await plugin('7-root')).contentHash).toBe(doc.contentHash)
+  })
+
+  it('clamps an oversized package.json description and keywords instead of failing the sync', async () => {
+    const routes = seoRoutes()
+    routes[raw(SEO.full_name, 'package.json')] = pkg({
+      ...SEO_PKG, description: 'd'.repeat(60_000), keywords: ['k'.repeat(60_000), 'ok'], peerDependencies: { payload: 'v'.repeat(60_000) },
+    })
+    const r = await sync(routes)
+    expect(r.created).toEqual(['7-root'])
+    const doc = await plugin('7-root')
+    expect(doc.description!.length).toBeLessThanOrEqual(2_000)
+    expect(doc.keywords!.every((k) => k.length <= 100)).toBe(true)
+  })
+
   it('skips content reads when pushedAt is unchanged but refreshes repository stats', async () => {
     await sync(seoRoutes())
     const f = fakeFetch({ [repoById(7)]: json({ ...SEO, stargazers_count: 99 }) }) // any raw read would reject

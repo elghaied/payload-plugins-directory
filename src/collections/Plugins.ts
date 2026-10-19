@@ -2,6 +2,7 @@ import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
+import { DESCRIPTION_MAX_CHARS, README_MAX_CHARS } from '@/sync/limits'
 
 export const listedPluginsWhere: Where = {
   and: [{ visibility: { equals: 'listed' } }, { deletedAt: { exists: false } }],
@@ -50,9 +51,9 @@ export const Plugins: CollectionConfig = {
     { name: 'source', type: 'select', required: true, defaultValue: 'topic', options: ['topic', 'official', 'submission'] },
     { name: 'firstSeenAt', type: 'date' },
     // Source content
-    { name: 'description', type: 'textarea' },
+    { name: 'description', type: 'textarea', maxLength: DESCRIPTION_MAX_CHARS },
     { name: 'keywords', type: 'text', hasMany: true, admin: { readOnly: true, description: 'npm keywords (written by sync).' } },
-    { name: 'readme', type: 'textarea' },
+    { name: 'readme', type: 'textarea', maxLength: README_MAX_CHARS },
     { name: 'contentHash', type: 'text', admin: { readOnly: true } },
     // Compatibility
     { name: 'payloadVersionRange', type: 'text' },

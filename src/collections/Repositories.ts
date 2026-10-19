@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
+import { DESCRIPTION_MAX_CHARS } from '@/sync/limits'
 
 export const Repositories: CollectionConfig = {
   slug: 'repositories',
@@ -13,7 +14,7 @@ export const Repositories: CollectionConfig = {
     { name: 'owner', type: 'text', required: true, index: true },
     { name: 'ownerAvatar', type: 'text' },
     { name: 'url', type: 'text', required: true },
-    { name: 'description', type: 'textarea' },
+    { name: 'description', type: 'textarea', maxLength: DESCRIPTION_MAX_CHARS },
     { name: 'stars', type: 'number', defaultValue: 0, index: true },
     { name: 'forks', type: 'number', defaultValue: 0 },
     { name: 'openIssues', type: 'number', defaultValue: 0 },
