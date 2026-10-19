@@ -81,7 +81,7 @@ export function TrendChart({ title, metric, series, tone, footnote }: Props) {
           role="img"
           aria-label={model.label}
           tabIndex={0}
-          className="relative h-32 flex-1 touch-none rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative h-32 flex-1 touch-pan-y rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           onPointerMove={onPointerMove}
           onPointerLeave={() => setActive(null)}
           onBlur={() => setActive(null)}
@@ -93,7 +93,6 @@ export function TrendChart({ title, metric, series, tone, footnote }: Props) {
             aria-hidden
             className={`absolute inset-0 h-full w-full overflow-visible ${TONE_CLASS[tone]}`}
           >
-            <title>{model.label}</title>
             {ticks.map((t) => (
               <line key={t.value} x1={0} x2={100} y1={t.y} y2={t.y} className="stroke-border" strokeWidth={1} vectorEffect="non-scaling-stroke" />
             ))}
