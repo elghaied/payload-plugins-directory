@@ -25,9 +25,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./cli/node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json /app/tsconfig.json ./cli/
 COPY --from=builder --chown=nextjs:nodejs /app/src ./cli/src
-# `refresh` mode: scripts/fetch-plugins.ts rewrites data/plugins.json (cwd-relative), so data/ must be writable by nextjs
-COPY --from=builder --chown=nextjs:nodejs /app/scripts ./cli/scripts
-COPY --from=builder --chown=nextjs:nodejs /app/data ./cli/data
 COPY --chown=nextjs:nodejs docker/entrypoint.sh /entrypoint.sh
 USER nextjs
 EXPOSE 3000

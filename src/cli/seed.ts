@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises'
 import type { Payload } from 'payload'
 import { strictObject, z } from 'payload'
 import { defineCLICommand } from 'payload/cli'
+import { QUEUES } from '@/sync/queues'
 import { mapLegacy, type LegacyPluginsData } from '@/lib/seed/mapLegacy'
 
 export async function seedDirectory(payload: Payload, input: ReturnType<typeof mapLegacy>) {
@@ -64,16 +65,19 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
 }
 
 export const seedCommand = defineCLICommand({
-  description: 'Import data/plugins.json and data/blocklist.json into the database (idempotent).',
+  description:
+    'One-time import of a legacy plugins.json export (slugs preserved; blocklisted ids hidden), then queue a discover run.',
   input: strictObject({
-    file: z._default(z.string(), 'data/plugins.json'),
-    blocklist: z._default(z.string(), 'data/blocklist.json'),
+    file: z.string(),
+    blocklist: z.optional(z.string()),
   }),
   handler: async ({ args, getPayload }) => {
     const payload = await getPayload()
     const data = JSON.parse(await readFile(args.file, 'utf8')) as LegacyPluginsData
-    const blocklist = (JSON.parse(await readFile(args.blocklist, 'utf8')) as { ids: string[] }).ids
+    const blocklist = args.blocklist ? (JSON.parse(await readFile(args.blocklist, 'utf8')) as { ids: string[] }).ids : []
     const result = await seedDirectory(payload, mapLegacy(data, blocklist))
-    payload.logger.info(result, 'Seed complete')
+    // Spec §4 `seed`: the import is followed by a full sync (githubIds, full READMEs, fresh stats).
+    await payload.jobs.queue({ task: 'discover', input: {}, queue: QUEUES.default, overrideAccess: true })
+    payload.logger.info(result, 'Seed complete; discover queued for the next worker tick')
   },
 })

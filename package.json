@@ -16,7 +16,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --project unit",
     "test:int": "vitest run --project int",
-    "fetch-plugins": "tsx --env-file=.env scripts/fetch-plugins.ts",
     "db:pull": "tsx --env-file=.env scripts/db/run.ts pull",
     "db:push": "tsx --env-file=.env scripts/db/run.ts push",
     "parity": "tsx scripts/parity.ts"

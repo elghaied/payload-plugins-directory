@@ -9,7 +9,7 @@ import {
   normalizeGitHubUrl, parseGitHubFullName, parseNpmPackageName,
 } from '@/sync/packages'
 
-describe('package helpers (ported from scripts/fetch-plugins.ts)', () => {
+describe('package helpers (ported from the legacy fetch script)', () => {
   it('validates npm package names', () => {
     expect(isValidPackageName('payload-plugin-seo')).toBe(true)
     expect(isValidPackageName('@acme/payload-seo')).toBe(true)

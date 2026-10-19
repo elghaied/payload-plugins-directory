@@ -3,7 +3,7 @@ import type { Payload } from 'payload'
 import fixture from '../fixtures/legacy-plugins.json'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 import { mapLegacy, type LegacyPluginsData } from '@/lib/seed/mapLegacy'
-import { seedDirectory } from '@/cli/seed'
+import { seedCommand, seedDirectory } from '@/cli/seed'
 
 let payload: Payload
 const input = mapLegacy(fixture as LegacyPluginsData, ['684372049-translator'])
@@ -84,5 +84,16 @@ describe('seedDirectory', () => {
     expect((await find()).docs[0].visibility).toBe('listed')
     await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, ['684372049-translator', slug]))
     expect((await find()).docs[0].visibility).toBe('hidden')
+  })
+
+  it('the CLI command imports the file given on the command line and queues a discover run', async () => {
+    await resetDatabase(payload)
+    await seedCommand.handler({ args: { file: 'tests/fixtures/legacy-plugins.json' }, getPayload: async () => payload } as never)
+    const plugins = await payload.count({ collection: 'plugins', overrideAccess: true, trash: true })
+    expect(plugins.totalDocs).toBe(4)
+    const repos = await payload.count({ collection: 'repositories', overrideAccess: true })
+    expect(repos.totalDocs).toBe(3)
+    const jobs = await payload.find({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'discover' } } })
+    expect(jobs.totalDocs).toBe(1)
   })
 })

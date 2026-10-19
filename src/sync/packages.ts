@@ -1,6 +1,6 @@
 import type { PackageJson } from '@/types'
 
-/** Directory / package names that are never plugins (ported unchanged from scripts/fetch-plugins.ts). */
+/** Directory / package names that are never plugins (ported unchanged from the legacy fetch script). */
 export const INVALID_PACKAGE_NAMES = new Set([
   'dev', 'test', 'tests', 'example', 'examples', 'demo', 'sample',
   'app', 'web', 'client', 'server', 'api', 'core', 'lib', 'utils',

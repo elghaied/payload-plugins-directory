@@ -10,10 +10,10 @@ A community-driven discovery platform for [Payload CMS](https://payloadcms.com) 
 
 The directory automatically discovers plugins from GitHub. **No manual submission is needed.**
 
-1. **Discovery** — A script searches GitHub for repositories tagged with the `payload-plugin` topic, plus official plugins from the `payloadcms/payload` monorepo
-2. **Data Collection** — For each plugin, metadata is pulled: description, stars, forks, Payload version compatibility, npm downloads, license, health score, and more
-3. **Automatic Updates** — A GitHub Actions workflow runs twice daily (6 AM and 6 PM UTC), refreshes the data, and auto-commits any changes
-4. **Static Serving** — Plugin data is stored in a static JSON file (`data/plugins.json`), so the site loads fast with no runtime API calls
+1. **Discovery** — Every 6 hours the `worker` searches GitHub for repositories tagged with the `payload-plugin` topic, plus the official plugins in the `payloadcms/payload` monorepo, and queues one `sync-repository` job per repository
+2. **Sync** — Each repository's metadata is refreshed; its `package.json`, workspaces and README are re-read only when it was pushed to since the last sync
+3. **Daily jobs** — npm downloads and versions are refreshed at 01:00 UTC and trend snapshots are taken at 00:30 UTC
+4. **Serving** — Data lives in Postgres (Payload CMS); cached pages are revalidated through `/api/revalidate` whenever their data changes
 
 ---
 
@@ -142,7 +142,7 @@ Fully responsive across devices:
 
 ### Plugin Reporting and Blocklist
 
-Community members can report plugins directly from the plugin card or detail page. A blocklist system (`data/blocklist.json`) allows admins to hide inappropriate or broken plugins.
+Community members can report plugins directly from the plugin card or detail page. Admins hide inappropriate or broken plugins by setting their Visibility to "hidden" in the admin panel.
 
 ---
 
@@ -151,7 +151,7 @@ Community members can report plugins directly from the plugin card or detail pag
 Getting listed is automatic. Just follow these two steps:
 
 1. **Add the `payload-plugin` topic** to your GitHub repository (Settings → Topics)
-2. **Wait up to 24 hours** — the directory refreshes twice daily and will pick up your plugin automatically
+2. **Wait up to 6 hours** — discovery runs every 6 hours and will pick up your plugin automatically
 
 That's it. No forms, no PRs, no manual submissions.
 
@@ -182,12 +182,15 @@ For best results, make sure your repo has:
 
 ```
 ├── .github/workflows/
-│   └── fetch-plugins.yml        # Twice-daily cron job to refresh plugin data
-├── data/
-│   ├── plugins.json             # Static plugin data (auto-updated by CI)
-│   └── blocklist.json           # Plugin IDs to exclude from the directory
+│   ├── ci.yml                   # Typecheck, lint, tests, build on pull requests
+│   └── image.yml                # Builds and pushes the Docker image
+├── docker/
+│   ├── compose.yml              # web + worker services (Coolify)
+│   └── entrypoint.sh            # web | worker | any command
 ├── scripts/
-│   └── fetch-plugins.ts         # Fetches plugins from GitHub API + npm
+│   ├── db/                      # db:pull / db:push
+│   └── parity.ts                # slug/sitemap parity check
+├── src/sync/                    # Sync jobs: GitHub/npm clients, discover, sync-repository, npm-stats, snapshot
 ├── src/
 │   ├── app/
 │   │   ├── about/page.tsx       # About page
@@ -253,7 +256,6 @@ The app runs at `http://localhost:3000` by default.
 | `pnpm start` | Start the production server |
 | `pnpm lint` | Run ESLint |
 | `pnpm worker` | Run the sync worker locally (queues due schedules and runs jobs every minute) |
-| `pnpm fetch-plugins` | Manually refresh plugin data from the GitHub API |
 
 ### Production Deployment (web + worker)
 
@@ -261,25 +263,29 @@ The app runs at `http://localhost:3000` by default.
 
 - **Run exactly ONE worker.** Payload's `handleSchedules` is not locked across processes, so a second worker would queue every scheduled job twice. Do not scale `worker` above 1.
 - **Never enable `jobs.autoRun` on the web process** for the same reason; the worker is the only scheduler.
+- **Before deploying this branch's replacement of the old pipeline, disable `.github/workflows/fetch-plugins.yml` on `main`.** The twice-daily Action commits `data/plugins.json`, which nothing reads any more; leaving it enabled only creates noise commits (and conflicts when `main` is merged). Import existing data once with `payload seed --file <path>` (see "One-time Import of the Legacy Data").
 - The worker shuts down gracefully on SIGTERM (it finishes its current batch, up to 45s), so redeploys do not leave jobs stuck in `processing`.
 - At startup both processes log warnings (never secret values) for production misconfigurations: `SERVER_URL` unset or not `https://payloaddirectory.dev` (the site is served with `noindex`), `REVALIDATE_SECRET` unset or shorter than 32 characters, and, for the worker, `GITHUB_TOKEN` or `INTERNAL_WEB_URL` unset.
 
-### Refreshing Plugin Data Locally
+### Running the Sync Worker Locally
 
-To fetch fresh plugin data on your machine:
+1. Put `GITHUB_TOKEN`, `REVALIDATE_SECRET` and `INTERNAL_WEB_URL=http://localhost:3000` in `.env` (see `.env.example`).
+2. Start the site with `pnpm dev`, then run `pnpm worker` in a second terminal.
 
-1. Set a GitHub token as an environment variable:
-   ```bash
-   export GITHUB_TOKEN=your_github_token
-   # or
-   export FINE_GRAINED_PERSONAL_ACCESS_TOKEN=your_token
-   ```
-2. Run the fetch script:
-   ```bash
-   pnpm fetch-plugins
-   ```
+The worker queues the scheduled jobs (discover every 6 hours, npm stats at 01:00 UTC, snapshots at 00:30 UTC) and runs queued jobs every minute. Job health is shown on the admin dashboard.
 
-This updates `data/plugins.json` with the latest data from GitHub and npm. In production, this happens automatically via the GitHub Actions workflow.
+### One-time Import of the Legacy Data
+
+The JSON files the old GitHub Action produced are no longer in the repository. To import them once (slugs preserved, blocklisted plugins hidden), recover them from git history and pass their paths:
+
+```bash
+rev=$(git log -1 --format=%h --diff-filter=D -- data/blocklist.json)
+git show "$rev^:data/plugins.json" > /tmp/plugins.json
+git show "$rev^:data/blocklist.json" > /tmp/blocklist.json
+pnpm payload seed --file /tmp/plugins.json --blocklist /tmp/blocklist.json
+```
+
+The seed queues a discover run, so the worker then refreshes every imported repository. In a container, copy the files in with `docker cp` and run `npx payload seed --file <path>` from `/app/cli`.
 
 ### Path Aliases
 
@@ -308,17 +314,15 @@ Contributions are welcome! Here's how to help:
 
 ## How Plugin Data Is Collected
 
-The `scripts/fetch-plugins.ts` script handles all data collection:
+The `worker` process (`payload worker --cron "* * * * *"`) runs these jobs, defined in `src/sync/`:
 
-1. **GitHub Search** — Queries the GitHub API for repos with the `payload-plugin` topic (paginated, up to 1000 results)
-2. **Official Plugins** — Separately fetches plugins from the `payloadcms/payload` monorepo (`packages/plugin-*`)
-3. **Package.json Parsing** — For each repo, fetches `package.json` to detect the Payload version dependency and npm package name
-4. **npm Stats** — Fetches weekly/monthly downloads, latest version, unpacked size, and dependency count from the npm registry
-5. **Health Score** — Calculates a composite score (0–100) based on GitHub activity recency, stars, npm downloads, publish recency, dependency count, and package size
-6. **README** — Fetches and truncates each plugin's README for the preview on detail pages
-7. **Rate Limit Handling** — Retries up to 3 times with exponential backoff; pauses when hitting GitHub API rate limits
+1. **discover** (every 6 hours) — Searches GitHub for repos with the `payload-plugin` topic (including archived ones) and fetches the official plugins from the `payloadcms/payload` monorepo (`packages/plugin-*`); queues a `sync-repository` job per repository and moves plugins to Trash when their repository stays missing across runs
+2. **sync-repository** — Refreshes repository metadata; when the repo was pushed to since the last sync, re-reads `package.json` (single package or monorepo workspaces), detects the Payload version and npm package name, and stores the full README. Rate limits re-queue the job; invalid inputs fail without retrying
+3. **npm-stats** (daily, 01:00 UTC) — Fetches weekly/monthly downloads, latest version, unpacked size and dependency count from the npm registry, and recomputes the health score (0–100) from GitHub activity, stars, downloads, publish recency, dependency count and package size
+4. **snapshot** (daily, 00:30 UTC) — Records daily trend snapshots
+5. **revalidate** — Asks the web process (`/api/revalidate`, constant-time secret check) to refresh cached pages after data changes
 
-The output is written to `data/plugins.json` and committed by CI.
+Nothing is fetched at request time. The legacy `data/plugins.json` is only used for the one-time `payload seed --file` import described above.
 
 ---
 

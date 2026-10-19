@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import data from '../../data/plugins.json'
+import data from '../fixtures/plugins-full.json'
 import { mapLegacy, type LegacyPluginsData } from '@/lib/seed/mapLegacy'
 import { toSummary } from '@/lib/directory/mappers'
 

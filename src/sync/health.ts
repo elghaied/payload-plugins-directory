@@ -29,7 +29,7 @@ export type StoredNpm =
 
 const DAY_MS = 86_400_000
 
-/** Health score 0–100: the formula of scripts/fetch-plugins.ts, unchanged. */
+/** Health score 0–100: the legacy fetch script formula, unchanged. */
 export function computeHealthScore(p: HealthInput, now: Date): number {
   if (p.isArchived) return 0
   const daysSince = (iso: string | null) => (iso ? (now.getTime() - new Date(iso).getTime()) / DAY_MS : Number.NaN)

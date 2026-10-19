@@ -1,6 +1,6 @@
 /**
  * First ~500 characters of a README, cut at the last sentence or paragraph break past 200 characters —
- * the preview scripts/fetch-plugins.ts stored. Sync now stores the full README; the detail page keeps
+ * the preview the legacy fetch script stored. Sync now stores the full README; the detail page keeps
  * showing this preview until Phase 2 redesigns it.
  */
 export function readmePreview(readme: string | null | undefined): string | undefined {

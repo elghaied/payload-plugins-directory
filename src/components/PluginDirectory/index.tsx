@@ -991,7 +991,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             topic to your GitHub repository.
           </p>
           <p className="mt-2">
-            Data is automatically refreshed twice daily via GitHub Actions.
+            Data is automatically refreshed by a background sync worker.
           </p>
         </footer>
       </div>
