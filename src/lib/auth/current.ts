@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import type { Maintainer } from '@/payload-types'
-import { DEFAULT_RETURN_TO, sanitizeReturnTo } from './oauth'
+import { sanitizeReturnTo } from './oauth'
 
 export type CurrentMaintainer = Maintainer & { collection: 'maintainers' }
 
@@ -16,6 +16,6 @@ export async function getCurrentMaintainer(): Promise<CurrentMaintainer | null> 
 
 export async function requireMaintainer(returnTo: string): Promise<CurrentMaintainer> {
   const maintainer = await getCurrentMaintainer()
-  if (!maintainer) redirect(`/auth/github?returnTo=${encodeURIComponent(sanitizeReturnTo(returnTo) || DEFAULT_RETURN_TO)}`)
+  if (!maintainer) redirect(`/auth/github?returnTo=${encodeURIComponent(sanitizeReturnTo(returnTo))}`)
   return maintainer
 }

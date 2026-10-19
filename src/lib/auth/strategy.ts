@@ -30,7 +30,7 @@ export function revokeSessionsNow(now: Date = new Date()): Date {
 }
 
 // Only the fields req.user needs, plus the two moderation fields the checks read (stripped below).
-export const USER_FIELDS = { githubId: true, login: true, name: true, avatarUrl: true, blocked: true, sessionsValidAfter: true, createdAt: true, updatedAt: true } as const
+const USER_FIELDS = { githubId: true, login: true, name: true, avatarUrl: true, blocked: true, sessionsValidAfter: true, createdAt: true, updatedAt: true } as const
 
 let loggedMissingSecret = false
 

@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { NO_STORE } from '@/lib/auth/http'
 import { readCookie, SESSION_COOKIE } from '@/lib/auth/session'
 import { GITHUB_SESSION_STRATEGY, githubSessionStrategy } from '@/lib/auth/strategy'
 
 export const dynamic = 'force-dynamic'
-
-const NO_STORE = { 'Cache-Control': 'no-store' }
 
 /** Who is signed in, for the client-side navbar. Exposes only the login and avatar. Never cacheable. */
 export async function GET(request: NextRequest) {

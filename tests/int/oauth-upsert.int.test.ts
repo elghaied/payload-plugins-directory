@@ -31,6 +31,15 @@ describe('upsertMaintainer', () => {
     expect(b.id).not.toBe(a.id)
   })
 
+  it('survives two accounts swapping logins (login is not unique); each row keeps its id', async () => {
+    const a = await upsertMaintainer(payload, { id: 1001, login: 'alice', name: null, avatarUrl: null })
+    const b = await upsertMaintainer(payload, { id: 1002, login: 'bob', name: null, avatarUrl: null })
+    const a2 = await upsertMaintainer(payload, { id: 1001, login: 'bob', name: null, avatarUrl: null })
+    const b2 = await upsertMaintainer(payload, { id: 1002, login: 'alice', name: null, avatarUrl: null })
+    expect([a2.id, b2.id]).toEqual([a.id, b.id])
+    expect([a2.login, b2.login]).toEqual(['bob', 'alice'])
+  })
+
   it('clamps over-long identity values', async () => {
     const m = await upsertMaintainer(payload, { id: 603, login: 'l'.repeat(300), name: 'n'.repeat(900), avatarUrl: null })
     expect(m.login).toHaveLength(100)

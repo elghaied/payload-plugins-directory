@@ -47,7 +47,11 @@ export function sanitizeReturnTo(value: string | null | undefined): string {
   if (!value.startsWith('/') || value.startsWith('//')) return DEFAULT_RETURN_TO
   // Backslashes (browsers treat `/\` like `//`) and every control character, including tab/CR/LF.
   if (/[\u0000-\u001f\u007f\\]/.test(value)) return DEFAULT_RETURN_TO
-  if (value.startsWith('/auth/')) return DEFAULT_RETURN_TO
+  // Dot-segments (also percent-encoded) would let `/x/../auth/github` slip past the guard below once normalised.
+  const path = value.split(/[?#]/, 1)[0]
+  if (path.split('/').some((segment) => /^(\.|%2e){1,2}$/i.test(segment))) return DEFAULT_RETURN_TO
+  const { pathname } = new URL(path, 'http://site.invalid')
+  if (pathname === '/auth' || pathname.startsWith('/auth/')) return DEFAULT_RETURN_TO
   return value
 }
 
@@ -103,6 +107,8 @@ export type LoginFailure =
   | 'blocked'
   | 'server_error'
 
+export type LoginFailureStage = 'exchange' | 'user' | 'db'
+
 export async function completeGitHubLogin(input: {
   code: string | null
   state: string | null
@@ -116,33 +122,36 @@ export async function completeGitHubLogin(input: {
   upsert: (user: GitHubUser) => Promise<{ id: number; githubId: number; blocked?: boolean | null }>
   secret: Uint8Array
   now?: Date
-  log?: (err: unknown) => void
+  /** Called with a stage tag and the error. Callers must log only a reason code, never the error object's contents. */
+  log?: (stage: LoginFailureStage, err: unknown) => void | Promise<void>
 }): Promise<{ ok: true; token: string; redirectTo: string } | { ok: false; reason: LoginFailure }> {
   const stored = parseStateCookie(input.storedState)
   if (!stored || !statesMatch(input.state, stored.state)) return { ok: false, reason: 'state_mismatch' }
   if (input.error) return { ok: false, reason: 'denied' }
   if (!input.code || input.code.length > CODE_MAX_CHARS) return { ok: false, reason: 'missing_code' }
 
+  let accessToken: string
+  try {
+    // The GitHub access token lives only in this function: used once for /user, never logged or stored.
+    accessToken = (await input.exchange({ code: input.code, codeVerifier: stored.verifier })).accessToken
+  } catch (err) {
+    await input.log?.('exchange', err)
+    return { ok: false, reason: 'exchange_failed' }
+  }
+
   let profile: GitHubUser
   try {
-    // The GitHub access token lives only in this scope: used once for /user, never logged or stored.
-    const { accessToken } = await input.exchange({ code: input.code, codeVerifier: stored.verifier })
-    try {
-      profile = await input.github.getAuthenticatedUser(accessToken)
-    } catch (err) {
-      input.log?.(err)
-      return { ok: false, reason: 'profile_failed' }
-    }
+    profile = await input.github.getAuthenticatedUser(accessToken)
   } catch (err) {
-    input.log?.(err)
-    return { ok: false, reason: 'exchange_failed' }
+    await input.log?.('user', err)
+    return { ok: false, reason: 'profile_failed' }
   }
 
   let maintainer: { id: number; githubId: number; blocked?: boolean | null }
   try {
     maintainer = await input.upsert(profile)
   } catch (err) {
-    input.log?.(err)
+    await input.log?.('db', err)
     return { ok: false, reason: 'server_error' }
   }
   if (maintainer.blocked) return { ok: false, reason: 'blocked' }

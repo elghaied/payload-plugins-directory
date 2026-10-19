@@ -75,12 +75,23 @@ describe('sanitizeReturnTo', () => {
     ['/me\r\nSet-Cookie: x', '/me'],
     ['/me\u0000', '/me'],
     ['/me\u007f', '/me'],
+    ['https:evil.com', '/me'],
+    ['/%2F%2Fevil.com', '/%2F%2Fevil.com'],
+    ['/./auth/github', '/me'],
+    ['/x/../auth/github', '/me'],
+    ['/%2e/auth/github', '/me'],
+    ['/%2E%2e/auth/github', '/me'],
+    ['/..//evil.com', '/me'],
+    ['/a/./b', '/me'],
+    ['/auth', '/me'],
+    ['/auth?x=1', '/me'],
+    ['/ok?next=/../x', '/ok?next=/../x'],
     [`/${'a'.repeat(600)}`, '/me'],
   ])('%j → %s', (value, expected) => {
     expect(sanitizeReturnTo(value)).toBe(expected)
   })
   it('stays on this site for every hostile input', () => {
-    for (const v of ['//x.y', '/\\x.y', 'https://x.y', '/\t/x.y', '///x.y']) {
+    for (const v of ['//x.y', '/\\x.y', 'https://x.y', 'https:x.y', '/\t/x.y', '///x.y', '/%2F%2Fx.y', '/..//x.y']) {
       expect(new URL(sanitizeReturnTo(v), 'https://dir.example').origin).toBe('https://dir.example')
     }
   })
@@ -167,6 +178,13 @@ describe('completeGitHubLogin', () => {
   it('reports a failed code exchange', async () => {
     const exchange = vi.fn(async () => { throw new Error('bad_verification_code') })
     expect(await completeGitHubLogin(input({ exchange }))).toEqual({ ok: false, reason: 'exchange_failed' })
+  })
+  it('logs a distinguishing stage for each failure', async () => {
+    const log = vi.fn()
+    await completeGitHubLogin(input({ log, exchange: vi.fn(async () => { throw new Error('x') }) }))
+    await completeGitHubLogin(input({ log, github: { getAuthenticatedUser: vi.fn(async () => { throw new Error('x') }) } }))
+    await completeGitHubLogin(input({ log, upsert: vi.fn(async () => { throw new Error('x') }) }))
+    expect(log.mock.calls.map((c) => c[0])).toEqual(['exchange', 'user', 'db'])
   })
   it('reports a failed profile fetch', async () => {
     const failing = { getAuthenticatedUser: vi.fn(async () => { throw new Error('401') }) }

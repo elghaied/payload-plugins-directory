@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { NO_STORE } from '@/lib/auth/http'
 import {
   beginGitHubLogin,
   getOAuthConfig,
@@ -9,8 +10,6 @@ import {
 } from '@/lib/auth/oauth'
 
 export const dynamic = 'force-dynamic'
-
-const NO_STORE = { 'Cache-Control': 'no-store' }
 
 export function GET(request: NextRequest) {
   let config: OAuthConfig
