@@ -1,10 +1,12 @@
-import type { JobsConfig, Payload, TaskConfig } from 'payload'
+import { JobCancelledError, type JobsConfig, type Payload, type TaskConfig } from 'payload'
 import { isAdmin, isAdminUser } from '@/access'
+import { isUsableSecret, MIN_SECRET_LENGTH } from '@/lib/revalidate'
 import { createSyncContext, getSyncDeps } from './deps'
 import { runDiscover } from './discover'
-import type { GitHubClient } from './github'
+import { InvalidGitHubPathError, type GitHubClient } from './github'
 import { RateLimitError } from './http'
 import { DISCOVER_GUARD_KEY, recordGitHubQuota, recordJobFailure, recordJobSuccess } from './jobStatus'
+import { InvalidNpmPackageNameError } from './npm'
 import { runNpmStats } from './npmStats'
 import { QUEUES } from './queues'
 import { postRevalidate } from './revalidate'
@@ -18,39 +20,59 @@ async function queueRevalidate(payload: Payload, tags: readonly string[]): Promi
   await payload.jobs.queue({ task: 'revalidate', input: { tags: [...new Set(tags)] }, queue: QUEUES.default, overrideAccess: true })
 }
 
+/** The worker is misconfigured: retrying cannot help until someone changes the environment. */
+export class SyncConfigError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SyncConfigError'
+  }
+}
+
+/** Errors that fail the same way on every attempt: the job is failed without using its retries. */
+const isPermanent = (err: unknown) =>
+  err instanceof InvalidGitHubPathError || err instanceof InvalidNpmPackageNameError || err instanceof SyncConfigError
+
 /**
- * Runs a task body and records the outcome in job_status. A RateLimitError re-queues the job as a fresh job with
- * `waitUntil` = the reset time (spec §4.2) and completes this run, so a rate limit never uses up the task's retries;
- * any other error is recorded and rethrown so Payload's retries (with backoff) apply.
+ * Runs a task body and records the outcome in job_status, every write stamped with `at` (one timestamp per run, so
+ * rows written by the same run compare equal). A RateLimitError re-queues the job as a fresh job with `waitUntil` =
+ * the reset time (spec §4.2) and completes this run, so a rate limit never uses up the task's retries. A permanent
+ * error (invalid input, missing configuration) is recorded and the job is cancelled: Payload marks it failed and never
+ * retries it. Any other error is recorded and rethrown so Payload's retries (with backoff) apply.
  */
 async function track<T extends Record<string, unknown>>(
   payload: Payload,
   slug: string,
+  at: Date,
   run: () => Promise<T>,
   requeue?: (err: RateLimitError) => Promise<unknown>,
 ): Promise<T | RateLimited> {
-  const { now } = getSyncDeps()
   try {
     const output = await run()
-    await recordJobSuccess(payload, slug, output, now())
+    await recordJobSuccess(payload, slug, output, at)
     return output
   } catch (err) {
     if (err instanceof RateLimitError && requeue) {
-      await requeue(err)
-      await recordJobSuccess(payload, slug, { status: 'rate-limited', resetAt: err.resetAt.toISOString() }, now())
+      try {
+        await requeue(err)
+      } catch (requeueErr) {
+        await recordJobFailure(payload, slug, requeueErr, at)
+        throw requeueErr
+      }
+      await recordJobSuccess(payload, slug, { status: 'rate-limited', resetAt: err.resetAt.toISOString() }, at)
       return { status: 'rate-limited' }
     }
-    await recordJobFailure(payload, slug, err, now())
+    await recordJobFailure(payload, slug, err, at)
+    if (isPermanent(err)) throw new JobCancelledError(`${(err as Error).message} (not retried)`)
     throw err
   }
 }
 
 /** Records the GitHub quota the run saw, whether it succeeded or not (the widget shows the latest one). */
-async function withQuota<T>(payload: Payload, github: GitHubClient, now: () => Date, run: () => Promise<T>): Promise<T> {
+async function withQuota<T>(payload: Payload, github: GitHubClient, at: Date, run: () => Promise<T>): Promise<T> {
   try {
     return await run()
   } finally {
-    await recordGitHubQuota(payload, github.quota, now()).catch((err: unknown) =>
+    await recordGitHubQuota(payload, github.quota, at).catch((err: unknown) =>
       payload.logger.error({ err, msg: 'Could not record the GitHub quota' }),
     )
   }
@@ -75,15 +97,18 @@ const discoverTask: TaskConfig<'discover'> = {
     const { payload } = req
     const deps = getSyncDeps()
     const ctx = createSyncContext(deps)
-    const output = await withQuota(payload, ctx.github, deps.now, () =>
+    const at = deps.now()
+    const output = await withQuota(payload, ctx.github, at, () =>
       track(
         payload,
         'discover',
+        at,
         async () => {
           const r = await runDiscover(payload, ctx)
           if (r.guardTripped) {
             // Own row and timestamp: a later failed run must not hide the last guard warning from the dashboard.
-            await recordJobSuccess(payload, DISCOVER_GUARD_KEY, { warning: r.warning, known: r.known, knownSeen: r.knownSeen }, deps.now())
+            // Same `at` as the run's own success row, so "guard current" = guard.lastSuccessAt >= discover.lastSuccessAt.
+            await recordJobSuccess(payload, DISCOVER_GUARD_KEY, { warning: r.warning, known: r.known, knownSeen: r.knownSeen }, at)
             if (r.warning) payload.logger.warn(r.warning)
           }
           for (const input of r.toSync) {
@@ -133,10 +158,12 @@ const syncRepositoryTask: TaskConfig<'sync-repository'> = {
     const { payload } = req
     const deps = getSyncDeps()
     const ctx = createSyncContext(deps)
-    const output = await withQuota(payload, ctx.github, deps.now, () =>
+    const at = deps.now()
+    const output = await withQuota(payload, ctx.github, at, () =>
       track(
         payload,
         'sync-repository',
+        at,
         async () => {
           const r = await runSyncRepository(payload, input, ctx)
           await queueRevalidate(payload, r.revalidateTags)
@@ -181,10 +208,12 @@ const npmStatsTask: TaskConfig<'npm-stats'> = {
   ],
   handler: async ({ input, req }) => {
     const { payload } = req
-    const ctx = createSyncContext(getSyncDeps())
+    const deps = getSyncDeps()
+    const ctx = createSyncContext(deps)
     const output = await track(
       payload,
       'npm-stats',
+      deps.now(),
       async () => {
         const r = await runNpmStats(payload, input, ctx)
         await queueRevalidate(payload, r.revalidateTags)
@@ -225,7 +254,8 @@ const snapshotTask: TaskConfig<'snapshot'> = {
   handler: async ({ req }) => {
     const { payload } = req
     const deps = getSyncDeps()
-    const output = await track(payload, 'snapshot', async () => ({ status: 'ok', ...(await runSnapshot(payload, deps.now())) }))
+    const at = deps.now()
+    const output = await track(payload, 'snapshot', at, async () => ({ status: 'ok', ...(await runSnapshot(payload, at)) }))
     return { output }
   },
 }
@@ -241,9 +271,12 @@ const revalidateTask: TaskConfig<'revalidate'> = {
   ],
   handler: async ({ input, req }) => {
     const deps = getSyncDeps()
-    const output = await track(req.payload, 'revalidate', async () => {
+    const output = await track(req.payload, 'revalidate', deps.now(), async () => {
       const secret = deps.env.revalidateSecret
-      if (!secret) throw new Error('REVALIDATE_SECRET is not set; the worker cannot call /api/revalidate')
+      // The endpoint rejects shorter secrets (fails closed), so posting would only fail on every attempt.
+      if (!isUsableSecret(secret)) {
+        throw new SyncConfigError(`REVALIDATE_SECRET is missing or shorter than ${MIN_SECRET_LENGTH} characters; the worker cannot call /api/revalidate`)
+      }
       const count = await postRevalidate(input.tags ?? [], { fetch: deps.fetch, url: `${deps.env.internalWebUrl}/api/revalidate`, secret })
       return { status: 'ok', count }
     })
