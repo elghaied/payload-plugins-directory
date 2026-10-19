@@ -60,7 +60,7 @@ describe('claimPluginAction', () => {
     const err = vi.spyOn(payload.logger, 'error').mockImplementation(() => undefined)
     try {
       const res = await claimPluginAction({ status: 'idle' }, form({ slug: 'ab' }))
-      expect(res).toEqual({ status: 'invalid', message: MESSAGES.submitFailed })
+      expect(res).toEqual({ status: 'invalid', message: MESSAGES.claimFailed })
       expect(err).toHaveBeenCalled()
     } finally {
       err.mockRestore()

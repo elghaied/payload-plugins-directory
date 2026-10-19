@@ -17,7 +17,7 @@ import { jobStatus } from './db/jobStatus'
 import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
 import { DirectorySettings } from './globals/DirectorySettings'
-import { runtimeEnvWarnings } from './lib/runtimeEnv'
+import { runtimeEnvNotices, runtimeEnvWarnings } from './lib/runtimeEnv'
 import { getServerURL } from './lib/serverUrl'
 import { jobsConfig } from './sync/tasks'
 
@@ -64,6 +64,7 @@ export default buildConfig({
   onInit: (payload) => {
     const role = process.env.DIRECTORY_ROLE === 'worker' ? 'worker' : 'web'
     for (const warning of runtimeEnvWarnings(process.env, role)) payload.logger.warn(warning)
+    for (const notice of runtimeEnvNotices(process.env, role)) payload.logger.info(notice)
   },
   upload: { transformers: [sharpTransformer()] },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

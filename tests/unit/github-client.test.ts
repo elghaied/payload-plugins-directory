@@ -32,6 +32,47 @@ describe('checkPublicOrgMembership', () => {
   })
 })
 
+describe('web token (GITHUB_WEB_TOKEN)', () => {
+  const withEnv = async (env: Record<string, string | undefined>, run: () => Promise<void>) => {
+    const saved = { web: process.env.GITHUB_WEB_TOKEN, worker: process.env.GITHUB_TOKEN }
+    const set = (k: string, v: string | undefined) => (v === undefined ? delete process.env[k] : (process.env[k] = v))
+    set('GITHUB_WEB_TOKEN', env.GITHUB_WEB_TOKEN)
+    set('GITHUB_TOKEN', env.GITHUB_TOKEN)
+    try {
+      await run()
+    } finally {
+      set('GITHUB_WEB_TOKEN', saved.web)
+      set('GITHUB_TOKEN', saved.worker)
+    }
+  }
+  it('sends GITHUB_WEB_TOKEN as a bearer token when set', async () => {
+    await withEnv({ GITHUB_WEB_TOKEN: 'web-tok' }, async () => {
+      const fetch = respond(404)
+      await createGitHubAuthClient({ fetch }).checkPublicOrgMembership('acme', 'octo')
+      expect((call(fetch)[1].headers as Record<string, string>).Authorization).toBe('Bearer web-tok')
+    })
+  })
+  it('sends no Authorization header when GITHUB_WEB_TOKEN is unset', async () => {
+    await withEnv({}, async () => {
+      const fetch = respond(404)
+      await createGitHubAuthClient({ fetch }).checkPublicOrgMembership('acme', 'octo')
+      expect((call(fetch)[1].headers as Record<string, string>).Authorization).toBeUndefined()
+    })
+  })
+  it('ignores the worker GITHUB_TOKEN', async () => {
+    await withEnv({ GITHUB_TOKEN: 'worker-tok' }, async () => {
+      const fetch = respond(404)
+      await createGitHubAuthClient({ fetch }).checkPublicOrgMembership('acme', 'octo')
+      expect((call(fetch)[1].headers as Record<string, string>).Authorization).toBeUndefined()
+    })
+    await withEnv({ GITHUB_TOKEN: 'worker-tok', GITHUB_WEB_TOKEN: 'web-tok' }, async () => {
+      const fetch = respond(404)
+      await createGitHubAuthClient({ fetch }).getUserById(5)
+      expect((call(fetch)[1].headers as Record<string, string>).Authorization).toBe('Bearer web-tok')
+    })
+  })
+})
+
 describe('checkPublicOrgMembership failures', () => {
   it('maps 403, 302 and network errors to unavailable without throwing', async () => {
     expect(await createGitHubAuthClient({ fetch: respond(204) }).checkPublicOrgMembership('acme', 'octo')).toEqual({ ok: true, member: true })

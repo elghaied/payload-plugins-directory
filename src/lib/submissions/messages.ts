@@ -7,6 +7,7 @@ export const MESSAGES = {
   pending: 'This plugin has already been submitted and is awaiting review.',
   tooMany: `You have ${MAX_PENDING_PER_MAINTAINER} requests awaiting review. Please wait until some are reviewed.`,
   submitFailed: 'Something went wrong while saving your submission. Please try again in a moment.',
+  claimFailed: 'Something went wrong while processing your claim. Please try again in a moment.',
   claimNotListed: 'A claim must reference a listed plugin.',
   alreadyMaintainer: 'You already maintain this plugin.',
   claimPending: 'You already have a pending claim for this plugin.',

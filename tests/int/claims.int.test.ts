@@ -24,6 +24,12 @@ function gh(opts: {
   members?: string[]
   membershipFail?: boolean
   throws?: boolean
+  userThrows?: boolean
+  membershipThrows?: boolean
+  memberValue?: unknown
+  malformedRepo?: boolean
+  malformedUser?: boolean
+  onRepoLookup?: () => Promise<void>
 }): Fake {
   const boom = () => {
     if (opts.throws) throw new Error('client exploded')
@@ -31,14 +37,20 @@ function gh(opts: {
   return {
     getRepositoryById: vi.fn(async (id: number) => {
       boom()
+      await opts.onRepoLookup?.()
+      if (opts.malformedRepo) return { ok: true as const } as never
       if (opts.repoFail) return { ok: false as const, reason: opts.repoFail }
       return { ok: true as const, repository: { id: opts.repoId ?? id, fullName: 'acmeorg/forms', owner: opts.owner! } }
     }),
     getUserById: vi.fn(async (id: number) => {
+      if (opts.userThrows) throw new Error('user lookup exploded')
+      if (opts.malformedUser) return { ok: true as const } as never
       if (opts.userFail) return { ok: false as const, reason: 'unavailable' as const }
       return { ok: true as const, user: { id: opts.userId ?? id, login: opts.userLogin ?? 'whoever', name: null, avatarUrl: null } }
     }),
     checkPublicOrgMembership: vi.fn(async (_org: string, login: string) => {
+      if (opts.membershipThrows) throw new Error('membership exploded')
+      if (opts.memberValue !== undefined) return { ok: true as const, member: opts.memberValue as never }
       if (opts.membershipFail) return { ok: false as const, reason: 'unavailable' as const }
       return { ok: true as const, member: (opts.members ?? []).includes(login) }
     }),
@@ -73,7 +85,7 @@ beforeAll(async () => {
   const officialFlag = await mkRepo('Someone/official-ish', 'Someone', repoGid.flagged)
   const officialOrg = await mkRepo('payloadcms/plugin-x', 'payloadcms', repoGid.official)
   const noId = await mkRepo('NoId/thing', 'NoId')
-  for (const slug of ['org-1', 'org-2', 'org-3', 'org-4', 'org-5', 'org-6', 'org-7', 'org-8', 'org-9', 'org-10', 'org-11', 'org-12', 'org-13', 'org-14', 'org-15', 'org-16']) await makePlugin(slug, orgRepo.id)
+  for (const slug of ['org-1', 'org-2', 'org-3', 'org-4', 'org-5', 'org-6', 'org-7', 'org-8', 'org-9', 'org-10', 'org-11', 'org-12', 'org-13', 'org-14', 'org-15', 'org-16', 'org-17', 'org-18', 'org-19']) await makePlugin(slug, orgRepo.id)
   await makePlugin('solo-tool', userRepo.id)
   await makePlugin('solo-2', userRepo.id)
   await makePlugin('flagged', officialFlag.id, { isOfficial: true })
@@ -148,6 +160,25 @@ describe('isInstantClaim (truth table)', () => {
     expect(await isInstantClaim({ github: gh({ throws: true }), maintainer: who, plugin: plain, repository: repoUser, onError })).toBe(false)
     expect(onError).toHaveBeenCalled()
   })
+  it('malformed {ok:true} bodies (no repository / no user) are queued, not thrown', async () => {
+    const onError = vi.fn()
+    expect(await isInstantClaim({ github: gh({ malformedRepo: true }), maintainer: who, plugin: plain, repository: repoUser, onError })).toBe(false)
+    expect(await isInstantClaim({ github: gh({ owner: org(), malformedUser: true }), maintainer: { githubId: 100 }, plugin: plain, repository: repoOrg, onError })).toBe(false)
+    expect(onError).toHaveBeenCalledTimes(2)
+  })
+  it('a throwing user lookup or membership check is queued', async () => {
+    expect(await isInstantClaim({ github: gh({ owner: org(), userThrows: true }), maintainer: { githubId: 100 }, plugin: plain, repository: repoOrg })).toBe(false)
+    expect(await isInstantClaim({ github: gh({ owner: org(), userLogin: 'x', membershipThrows: true }), maintainer: { githubId: 100 }, plugin: plain, repository: repoOrg })).toBe(false)
+  })
+  it('a truthy but non-true `member` is not membership', async () => {
+    for (const memberValue of ['yes', 1, {}, 'true']) {
+      expect(await isInstantClaim({ github: gh({ owner: org(), userLogin: 'x', memberValue }), maintainer: { githubId: 100 }, plugin: plain, repository: repoOrg })).toBe(false)
+    }
+  })
+  it('a live User-type owner named payloadcms is never instant', async () => {
+    const g = gh({ owner: { id: 4242, login: 'PayloadCMS', type: 'User' } })
+    expect(await isInstantClaim({ github: g, maintainer: who, plugin: plain, repository: repoUser })).toBe(false)
+  })
   it('an unexpected owner type is queued', async () => {
     const g = gh({ owner: { id: 4242, login: 'bot', type: 'Bot' as never } })
     expect(await isInstantClaim({ github: g, maintainer: who, plugin: plain, repository: repoUser })).toBe(false)
@@ -191,6 +222,7 @@ describe('claimPlugin', () => {
     const g = gh({ owner: org(), userLogin: 'livemember', members: ['livemember'] })
     expect(await claimPlugin({ payload, maintainer: m.orgMember, slug: 'org-1', note: '', github: g })).toEqual({ status: 'claimed' })
     expect(await maintainersOf('org-1')).toEqual([m.orgMember.id])
+    expect((await submissionsOf(m.orgMember.id)).docs[0]).toMatchObject({ type: 'claim', status: 'approved' })
   })
   it('org, private or absent membership: queued with a pending claim', async () => {
     expect(await claimPlugin({ payload, maintainer: m.stranger, slug: 'org-2', note: 'I wrote it', github: gh({ owner: org() }) })).toEqual({ status: 'queued' })
@@ -200,7 +232,13 @@ describe('claimPlugin', () => {
   it('GitHub rate limited / unavailable at any step: queued', async () => {
     expect(await claimPlugin({ payload, maintainer: m.flaky, slug: 'org-3', note: '', github: gh({ repoFail: 'unavailable' }) })).toEqual({ status: 'queued' })
     expect(await claimPlugin({ payload, maintainer: m.flaky, slug: 'org-4', note: '', github: gh({ owner: org(), userLogin: 'flaky', members: ['flaky'], membershipFail: true }) })).toEqual({ status: 'queued' })
-    expect(await claimPlugin({ payload, maintainer: m.flaky, slug: 'org-5', note: '', github: gh({ throws: true }) })).toEqual({ status: 'queued' })
+    const warn = vi.spyOn(payload.logger, 'warn').mockImplementation(() => undefined)
+    try {
+      expect(await claimPlugin({ payload, maintainer: m.flaky, slug: 'org-5', note: '', github: gh({ throws: true }) })).toEqual({ status: 'queued' })
+      expect(warn).toHaveBeenCalled()
+    } finally {
+      warn.mockRestore()
+    }
     expect(await maintainersOf('org-3')).toEqual([])
     expect(await maintainersOf('org-4')).toEqual([])
     expect(await maintainersOf('org-5')).toEqual([])
@@ -217,10 +255,10 @@ describe('claimPlugin', () => {
     expect(await claimPlugin({ payload, maintainer: m.soloOwner, slug: 'no-id', note: '', github: g })).toEqual({ status: 'queued' })
     expect(calls(g)).toBe(0)
   })
-  it('a pending claim by the same maintainer is reported without any GitHub call', async () => {
-    const g = gh({ owner: org() })
-    expect(await claimPlugin({ payload, maintainer: m.stranger, slug: 'org-2', note: '', github: g })).toEqual({ status: 'pending' })
-    expect(calls(g)).toBe(0)
+  it('re-submitting an own pending claim that still cannot be verified keeps it pending, with no new row', async () => {
+    expect(await claimPlugin({ payload, maintainer: m.stranger, slug: 'org-2', note: '', github: gh({ owner: org() }) })).toEqual({ status: 'pending' })
+    expect((await submissionsOf(m.stranger.id)).docs).toHaveLength(1)
+    expect(await maintainersOf('org-2')).toEqual([])
   })
   it('an existing maintainer gets "already" without any GitHub call', async () => {
     const g = gh({ owner: user(4242) })
@@ -243,5 +281,41 @@ describe('claimPlugin', () => {
     expect(await claimPlugin({ payload, maintainer: m.capped, slug: 'org-16', note: '', github: g })).toEqual({ status: 'invalid', message: MESSAGES.tooMany })
     expect(calls(g)).toBe(callsBefore)
     expect(await maintainersOf('org-16')).toEqual([])
+  })
+  it('a plugin trashed between the lookup and the write is refused, not granted', async () => {
+    const g = gh({
+      owner: user(4242),
+      onRepoLookup: async () => {
+        const doc = (await payload.find({ collection: 'plugins', overrideAccess: true, depth: 0, where: { slug: { equals: 'org-17' } } })).docs[0]
+        await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, data: { deletedAt: new Date().toISOString() } })
+      },
+    })
+    const res = await claimPlugin({ payload, maintainer: m.soloOwner, slug: 'org-17', note: '', github: g })
+    // org-17's repository is AcmeOrg's (id 5001): the fake reports a user owner whose id matches soloOwner, so it is instant.
+    expect(res).toEqual({ status: 'invalid', message: MESSAGES.claimPluginGone })
+    const trashed = (await payload.find({ collection: 'plugins', overrideAccess: true, depth: 0, trash: true, where: { slug: { equals: 'org-17' } } })).docs[0]
+    expect(trashed.maintainers ?? []).toEqual([])
+  })
+  it('a queued claim is approved in place when a re-submit now verifies (same row, no duplicate)', async () => {
+    expect(await claimPlugin({ payload, maintainer: m.other, slug: 'org-18', note: '', github: gh({ repoFail: 'unavailable' }) })).toEqual({ status: 'queued' })
+    const before = (await submissionsOf(m.other.id)).docs
+    expect(before).toHaveLength(1)
+    const res = await claimPlugin({ payload, maintainer: m.other, slug: 'org-18', note: '', github: gh({ owner: org(), userLogin: 'o', members: ['o'] }) })
+    expect(res).toEqual({ status: 'claimed' })
+    const after = (await submissionsOf(m.other.id)).docs
+    expect(after).toHaveLength(1)
+    expect(after[0]).toMatchObject({ id: before[0].id, status: 'approved' })
+    expect(await maintainersOf('org-18')).toEqual([m.other.id])
+  })
+  it('the cap does not block re-checking an own pending claim', async () => {
+    const res = await claimPlugin({ payload, maintainer: m.capped, slug: 'org-6', note: '', github: gh({ owner: org(), userLogin: 'c', members: ['c'] }) })
+    expect(res).toEqual({ status: 'claimed' })
+    expect(await maintainersOf('org-6')).toEqual([m.capped.id])
+  })
+  it('a pending claim on an official plugin is never approved by a re-submit and makes no GitHub call', async () => {
+    const g = gh({ owner: user(4242) })
+    expect(await claimPlugin({ payload, maintainer: m.soloOwner, slug: 'official', note: '', github: g })).toEqual({ status: 'pending' })
+    expect(calls(g)).toBe(0)
+    expect(await maintainersOf('official')).toEqual([])
   })
 })

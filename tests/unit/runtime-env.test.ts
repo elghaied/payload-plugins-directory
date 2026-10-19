@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runtimeEnvWarnings } from '@/lib/runtimeEnv'
+import { runtimeEnvNotices, runtimeEnvWarnings } from '@/lib/runtimeEnv'
 
 const prod = {
   NODE_ENV: 'production', SERVER_URL: 'https://payloaddirectory.dev', REVALIDATE_SECRET: 'a-long-random-secret-value-0123456789',
@@ -58,5 +58,18 @@ describe('runtimeEnvWarnings', () => {
     expect(runtimeEnvWarnings({ ...prod, GITHUB_OAUTH_CLIENT_ID: '' }, 'web')).toEqual([expect.stringMatching(/GITHUB_OAUTH_CLIENT_ID/)])
     expect(runtimeEnvWarnings({ ...prod, GITHUB_OAUTH_CLIENT_SECRET: undefined }, 'web')).toEqual([expect.stringMatching(/GITHUB_OAUTH_CLIENT_SECRET/)])
     expect(runtimeEnvWarnings({ ...prod, GITHUB_OAUTH_CLIENT_ID: '' }, 'worker')).toEqual([])
+  })
+})
+
+describe('runtimeEnvNotices', () => {
+  it('notes a missing GITHUB_WEB_TOKEN for the web process only, in production only', () => {
+    expect(runtimeEnvNotices(prod, 'web')).toEqual([expect.stringMatching(/GITHUB_WEB_TOKEN.*60/)])
+    expect(runtimeEnvNotices({ ...prod, GITHUB_WEB_TOKEN: 'x' }, 'web')).toEqual([])
+    expect(runtimeEnvNotices(prod, 'worker')).toEqual([])
+    expect(runtimeEnvNotices({ NODE_ENV: 'development' }, 'web')).toEqual([])
+  })
+  it('is never a warning, and never logs the token', () => {
+    expect(runtimeEnvWarnings(prod, 'web')).toEqual([])
+    expect(runtimeEnvNotices({ ...prod, GITHUB_WEB_TOKEN: 'secret-tok' }, 'web').join(' ')).not.toContain('secret-tok')
   })
 })

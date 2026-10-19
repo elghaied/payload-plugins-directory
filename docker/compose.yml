@@ -26,6 +26,9 @@ services:
       GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID}
       GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET}
       SESSION_SECRET: ${SESSION_SECRET}
+      # Optional (web only): fine-grained PAT, public repositories read-only, for claim ownership checks (60 -> 5,000 requests/hour).
+      # NOT the worker's GITHUB_TOKEN, which the web client ignores.
+      GITHUB_WEB_TOKEN: ${GITHUB_WEB_TOKEN:-}
       # Read at runtime (Payload serverURL / allowed origins, noindex decision).
       # NEXT_PUBLIC_* values are inlined at build time, so they cannot configure a prebuilt image.
       SERVER_URL: https://payloaddirectory.dev

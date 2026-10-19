@@ -265,7 +265,8 @@ The app runs at `http://localhost:3000` by default.
 - **Never enable `jobs.autoRun` on the web process** for the same reason; the worker is the only scheduler.
 - **Before deploying this branch's replacement of the old pipeline, disable `.github/workflows/fetch-plugins.yml` on `main`.** The twice-daily Action commits `data/plugins.json`, which nothing reads any more; leaving it enabled only creates noise commits (and conflicts when `main` is merged). Import existing data once with `payload seed --file <path>` (see "One-time Import of the Legacy Data").
 - The worker shuts down gracefully on SIGTERM (it finishes its current batch, up to 45s), so redeploys do not leave jobs stuck in `processing`.
-- At startup both processes log warnings (never secret values) for production misconfigurations: `SERVER_URL` unset or not `https://payloaddirectory.dev` (the site is served with `noindex`), `REVALIDATE_SECRET` unset or shorter than 32 characters, and, for the worker, `GITHUB_TOKEN` or `INTERNAL_WEB_URL` unset.
+- At startup both processes log warnings (never secret values) for production misconfigurations: `SERVER_URL` unset or not `https://payloaddirectory.dev` (the site is served with `noindex`), `REVALIDATE_SECRET` unset or shorter than 32 characters, and, for the worker, `GITHUB_TOKEN` or `INTERNAL_WEB_URL` unset. The web process also logs an info note when `GITHUB_WEB_TOKEN` is unset.
+- `GITHUB_WEB_TOKEN` (web only, optional): a fine-grained PAT with public-repositories read-only access and no other permissions. It raises claim ownership checks from 60 to 5,000 GitHub requests per hour. The web client never falls back to the worker's `GITHUB_TOKEN`.
 
 ### Running the Sync Worker Locally
 

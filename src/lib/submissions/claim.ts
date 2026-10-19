@@ -101,13 +101,29 @@ export async function claimPlugin({
   if (!plugin || typeof plugin.repository !== 'object' || plugin.repository === null) return { status: 'not_found' }
   if ((plugin.maintainers ?? []).map(relationId).includes(maintainer.id)) return { status: 'already' }
 
-  const open = await payload.count({
+  const onError = (err: unknown) => payload.logger.warn({ err }, 'claim: ownership check failed; queueing for review')
+  const own = await payload.find({
     collection: 'submissions',
     overrideAccess: false,
     user: maintainer,
+    depth: 0,
+    limit: 1,
     where: { and: [{ type: { equals: 'claim' } }, { plugin: { equals: plugin.id } }, { status: { equals: 'pending' } }] },
   })
-  if (open.totalDocs) return { status: 'pending' }
+  const existing = own.docs[0]
+  if (existing) {
+    // The maintainer's own pending claim (queued earlier, e.g. during a GitHub outage). The cap does not apply to
+    // re-checking it. If ownership is now confirmed, approve THAT claim through the normal approval path (system write:
+    // maintainers cannot update submissions); otherwise it stays pending. No duplicate row is ever created.
+    if (!(await isInstantClaim({ github, maintainer, plugin, repository: plugin.repository, onError }))) return { status: 'pending' }
+    try {
+      await payload.update({ collection: 'submissions', id: existing.id, overrideAccess: true, depth: 0, data: { status: 'approved' } })
+      return { status: 'claimed' }
+    } catch (err) {
+      if (err instanceof ValidationError) return { status: 'invalid', message: validationMessage(err) }
+      throw err
+    }
+  }
 
   // Cap BEFORE any GitHub call (F24): an account at the cap must not be able to spend the shared unauthenticated quota.
   const pendingTotal = await payload.count({
@@ -118,13 +134,7 @@ export async function claimPlugin({
   })
   if (pendingTotal.totalDocs >= MAX_PENDING_PER_MAINTAINER) return { status: 'invalid', message: MESSAGES.tooMany }
 
-  const instant = await isInstantClaim({
-    github,
-    maintainer,
-    plugin,
-    repository: plugin.repository,
-    onError: (err) => payload.logger.warn({ err }, 'claim: ownership check failed; queueing for review'),
-  })
+  const instant = await isInstantClaim({ github, maintainer, plugin, repository: plugin.repository, onError })
 
   try {
     if (instant) {

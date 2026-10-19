@@ -30,6 +30,6 @@ export async function claimPluginAction(_prev: ClaimState, formData: FormData): 
     })
   } catch (err) {
     payload.logger.error({ err }, 'claim: unexpected failure')
-    return { status: 'invalid', message: MESSAGES.submitFailed }
+    return { status: 'invalid', message: MESSAGES.claimFailed }
   }
 }

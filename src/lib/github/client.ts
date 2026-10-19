@@ -71,7 +71,9 @@ function toOwner(value: unknown): GitHubOwner | null {
 
 export function createGitHubAuthClient({
   fetch: baseFetch = globalThis.fetch as FetchFn,
-  token = process.env.GITHUB_TOKEN,
+  // Dedicated, optional, read-only public-repos token for the web service. Deliberately NOT `GITHUB_TOKEN` (the worker's
+  // broader token): it must never be picked up on web by accident.
+  token = process.env.GITHUB_WEB_TOKEN,
 }: { fetch?: FetchFn; token?: string } = {}): GitHubAuthClient {
   const doFetch = withTimeout(baseFetch, TIMEOUT_MS)
   // Redirects are never followed: every URL here is a fixed api.github.com path.

@@ -49,3 +49,12 @@ export function runtimeEnvWarnings(env: Env, role: ProcessRole): string[] {
   }
   return warnings
 }
+
+/** Informational startup notes (not misconfigurations); logged at info level. Production only. */
+export function runtimeEnvNotices(env: Env, role: ProcessRole): string[] {
+  if (env.NODE_ENV !== 'production') return []
+  if (role === 'web' && !env.GITHUB_WEB_TOKEN) {
+    return ['GITHUB_WEB_TOKEN is not set: ownership checks for claims share 60 unauthenticated GitHub requests per hour, so busy periods queue more claims for review.']
+  }
+  return []
+}
