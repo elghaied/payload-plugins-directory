@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import { PluginDirectory } from "@/components/PluginDirectory";
+import { getHomeFilterOptions } from "@/lib/directory/taxonomy";
 import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const [plugins, metadata] = await Promise.all([getPluginSummaries(), getDirectoryMeta()]);
+  const [plugins, metadata, filters] = await Promise.all([getPluginSummaries(), getDirectoryMeta(), getHomeFilterOptions()]);
 
   const topPlugins = [...plugins]
     .sort((a, b) => b.stars - a.stars)
@@ -47,7 +48,7 @@ export default async function Page() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
       />
       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p className="text-muted-foreground">Loading plugins...</p></div>}>
-        <PluginDirectory plugins={plugins} metadata={metadata} />
+        <PluginDirectory plugins={plugins} metadata={metadata} categories={filters.categories} tags={filters.tags} />
       </Suspense>
     </>
   );

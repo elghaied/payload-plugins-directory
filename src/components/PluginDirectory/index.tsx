@@ -44,6 +44,8 @@ import {
 } from "@/components/ui/drawer";
 import type { PluginSummary as Plugin } from "@/lib/directory/types";
 import { SortOption, VersionFilter } from "../../types";
+import { matchesCategory, matchesTag, UNCATEGORIZED, type CategoryOption, type TagOption } from "@/lib/directory/filters";
+import { TaxonomyFilters } from "./TaxonomyFilters";
 import { PayloadIcon } from "../PayloadIcon";
 import { ComparisonView } from "../ComparisonView";
 import {
@@ -64,6 +66,8 @@ interface PluginDirectoryProps {
     lastUpdated: string;
     totalCount: number;
   };
+  categories: CategoryOption[];
+  tags: TagOption[];
 }
 
 type SourceFilter = "all" | "official" | "community";
@@ -339,6 +343,8 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
 export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
   plugins,
   metadata,
+  categories,
+  tags,
 }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -354,6 +360,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         : "all";
   const sourceFilter = (searchParams.get("source") as SourceFilter) || "all";
   const licenseFilter = searchParams.get("license") || "all";
+  // Unknown slugs (renamed or deleted categories/tags in old links) fall back to "all".
+  const rawCategory = searchParams.get("category") || "all";
+  const categoryFilter =
+    rawCategory === UNCATEGORIZED || categories.some((c) => c.slug === rawCategory) ? rawCategory : "all";
+  const rawTag = searchParams.get("tag") || "all";
+  const tagFilter = tags.some((t) => t.slug === rawTag) ? rawTag : "all";
+  const uncategorizedCount = useMemo(() => plugins.filter((p) => !p.categoryPath).length, [plugins]);
 
   // Debounced search: local state for immediate display, URL updates after 300ms
   const [localSearch, setLocalSearch] = useState(searchTerm);
@@ -420,7 +433,8 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             topic.toLowerCase().includes(searchLower)
           ) ||
           plugin.owner.toLowerCase().includes(searchLower) ||
-          (plugin.packageName?.toLowerCase().includes(searchLower) ?? false);
+          (plugin.packageName?.toLowerCase().includes(searchLower) ?? false) ||
+          (plugin.tags?.some((t) => t.includes(searchLower)) ?? false);
 
         const matchesVersion =
           versionFilter === "all" ||
@@ -434,7 +448,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         const matchesLicense =
           licenseFilter === "all" || plugin.license === licenseFilter;
 
-        return matchesSearch && matchesVersion && matchesSource && matchesLicense;
+        const matchesTaxonomy =
+          matchesCategory(plugin, categoryFilter, categories) && matchesTag(plugin, tagFilter);
+
+        return matchesSearch && matchesVersion && matchesSource && matchesLicense && matchesTaxonomy;
       })
       .sort((a, b) => {
         switch (sortBy) {
@@ -471,7 +488,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             return 0;
         }
       });
-  }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
+  }, [plugins, searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter, categoryFilter, tagFilter, categories]);
 
   // Recently added plugins (last 90 days), shown only on unfiltered view
   const recentlyAdded = useMemo(() => {
@@ -488,6 +505,8 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     versionFilter === "all" &&
     sourceFilter === "all" &&
     licenseFilter === "all" &&
+    categoryFilter === "all" &&
+    tagFilter === "all" &&
     sortBy === "featured";
 
   // Responsive column count
@@ -541,7 +560,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     if (!el) return;
     const stickyBarHeight = 72; // approx height of sticky filter bar (py-4 + content)
     window.scrollTo({ top: Math.max(0, el.offsetTop - stickyBarHeight) });
-  }, [searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter]);
+  }, [searchTerm, sortBy, versionFilter, sourceFilter, licenseFilter, categoryFilter, tagFilter]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -571,6 +590,14 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     updateParams({ license: value });
   }, [updateParams]);
 
+  const handleCategoryChange = useCallback((value: string) => {
+    updateParams({ category: value });
+  }, [updateParams]);
+
+  const handleTagChange = useCallback((value: string) => {
+    updateParams({ tag: value });
+  }, [updateParams]);
+
   const handleTopicClick = useCallback((topic: string) => {
     updateParams({ q: topic });
   }, [updateParams]);
@@ -590,8 +617,10 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
     if (versionFilter !== "all") count++;
     if (sourceFilter !== "all") count++;
     if (licenseFilter !== "all") count++;
+    if (categoryFilter !== "all") count++;
+    if (tagFilter !== "all") count++;
     return count;
-  }, [versionFilter, sourceFilter, licenseFilter]);
+  }, [versionFilter, sourceFilter, licenseFilter, categoryFilter, tagFilter]);
 
   const handleToggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -813,6 +842,17 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               </SelectContent>
             </Select>
 
+            <TaxonomyFilters
+              variant="inline"
+              categories={categories}
+              tags={tags}
+              category={categoryFilter}
+              tag={tagFilter}
+              uncategorizedCount={uncategorizedCount}
+              onCategoryChange={handleCategoryChange}
+              onTagChange={handleTagChange}
+            />
+
             <Select value={sortBy} onValueChange={handleSortChange}>
               <SelectTrigger className="hidden sm:flex w-44" aria-label="Sort plugins">
                 <SortAsc className="h-4 w-4 mr-2" />
@@ -867,6 +907,24 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                   className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   {licenseFilter}
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {categoryFilter !== "all" && (
+                <button
+                  onClick={() => handleCategoryChange("all")}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  {categoryFilter === UNCATEGORIZED ? "Uncategorized" : (categories.find((c) => c.slug === categoryFilter)?.title ?? categoryFilter)}
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+              {tagFilter !== "all" && (
+                <button
+                  onClick={() => handleTagChange("all")}
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  #{tags.find((t) => t.slug === tagFilter)?.title ?? tagFilter}
                   <X className="h-3 w-3" />
                 </button>
               )}
@@ -935,7 +993,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               variant="outline"
               className="mt-4 cursor-pointer"
               onClick={() => {
-                updateParams({ q: null, version: null, source: null, license: null, sort: null });
+                updateParams({ q: null, version: null, source: null, license: null, sort: null, category: null, tag: null });
               }}
             >
               Clear filters
@@ -1050,6 +1108,17 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 </SelectContent>
               </Select>
             </div>
+
+            <TaxonomyFilters
+              variant="drawer"
+              categories={categories}
+              tags={tags}
+              category={categoryFilter}
+              tag={tagFilter}
+              uncategorizedCount={uncategorizedCount}
+              onCategoryChange={handleCategoryChange}
+              onTagChange={handleTagChange}
+            />
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Sort</label>
