@@ -53,12 +53,13 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
       const { visibility, ...rest } = data
       const updateData = visibility === 'hidden' ? data : rest
       // trash: true — updateByID otherwise 404s on a trashed plugin. `data` has no deletedAt, so it stays trashed.
-      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, data: updateData })
+      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, context: { skipRevalidate: true }, data: updateData })
       counts.pluginsUpdated++
     } else {
       await payload.create({
         collection: 'plugins',
         overrideAccess: true,
+        context: { skipRevalidate: true },
         data: { ...data, firstSeenAt: new Date().toISOString() },
       })
       counts.pluginsCreated++

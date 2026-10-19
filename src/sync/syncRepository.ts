@@ -64,6 +64,9 @@ export function toRepositoryData(meta: GitHubRepo, isMonorepo: boolean, now: Dat
 
 type RepositoryData = ReturnType<typeof toRepositoryData>
 
+/** Sync queues its own revalidation (result.revalidateTags); the Plugins hook must not queue a second job. */
+const SKIP = { skipRevalidate: true }
+
 const COMPARED = ['fullName', 'owner', 'ownerAvatar', 'description', 'stars', 'forks', 'openIssues', 'license', 'isArchived', 'defaultBranch'] as const
 
 function repositoryChanged(prev: Repository | null, next: RepositoryData): boolean {
@@ -249,6 +252,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
           collection: 'plugins',
           overrideAccess: true,
           depth: 0,
+          context: SKIP,
           data: {
             ...data, _h_tags: aliasIds, slug: p.slug, source: sourceFor(official, input.source), visibility: 'listed', firstSeenAt: now.toISOString(),
           },
@@ -266,6 +270,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         overrideAccess: true,
         trash: true,
         depth: 0,
+        context: SKIP,
         data: { ...data, ...(tags ? { _h_tags: tags } : {}), ...(restore ? { deletedAt: null, syncTrashReason: null } : {}) },
       })
       ;(restore ? result.restored : result.updated).push(p.slug)
@@ -293,7 +298,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       const tags = staleChanged ? await mergedTagsNow(payload, p.id, topicTagIds) : null
       const tagsChanged = tags !== null
       await payload.update({
-        collection: 'plugins', id: p.id, overrideAccess: true, depth: 0,
+        collection: 'plugins', id: p.id, overrideAccess: true, depth: 0, context: SKIP,
         data: { healthScore, ...(tagsChanged ? { _h_tags: tags } : {}) },
       })
       result.updated.push(p.slug)

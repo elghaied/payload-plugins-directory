@@ -195,6 +195,7 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
             id: p.id,
             overrideAccess: true,
             depth: 0,
+            context: { skipRevalidate: true },
             data: {
               ...(npmChanged && fresh ? { npm: fresh } : {}),
               ...(majorsChanged ? { payloadMajors } : {}),

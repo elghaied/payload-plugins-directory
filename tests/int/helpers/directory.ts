@@ -21,6 +21,8 @@ export async function createPlugin(payload: Payload, repository: number, over: P
     collection: 'plugins',
     overrideAccess: true,
     depth: 0,
+    // Setup, not the subject of a test: keep the revalidate queue free of the Plugins hook's job.
+    context: { skipRevalidate: true },
     data: { slug: `plugin-${n}`, name: `Plugin ${n}`, repository, url: `https://github.com/acme/plugin-${n}`, source: 'topic', ...over } as never,
   })
 }

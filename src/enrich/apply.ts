@@ -8,7 +8,7 @@ import type { CleanEnrichment } from './types'
 export type ApplyArgs = { pluginId: number; contentHash: string | null; fingerprint: string; model: string; result: CleanEnrichment; now: Date }
 export type ApplyResult = { status: 'applied' | 'stale' | 'missing' | 'disabled'; revalidateTags: string[]; createdTags: string[] }
 
-const WRITE = { overrideAccess: true as const, depth: 0, context: { enrichment: true } }
+const WRITE = { overrideAccess: true as const, depth: 0, context: { enrichment: true, skipRevalidate: true } }
 
 /**
  * Writes one validated enrichment (spec §5.1, §5.3). The kill switch and the plugin are re-read right before

@@ -11,7 +11,7 @@ export async function trashPlugins(payload: Payload, where: Where, reason: SyncT
     collection: 'plugins',
     overrideAccess: true,
     depth: 0,
-    context: { syncTrash: true },
+    context: { syncTrash: true, skipRevalidate: true },
     where: { and: [where, { deletedAt: { exists: false } }] },
     data: { deletedAt: now.toISOString(), syncTrashReason: reason },
   })

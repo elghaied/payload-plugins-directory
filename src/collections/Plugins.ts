@@ -1,6 +1,7 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
+import { revalidatePluginChange, revalidatePluginDelete } from '@/collections/hooks/revalidatePlugin'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
 import { DESCRIPTION_MAX_CHARS, README_MAX_CHARS } from '@/sync/limits'
 
@@ -38,6 +39,8 @@ export const Plugins: CollectionConfig = {
       },
       lockAdminEditedAiFields,
     ],
+    afterChange: [revalidatePluginChange],
+    afterDelete: [revalidatePluginDelete],
   },
   fields: [
     // Identity
