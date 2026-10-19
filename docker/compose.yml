@@ -1,3 +1,17 @@
+# Maintainer sign-in (phase 4) deploy notes, web service only:
+#   - GitHub OAuth App owned by the directory's GitHub account, callback: https://payloaddirectory.dev/auth/github/callback
+#     -> GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET. SESSION_SECRET = `openssl rand -hex 32`
+#     (rotating it signs everyone out).
+#   - Optional GITHUB_WEB_TOKEN: fine-grained PAT, public repositories read-only, created on a bot account that is in no
+#     organisation (raises claim ownership checks from 60 to 5,000 requests/hour).
+#   - Cloudflare Cache Rule "Bypass cache" when: URI path starts with /me, /submit, /claim/, /auth/
+#     OR the request cookie contains "pd_session". Badges (/badge/*.svg) stay cacheable: the origin sends
+#     s-maxage=3600 (1 h), so a hidden or trashed plugin's badge can linger at the CDN for up to 1 h (+1 h stale-while-revalidate).
+#   - Cloudflare rate-limit rules for /auth/*, /submit, /claim/*, /me and REST writes (POST/PATCH/DELETE on /api/*).
+#     Also rate-limit /badge/* requests that carry a query string (cache-busting reaches the origin).
+#   - HSTS: send Strict-Transport-Security with includeSubDomains (Cloudflare SSL/TLS > Edge Certificates, or at the proxy)
+#     because the pd_session cookie is Secure and must never travel over plain HTTP.
+#
 # Production stack for Coolify (pasted into a Docker Compose resource; this file is the source of truth).
 #
 # `directory.env` labels let `pnpm db:push` verify it is about to overwrite the right environment
