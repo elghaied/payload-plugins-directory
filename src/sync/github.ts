@@ -51,7 +51,8 @@ export class InvalidGitHubPathError extends Error {
 const FULL_NAME = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9._-]{1,100}$/
 const CONTROL = /[\u0000-\u001f\u007f]/
 
-function checkFullName(fullName: string): string {
+/** The full name, or InvalidGitHubPathError when it is not a valid `owner/repo`. */
+export function checkFullName(fullName: string): string {
   if (!FULL_NAME.test(fullName)) throw new InvalidGitHubPathError('repository name', fullName)
   const repo = fullName.split('/')[1]
   if (repo === '.' || repo === '..') throw new InvalidGitHubPathError('repository name', fullName)

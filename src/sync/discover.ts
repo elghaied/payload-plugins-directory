@@ -3,8 +3,9 @@ import type { Payload } from 'payload'
 import { revalidationTagsFor } from '@/lib/cacheTags'
 import type { SyncContext } from './context'
 import { OFFICIAL_REPO } from './extract'
+import { checkFullName, InvalidGitHubPathError } from './github'
 import { HttpError } from './http'
-import type { NpmClient } from './npm'
+import { InvalidNpmPackageNameError, type NpmClient } from './npm'
 import { normalizeGitHubUrl, parseGitHubFullName, parseNpmPackageName } from './packages'
 import type { SyncRepositoryInput } from './syncRepository'
 import { trashPlugins } from './trash'
@@ -44,6 +45,18 @@ async function setMissedDiscoveries(payload: Payload, r: StoredRepo, next: numbe
   return res.rows.length > 0
 }
 
+const isSkippableSubmissionError = (err: unknown): boolean =>
+  err instanceof InvalidNpmPackageNameError || err instanceof InvalidGitHubPathError || err instanceof URIError || err instanceof HttpError
+
+/** "owner/repo" of a submission URL: a GitHub URL directly, an npm URL via the registry; null when there is none (incl. npm 404). */
+async function submissionRepo(url: string, npm: NpmClient): Promise<string | null> {
+  const fromGitHub = parseGitHubFullName(url)
+  if (fromGitHub) return fromGitHub
+  const packageName = parseNpmPackageName(url)
+  if (!packageName) return null
+  return normalizeGitHubUrl((await npm.getPackage(packageName))?.repositoryUrl)
+}
+
 /** Repositories of approved listing submissions: GitHub URLs directly, npm URLs via the registry's repository field. */
 async function approvedSubmissionRepos(payload: Payload, npm: NpmClient): Promise<string[]> {
   const subs = await payload.find({
@@ -57,18 +70,14 @@ async function approvedSubmissionRepos(payload: Payload, npm: NpmClient): Promis
   const names: string[] = []
   for (const sub of subs.docs) {
     if (!sub.url) continue
-    const fromGitHub = parseGitHubFullName(sub.url)
-    if (fromGitHub) {
-      names.push(fromGitHub)
-      continue
-    }
-    const packageName = parseNpmPackageName(sub.url)
-    if (!packageName) continue
+    // One bad submission (malformed URL, invalid name, broken registry entry) is skipped, never aborts discovery.
+    // Rate limits propagate so the whole run is re-queued.
     try {
-      const fullName = normalizeGitHubUrl((await npm.getPackage(packageName))?.repositoryUrl)
-      if (fullName) names.push(fullName)
+      const fullName = await submissionRepo(sub.url, npm)
+      if (fullName) names.push(checkFullName(fullName))
     } catch (err) {
-      if (!(err instanceof HttpError)) throw err // rate limits propagate; a broken npm entry only skips this submission
+      if (!isSkippableSubmissionError(err)) throw err
+      payload.logger.warn({ msg: `Discover: skipped approved submission ${sub.id}: ${(err as Error).message}`, submission: sub.id })
     }
   }
   return names

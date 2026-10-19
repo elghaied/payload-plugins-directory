@@ -1,8 +1,9 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import { runDiscover } from '@/sync/discover'
+import { RateLimitError } from '@/sync/http'
 import { fakeFetch, type FakeRoute } from '../helpers/fakeFetch'
-import { ghRepo, npmRoutes, searchPage, searchResult } from '../fixtures/sync/github'
+import { DOWNLOADS, ghRepo, npmRoutes, REGISTRY, searchPage, searchResult } from '../fixtures/sync/github'
 import { createPlugin, createRepo } from './helpers/directory'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 import { syncContext } from './helpers/syncContext'
@@ -201,6 +202,52 @@ describe('runDiscover', () => {
     expect(r).toMatchObject({ missed: [], known: 4, knownSeen: 4 })
     expect(r.toSync).toContainEqual({ fullName: 'payloadcms/payload', githubId: 9000, source: 'official', discovered: true })
     expect((await repoDoc('payloadcms/payload')).missedDiscoveries).toBe(0)
+  })
+
+  it('skips (and logs) a bad approved submission instead of aborting discovery', async () => {
+    const m = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 1, login: 'maint' } })
+    const urls = [
+      'https://www.npmjs.com/package/%E0%A4%A', // URIError when decoded
+      'https://www.npmjs.com/package/Bad_Name', // invalid npm package name
+      'https://www.npmjs.com/package/payload-broken', // registry answers 500
+      'https://github.com/acme/..', // invalid GitHub repository name
+      'https://www.npmjs.com/package/payload-good',
+    ]
+    for (const url of urls) {
+      await payload.create({ collection: 'submissions', overrideAccess: true, data: { type: 'listing', url, status: 'approved', submittedBy: m.id } })
+    }
+    const warn = vi.spyOn(payload.logger, 'warn').mockImplementation(() => undefined)
+    try {
+      const r = await discover({
+        ...search(101),
+        ...npmRoutes('payload-good', { repositoryUrl: 'https://github.com/acme/good' }),
+        [`${REGISTRY}/payload-broken`]: { status: 500 },
+        [`${DOWNLOADS}/last-week/payload-broken`]: { status: 500 },
+        [`${DOWNLOADS}/last-month/payload-broken`]: { status: 500 },
+      })
+      expect(r.toSync).toContainEqual({ fullName: 'acme/good', source: 'submission', discovered: true })
+      expect(r.toSync.map((t) => t.fullName).sort()).toEqual(['acme/good', 'acme/r1', 'payloadcms/payload'])
+      expect(warn).toHaveBeenCalledTimes(4)
+    } finally {
+      warn.mockRestore()
+    }
+  })
+
+  it('still propagates a rate limit while resolving an npm submission', async () => {
+    const m = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 1, login: 'maint' } })
+    await payload.create({
+      collection: 'submissions', overrideAccess: true,
+      data: { type: 'listing', url: 'https://www.npmjs.com/package/payload-limited', status: 'approved', submittedBy: m.id },
+    })
+    const limited = { status: 429, headers: { 'retry-after': '30' } }
+    await expect(
+      discover({
+        ...search(101),
+        [`${REGISTRY}/payload-limited`]: limited,
+        [`${DOWNLOADS}/last-week/payload-limited`]: limited,
+        [`${DOWNLOADS}/last-month/payload-limited`]: limited,
+      }),
+    ).rejects.toBeInstanceOf(RateLimitError)
   })
 
   it('queues an approved submission of a stored repository with its GitHub id', async () => {
