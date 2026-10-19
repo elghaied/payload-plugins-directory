@@ -16,7 +16,7 @@ export class InvalidNpmPackageNameError extends Error {
 const PACKAGE_NAME = /^(?:@[a-z0-9~-][a-z0-9._~-]*\/)?[a-z0-9~-][a-z0-9._~-]*$/
 
 function checkPackageName(name: string): string {
-  if (typeof name !== 'string' || name.length > 214 || name.includes('..') || !PACKAGE_NAME.test(name)) {
+  if (typeof name !== 'string' || name.length > 214 || !PACKAGE_NAME.test(name)) {
     throw new InvalidNpmPackageNameError(String(name))
   }
   return name
@@ -58,13 +58,14 @@ export function createNpmClient(opts: { fetch: FetchFn; now?: () => Date }): Npm
     return res
   }
 
-  /** Download counts are optional (legacy behaviour: 0 when unavailable); rate limits still propagate. */
+  /** A package with no download stats (404) or an unparseable body counts as 0; every other failure throws so a transient error never records 0. */
   async function downloads(url: string): Promise<number> {
+    const res = await get(url)
+    if (!res) return 0
     try {
-      const res = await get(url)
-      return res ? (((await res.json()) as { downloads?: number }).downloads ?? 0) : 0
-    } catch (err) {
-      if (err instanceof RateLimitError) throw err
+      const body = (await res.json()) as { downloads?: unknown }
+      return typeof body?.downloads === 'number' && Number.isFinite(body.downloads) ? body.downloads : 0
+    } catch {
       return 0
     }
   }

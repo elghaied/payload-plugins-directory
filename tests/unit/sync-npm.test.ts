@@ -23,11 +23,11 @@ describe('createNpmClient().getPackage', () => {
     })
   })
 
-  it('encodes scoped names and counts failed download lookups as 0', async () => {
+  it('encodes scoped names and counts missing (404) download stats as 0', async () => {
     const id = encodeURIComponent('@acme/seo')
     const f = fakeFetch({
       ...npmRoutes('@acme/seo'),
-      [`${DOWNLOADS}/last-week/${id}`]: { status: 500 },
+      [`${DOWNLOADS}/last-week/${id}`]: { status: 404 },
       [`${DOWNLOADS}/last-month/${id}`]: { status: 404 },
     })
     const info = await createNpmClient({ fetch: f, now }).getPackage('@acme/seo')
@@ -88,4 +88,33 @@ describe('createNpmClient().getPackage', () => {
     await createNpmClient({ fetch: f, now }).getPackage('@acme/seo')
     for (const c of f.calls) expect(['https://registry.npmjs.org', 'https://api.npmjs.org']).toContain(new URL(c.url).origin)
   })
+
+  it('throws instead of recording 0 downloads on a 5xx from the downloads API', async () => {
+    const f = fakeFetch({ ...npmRoutes('flaky'), [`${DOWNLOADS}/last-month/flaky`]: { status: 500 } })
+    await expect(createNpmClient({ fetch: f, now }).getPackage('flaky')).rejects.toBeInstanceOf(HttpError)
+  })
+
+  it('propagates network errors from the downloads API', async () => {
+    const routes = npmRoutes('net')
+    routes[`${DOWNLOADS}/last-week/net`] = () => { throw new Error('socket hang up') }
+    await expect(createNpmClient({ fetch: fakeFetch(routes), now }).getPackage('net')).rejects.toThrow('socket hang up')
+  })
+
+  it('counts an unparseable downloads body as 0', async () => {
+    const f = fakeFetch({ ...npmRoutes('odd2'), [`${DOWNLOADS}/last-week/odd2`]: { text: 'not json' } })
+    expect((await createNpmClient({ fetch: f, now }).getPackage('odd2'))?.data.weeklyDownloads).toBe(0)
+  })
+
+  it('throws RateLimitError on a 429 from the registry', async () => {
+    const f = fakeFetch({ ...npmRoutes('busy2'), [`${REGISTRY}/busy2`]: { status: 429, headers: { 'retry-after': '30' } } })
+    await expect(createNpmClient({ fetch: f, now }).getPackage('busy2')).rejects.toBeInstanceOf(RateLimitError)
+  })
+
+  it.each(['@payloadcms/plugin-seo', 'payload-plugin-x.y', '@payload-enchants/translator', 'payload-auth', '@a/b'])(
+    'accepts real package name %s',
+    async (name) => {
+      const f = fakeFetch(npmRoutes(name))
+      expect((await createNpmClient({ fetch: f, now }).getPackage(name))?.data.latestVersion).toBe('1.2.0')
+    },
+  )
 })
