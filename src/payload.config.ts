@@ -17,6 +17,7 @@ import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
 import { DirectorySettings } from './globals/DirectorySettings'
 import { getServerURL } from './lib/serverUrl'
+import { jobsConfig } from './sync/tasks'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -28,6 +29,7 @@ export default buildConfig({
   collections: [Users, Maintainers, Repositories, Plugins, Categories, Tags, Submissions, Media],
   globals: [DirectorySettings],
   endpoints: [healthEndpoint],
+  jobs: jobsConfig,
   cli: { commands: { seed: './cli/seed.js#seedCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',
   // Runtime value (SERVER_URL): Payload derives CSRF/CORS allowed origins from it.

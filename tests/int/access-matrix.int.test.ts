@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { Forbidden, ValidationError, type Payload } from 'payload'
+import { createPayloadRequest, Forbidden, ValidationError, type Payload } from 'payload'
 import type { Maintainer } from '@/payload-types'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
@@ -149,6 +149,24 @@ describe('access matrix', () => {
   it('anonymous cannot read the ai settings group', async () => {
     const settings = await payload.findGlobal({ slug: 'directory-settings', overrideAccess: false, user: null })
     expect(settings.ai).toBeUndefined()
+  })
+  it('jobs are admin-only: anonymous users and maintainers cannot read, create or queue them', async () => {
+    const job = await payload.jobs.queue({ task: 'snapshot', input: {}, queue: 'default', overrideAccess: true })
+    for (const user of [null, maintainer]) {
+      await expect(payload.find({ collection: 'payload-jobs', overrideAccess: false, user: user as never })).rejects.toThrow(Forbidden)
+      await expect(
+        payload.create({ collection: 'payload-jobs', overrideAccess: false, user: user as never, data: { taskSlug: 'snapshot', input: {} } as never }),
+      ).rejects.toThrow(Forbidden)
+      const req = await createPayloadRequest({ payload, user: user as never })
+      await expect(payload.jobs.queue({ task: 'snapshot', input: {}, queue: 'default', req, overrideAccess: false })).rejects.toThrow(Forbidden)
+    }
+    const asAdmin = await payload.find({ collection: 'payload-jobs', overrideAccess: false, user: admin as never })
+    expect(asAdmin.docs.map((d) => d.id)).toEqual([job.id])
+    // Read-only for admins too: jobs are only created through payload.jobs.queue by system code.
+    await expect(
+      payload.create({ collection: 'payload-jobs', overrideAccess: false, user: admin as never, data: { taskSlug: 'snapshot', input: {} } as never }),
+    ).rejects.toThrow(Forbidden)
+    await payload.delete({ collection: 'payload-jobs', id: job.id, overrideAccess: true })
   })
   it('an admin can still log in despite admin-only users read access', async () => {
     const email = 'admin@example.com'

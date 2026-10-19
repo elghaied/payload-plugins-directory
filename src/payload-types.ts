@@ -77,6 +77,7 @@ export interface Config {
     submissions: Submission;
     media: Media;
     'payload-kv': PayloadKv;
+    'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -93,6 +94,7 @@ export interface Config {
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
+    'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -104,9 +106,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'directory-settings': DirectorySetting;
+    'payload-jobs-stats': PayloadJobsStat;
   };
   globalsSelect: {
     'directory-settings': DirectorySettingsSelect<false> | DirectorySettingsSelect<true>;
+    'payload-jobs-stats': PayloadJobsStatsSelect<false> | PayloadJobsStatsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -118,7 +122,17 @@ export interface Config {
   };
   user: User | Maintainer;
   jobs: {
-    tasks: unknown;
+    tasks: {
+      discover: TaskDiscover;
+      'sync-repository': TaskSyncRepository;
+      'npm-stats': TaskNpmStats;
+      snapshot: TaskSnapshot;
+      revalidate: TaskRevalidate;
+      inline: {
+        input: unknown;
+        output: unknown;
+      };
+    };
     workflows: unknown;
   };
 }
@@ -499,6 +513,116 @@ export interface PayloadKv {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs".
+ */
+export interface PayloadJob {
+  id: number;
+  /**
+   * Input data provided to the job
+   */
+  input?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  taskStatus?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  meta?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  completedAt?: string | null;
+  totalTried?: number | null;
+  /**
+   * If hasError is true this job will not be retried
+   */
+  hasError?: boolean | null;
+  /**
+   * If hasError is true, this is the error that caused it
+   */
+  error?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Task execution log
+   */
+  log?:
+    | {
+        executedAt: string;
+        completedAt: string;
+        taskSlug: 'inline' | 'discover' | 'sync-repository' | 'npm-stats' | 'snapshot' | 'revalidate';
+        taskID: string;
+        input:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        output?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        state: 'failed' | 'succeeded';
+        error?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        parent?: {
+          taskSlug?: ('inline' | 'discover' | 'sync-repository' | 'npm-stats' | 'snapshot' | 'revalidate') | null;
+          taskID?: string | null;
+        };
+        id?: string | null;
+      }[]
+    | null;
+  taskSlug?: ('inline' | 'discover' | 'sync-repository' | 'npm-stats' | 'snapshot' | 'revalidate') | null;
+  queue?: string | null;
+  waitUntil?: string | null;
+  processingUntil?: string | null;
+  processingToken?: string | null;
+  /**
+   * Used for concurrency control. Jobs with the same key are subject to exclusive/supersedes rules.
+   */
+  concurrencyKey?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -840,6 +964,46 @@ export interface PayloadKvSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs_select".
+ */
+export interface PayloadJobsSelect<T extends boolean = true> {
+  input?: T;
+  taskStatus?: T;
+  meta?: T;
+  completedAt?: T;
+  totalTried?: T;
+  hasError?: T;
+  error?: T;
+  log?:
+    | T
+    | {
+        executedAt?: T;
+        completedAt?: T;
+        taskSlug?: T;
+        taskID?: T;
+        input?: T;
+        output?: T;
+        state?: T;
+        error?: T;
+        parent?:
+          | T
+          | {
+              taskSlug?: T;
+              taskID?: T;
+            };
+        id?: T;
+      };
+  taskSlug?: T;
+  queue?: T;
+  waitUntil?: T;
+  processingUntil?: T;
+  processingToken?: T;
+  concurrencyKey?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents_select".
  */
 export interface PayloadLockedDocumentsSelect<T extends boolean = true> {
@@ -926,6 +1090,24 @@ export interface DirectorySetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats".
+ */
+export interface PayloadJobsStat {
+  id: number;
+  stats?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "directory-settings_select".
  */
 export interface DirectorySettingsSelect<T extends boolean = true> {
@@ -946,6 +1128,16 @@ export interface DirectorySettingsSelect<T extends boolean = true> {
       };
   createdBy?: T;
   updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-jobs-stats_select".
+ */
+export interface PayloadJobsStatsSelect<T extends boolean = true> {
+  stats?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -978,7 +1170,15 @@ export interface CollectionQueryWidget {
   data?: {
     title?: string | null;
     relatedCollection:
-      'users' | 'maintainers' | 'repositories' | 'plugins' | 'categories' | 'tags' | 'submissions' | 'media';
+      | 'users'
+      | 'maintainers'
+      | 'repositories'
+      | 'plugins'
+      | 'categories'
+      | 'tags'
+      | 'submissions'
+      | 'media'
+      | 'payload-jobs';
     where?:
       | {
           [k: string]: unknown;
@@ -1001,7 +1201,18 @@ export interface CollectionQueryWidget {
 export interface ActivityWidget {
   data?: {
     excludedCollections?:
-      ('users' | 'maintainers' | 'repositories' | 'plugins' | 'categories' | 'tags' | 'submissions' | 'media')[] | null;
+      | (
+          | 'users'
+          | 'maintainers'
+          | 'repositories'
+          | 'plugins'
+          | 'categories'
+          | 'tags'
+          | 'submissions'
+          | 'media'
+          | 'payload-jobs'
+        )[]
+      | null;
   };
   width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
@@ -1014,6 +1225,86 @@ export interface UploadDropzoneWidget {
     excludedCollections?: 'media'[] | null;
   };
   width: 'x-small' | 'small' | 'medium' | 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskDiscover".
+ */
+export interface TaskDiscover {
+  input?: unknown;
+  output: {
+    status?: string | null;
+    discovered?: number | null;
+    known?: number | null;
+    knownSeen?: number | null;
+    queued?: number | null;
+    trashed?: number | null;
+    warning?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSync-repository".
+ */
+export interface TaskSyncRepository {
+  input: {
+    fullName: string;
+    githubId?: number | null;
+    source?: ('topic' | 'official' | 'submission') | null;
+    discovered?: boolean | null;
+  };
+  output: {
+    status?: string | null;
+    contentReRead?: boolean | null;
+    created?: number | null;
+    updated?: number | null;
+    restored?: number | null;
+    trashed?: number | null;
+    contentChanged?: number[] | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskNpm-stats".
+ */
+export interface TaskNpmStats {
+  input: {
+    slugs?: string[] | null;
+  };
+  output: {
+    status?: string | null;
+    checked?: number | null;
+    updated?: number | null;
+    errors?: number | null;
+    failed?: number | null;
+    mismatched?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSnapshot".
+ */
+export interface TaskSnapshot {
+  input?: unknown;
+  output: {
+    status?: string | null;
+    date?: string | null;
+    repositories?: number | null;
+    plugins?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRevalidate".
+ */
+export interface TaskRevalidate {
+  input: {
+    tags: string[];
+  };
+  output: {
+    status?: string | null;
+    count?: number | null;
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -4,6 +4,12 @@ import { jobStatus } from '@/db/jobStatus'
 import type { GitHubQuota } from './github'
 
 export const GITHUB_QUOTA_KEY = 'github-quota'
+/**
+ * Last time the discover guard tripped (`lastSuccessAt`) and its warning (`details`). Kept apart from the `discover`
+ * row so a later failed run cannot hide it; the guard is current when this row is at least as new as discover's
+ * last success.
+ */
+export const DISCOVER_GUARD_KEY = 'discover-guard'
 
 export async function recordJobSuccess(payload: Payload, key: string, details: Record<string, unknown>, now: Date): Promise<void> {
   await payload.db.drizzle
