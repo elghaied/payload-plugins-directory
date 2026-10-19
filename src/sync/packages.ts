@@ -22,9 +22,9 @@ export function getPayloadVersion(pkg: PackageJson): string | null {
 }
 
 function workspacePatterns(pkg: PackageJson): string[] {
-  const ws = pkg.workspaces
-  if (!ws) return []
-  return Array.isArray(ws) ? ws : (ws.packages ?? [])
+  const ws: unknown = pkg.workspaces
+  const list: unknown = Array.isArray(ws) ? ws : ws && typeof ws === 'object' ? (ws as { packages?: unknown }).packages : undefined
+  return Array.isArray(list) ? list.filter((p): p is string => typeof p === 'string') : []
 }
 
 export function isMonorepo(pkg: PackageJson): boolean {

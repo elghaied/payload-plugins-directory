@@ -22,6 +22,12 @@ describe('package helpers (ported from scripts/fetch-plugins.ts)', () => {
     expect(getPayloadVersion({ devDependencies: { payload: '^3.1.0' } })).toBe('^3.1.0')
     expect(getPayloadVersion({})).toBeNull()
   })
+  it('ignores non-string and non-array workspace declarations', () => {
+    expect(getWorkspaceDirs({ workspaces: [1, 'packages/*'] as unknown as string[] })).toEqual(['packages'])
+    expect(getWorkspaceDirs({ workspaces: { packages: 'packages/*' } as unknown as { packages: string[] } })).toEqual([])
+    expect(isMonorepo({ workspaces: { packages: 'packages/*' } as unknown as { packages: string[] } })).toBe(false)
+  })
+
   it('detects workspaces and their top-level directories', () => {
     expect(isMonorepo({ workspaces: ['packages/*'] })).toBe(true)
     expect(isMonorepo({ workspaces: { packages: [] } })).toBe(false)

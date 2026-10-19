@@ -25,6 +25,9 @@ type ReadPackage = { json: PackageJson; text: string }
 const README_NAMES = ['README.md', 'readme.md', 'Readme.md']
 const NO_DESCRIPTION = 'No description available'
 const BATCH = 5
+/** Caps on GitHub requests driven by an untrusted package.json. */
+export const MAX_WORKSPACE_DIRS = 20
+export const MAX_SUBDIRS_PER_DIR = 100
 
 async function readPackageJson(gh: GitHubClient, fullName: string, ref: string, dir: string): Promise<ReadPackage | null> {
   const text = await gh.getRawFile(fullName, ref, dir ? `${dir}/package.json` : 'package.json')
@@ -69,7 +72,7 @@ async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Pro
   const ref = repo.default_branch
   const found: ExtractedPlugin[] = []
   const seen = new Set<string>()
-  for (const dir of dirs) {
+  for (const dir of dirs.slice(0, MAX_WORKSPACE_DIRS)) {
     // Workspace entries come from the repository's package.json and are untrusted: skip invalid ones.
     let listing
     try {
@@ -78,7 +81,7 @@ async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Pro
       if (error instanceof InvalidGitHubPathError) continue
       throw error
     }
-    const subdirs = listing.filter((e) => e.type === 'dir')
+    const subdirs = listing.filter((e) => e.type === 'dir').slice(0, MAX_SUBDIRS_PER_DIR)
     for (let i = 0; i < subdirs.length; i += BATCH) {
       const batch = await Promise.all(
         subdirs.slice(i, i + BATCH).map(async (entry): Promise<ExtractedPlugin | null> => {
@@ -175,6 +178,9 @@ export async function extractOfficialPlugins(repo: GitHubRepo, gh: GitHubClient)
       }),
     )
     for (const plugin of batch) if (plugin) plugins.push(plugin)
+  }
+  if (plugins.length === 0) {
+    throw new Error(`Extracted no official plugins from ${dirs.length} packages/plugin-* directories in ${repo.full_name}; refusing to treat every official plugin as removed.`)
   }
   return { plugins, isMonorepo: true }
 }
