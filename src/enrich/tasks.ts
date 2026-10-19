@@ -74,7 +74,8 @@ const enrichAllTask: TaskConfig<'enrich-all'> = {
   slug: 'enrich-all',
   label: 'Enrich stale plugins (AI)',
   schedule: [{ cron: '20 * * * *', queue: QUEUES.default }],
-  // Never retried: the next hourly run is the retry, and a retried pass must not race a batch it may have created.
+  // Never retried: the next hourly run is the retry. (A retry could not submit a second batch anyway: the in-flight
+  // marker in batch.ts blocks that.)
   retries: 0,
   concurrency: () => 'enrich-all',
   inputSchema: [{ name: 'force', type: 'checkbox' }],

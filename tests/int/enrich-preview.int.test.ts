@@ -51,6 +51,11 @@ describe('previewEnrichment', () => {
     await setAiSettings(payload, { model: 'claude-mystery-9' })
     const [b] = await previewEnrichment(payload, { limit: 1 })
     expect(b).toMatchObject({ priceKnown: false, model: 'claude-mystery-9' })
+    // An inherited Object key is not a price-table entry (Object.hasOwn, not `in`).
+    await setAiSettings(payload, { model: 'constructor' })
+    const [c] = await previewEnrichment(payload, { limit: 1 })
+    expect(c.priceKnown).toBe(false)
+    expect(Number.isFinite(c.estCostUsd)).toBe(true)
   })
 
   it('previews exactly the requested slugs', async () => {

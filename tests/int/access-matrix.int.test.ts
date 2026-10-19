@@ -161,7 +161,9 @@ describe('access matrix', () => {
       const req = await createPayloadRequest({ payload, user: user as never })
       await expect(payload.jobs.queue({ task: 'snapshot', input: {}, queue: 'default', req, overrideAccess: false })).rejects.toThrow(Forbidden)
     }
-    const asAdmin = await payload.find({ collection: 'payload-jobs', overrideAccess: false, user: admin as never })
+    const asAdmin = await payload.find({
+      collection: 'payload-jobs', overrideAccess: false, user: admin as never, where: { taskSlug: { equals: 'snapshot' } },
+    })
     expect(asAdmin.docs.map((d) => d.id)).toEqual([job.id])
     // Read-only for admins too: jobs are only created through payload.jobs.queue by system code.
     await expect(

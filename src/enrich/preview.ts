@@ -57,7 +57,7 @@ export async function previewEnrichment(payload: Payload, opts: { slugs?: string
     const schemaTokens = tokensOf(JSON.stringify(request.output_config.format.schema).length)
     const systemTokens = tokensOf(systemChars)
     const rest = tokensOf(userChars) + schemaTokens
-    const known = request.model in PRICES
+    const known = Object.hasOwn(PRICES, request.model)
     const price = PRICES[known ? request.model : FALLBACK_MODEL]
     const cost = (systemRate: number) => (systemTokens * systemRate + rest * price.input + EST_OUTPUT_TOKENS * price.output) / 1e6
     return {
