@@ -1,0 +1,204 @@
+import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import type { Payload } from 'payload'
+import { cancelBatchQuietly, customIdFor, DEFAULT_MAX_PER_PASS, findStalePlugins, maxPerPassFromEnv, runEnrichAll, runEnrichBatch, type EnrichBatchInput } from '@/enrich/batch'
+import { failureKey, loadEnrichContext } from '@/enrich/context'
+import type { BatchResultEntry } from '@/enrich/types'
+import type { Plugin } from '@/payload-types'
+import { endBatch, fakeEnrichClient, maxTokensMessage, okMessage, refusalMessage } from '../helpers/fakeEnrichClient'
+import { createPlugin, createRepo } from './helpers/directory'
+import { getTestPayload, resetDatabase } from './helpers/payload'
+import { createTestTaxonomy, goodOutput, setAiSettings } from './helpers/taxonomy'
+
+let payload: Payload
+let plugins: Plugin[]
+const LATER = () => new Date(Date.now() + 2 * 3_600_000) // past the edit debounce of the taxonomy created in beforeEach
+const reload = (id: number) => payload.findByID({ collection: 'plugins', id, overrideAccess: true, depth: 0, trash: true })
+const ok = (id: number): BatchResultEntry => ({ custom_id: customIdFor(id), result: { type: 'succeeded', message: okMessage(goodOutput()) } })
+
+beforeEach(async () => {
+  payload = await getTestPayload()
+  await resetDatabase(payload)
+  await createTestTaxonomy(payload)
+  const repo = await createRepo(payload)
+  plugins = []
+  for (const [i, health] of [10, 90, 50, 70, 30, 20].entries()) {
+    plugins.push(await createPlugin(payload, repo.id, { slug: `p${i}`, contentHash: `h${i}`, readme: `# P${i}`, healthScore: health }))
+  }
+})
+afterAll(async () => resetDatabase(payload))
+
+describe('findStalePlugins', () => {
+  it('finds never-enriched, changed and re-prompted plugins, skipping current, failed, locked and trashed ones', async () => {
+    const { fingerprint } = await loadEnrichContext(payload)
+    const [p0, p1, p2, p3, p4, p5] = plugins
+    const set = (p: Plugin, data: Record<string, unknown>) => payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: data as never })
+    await set(p0, { ai: { enrichedHash: 'h0', promptHash: fingerprint } }) // current
+    await set(p1, { ai: { enrichedHash: 'old', promptHash: fingerprint } }) // content changed
+    await set(p2, { ai: { enrichedHash: 'h2', promptHash: 'old-prompt' } }) // prompt changed
+    await set(p3, { ai: { failedKey: failureKey('h3', fingerprint) } }) // same input already failed
+    await set(p4, { locks: { category: true, tags: true, tagline: true, summary: true, features: true, useCases: true } })
+    await set(p5, { deletedAt: new Date().toISOString() })
+    expect((await findStalePlugins(payload, fingerprint)).map((p) => p.slug)).toEqual(['p1', 'p2'])
+  })
+})
+
+describe('runEnrichAll', () => {
+  it('queues direct jobs below the batch threshold, highest health first', async () => {
+    const r = await runEnrichAll(payload, fakeEnrichClient(), LATER())
+    expect(r).toMatchObject({ status: 'direct', stale: 6, batch: null })
+    expect(r.direct).toEqual([plugins[1], plugins[3], plugins[2], plugins[4], plugins[5], plugins[0]].map((p) => p.id))
+  })
+
+  it('submits one batch without fallbacks at or above the threshold', async () => {
+    const fake = fakeEnrichClient()
+    const r = await runEnrichAll(payload, fake, LATER(), { batchMin: 3 })
+    expect(r).toMatchObject({ status: 'batch', stale: 6, direct: [] })
+    const { fingerprint } = await loadEnrichContext(payload)
+    expect(r.batch).toMatchObject({ batchId: 'msgbatch_1', fingerprint, model: 'claude-sonnet-5-5' })
+    expect(r.batch?.items).toHaveLength(6)
+    const sent = fake.batches.get('msgbatch_1')!.items
+    expect(sent.map((i) => i.custom_id)).toEqual(r.batch!.items.map((i) => customIdFor(i.id)))
+    for (const item of sent) {
+      expect(item.params).not.toHaveProperty('fallbacks')
+      expect(item.params.system[0].cache_control).toEqual({ type: 'ephemeral' })
+    }
+    expect(new Set(sent.map((i) => i.params.system[0].text)).size).toBe(1) // one shared, cacheable system prompt
+    expect(fake.calls).toHaveLength(0)
+  })
+
+  it('does nothing when disabled, without a client or right after a taxonomy edit', async () => {
+    const fake = fakeEnrichClient()
+    expect((await runEnrichAll(payload, null, LATER())).status).toBe('no-api-key')
+    expect((await runEnrichAll(payload, fake, new Date())).status).toBe('debounced')
+    expect((await runEnrichAll(payload, fake, new Date(), { force: true })).status).toBe('direct')
+    await setAiSettings(payload, { enabled: false })
+    expect((await runEnrichAll(payload, fake, LATER(), { force: true })).status).toBe('disabled')
+    expect(fake.batches.size).toBe(0)
+  })
+  // "batch in flight" and "pending enrich job" need the registered task slugs: tests/int/enrich-jobs.int.test.ts (Task 10).
+
+  it('re-enriches everything after a category intro changes', async () => {
+    const { fingerprint } = await loadEnrichContext(payload)
+    for (const p of plugins) {
+      await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { ai: { enrichedHash: p.contentHash, promptHash: fingerprint } } })
+    }
+    expect((await runEnrichAll(payload, fakeEnrichClient(), LATER())).status).toBe('nothing-stale')
+    const other = (await payload.find({ collection: 'categories', overrideAccess: true, where: { slug: { equals: 'other' } } })).docs[0]
+    await payload.update({ collection: 'categories', id: other.id, overrideAccess: true, context: { skipRevalidate: true }, data: { intro: 'Plugins that fit nowhere else.' } })
+    expect((await runEnrichAll(payload, fakeEnrichClient(), LATER())).stale).toBe(6)
+  })
+})
+
+describe('runEnrichBatch', () => {
+  const submit = async (fake: ReturnType<typeof fakeEnrichClient>): Promise<EnrichBatchInput> => {
+    const r = await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })
+    if (!r.batch) throw new Error(`expected a batch, got ${r.status}`)
+    return r.batch
+  }
+
+  it('reports processing until the batch ends', async () => {
+    const fake = fakeEnrichClient()
+    const input = await submit(fake)
+    expect(await runEnrichBatch(payload, fake, input, LATER())).toMatchObject({ status: 'processing', applied: 0 })
+  })
+
+  it('applies results in any order and routes refusals, errors, expiries and missing results to direct retries', async () => {
+    const fake = fakeEnrichClient()
+    const input = await submit(fake)
+    const [p0, p1, p2, p3, p4, p5] = plugins
+    endBatch(fake, input.batchId, [
+      { custom_id: customIdFor(p4.id), result: { type: 'succeeded', message: maxTokensMessage() } },
+      ok(p0.id),
+      { custom_id: customIdFor(p2.id), result: { type: 'errored' } },
+      { custom_id: customIdFor(p1.id), result: { type: 'succeeded', message: refusalMessage('cyber') } },
+      { custom_id: customIdFor(p3.id), result: { type: 'expired' } },
+      { custom_id: 'not-ours', result: { type: 'succeeded', message: okMessage(goodOutput()) } },
+      ok(p0.id), // a duplicate is ignored
+    ])
+    const r = await runEnrichBatch(payload, fake, input, LATER())
+    expect(r).toMatchObject({ status: 'done', applied: 1, failed: 1 })
+    expect([...r.retryDirect].sort((a, b) => a - b)).toEqual([p1.id, p2.id, p3.id, p5.id].sort((a, b) => a - b))
+    expect(r.revalidateTags).toEqual(expect.arrayContaining(['plugins', 'plugin:p0', 'category:cloud-storage']))
+    expect(r.usage.input).toBe(18000) // max_tokens, success and refusal answers are all billed
+    expect((await reload(p0.id)).ai).toMatchObject({ enrichedHash: 'h0', tagline: 'Store Payload uploads in Amazon S3' })
+    expect((await reload(p4.id)).ai).toMatchObject({ failure: 'max_tokens' })
+    expect((await reload(p1.id)).ai?.failure ?? null).toBeNull() // refusal → direct retry with fallback, not a failure yet
+  })
+
+  it('discards a result whose plugin content changed after submission', async () => {
+    const fake = fakeEnrichClient()
+    const input = await submit(fake)
+    await payload.update({ collection: 'plugins', id: plugins[0].id, overrideAccess: true, data: { contentHash: 'h0-new' } })
+    endBatch(fake, input.batchId, [ok(plugins[0].id)])
+    const r = await runEnrichBatch(payload, fake, input, LATER())
+    expect(r.applied).toBe(0)
+    expect((await reload(plugins[0].id)).ai?.tagline ?? null).toBeNull()
+  })
+
+  it('cancels and applies nothing when AI is switched off or the prompt changed', async () => {
+    const fake = fakeEnrichClient()
+    const input = await submit(fake)
+    await setAiSettings(payload, { enabled: false })
+    expect(await runEnrichBatch(payload, fake, input, LATER())).toMatchObject({ status: 'cancelled', applied: 0 })
+    expect(fake.batches.get(input.batchId)!.cancelled).toBe(true)
+
+    await setAiSettings(payload, { enabled: true, instructions: 'New house style.' })
+    const ended = fakeEnrichClient()
+    const second = await submit(ended)
+    await setAiSettings(payload, { instructions: 'Changed again.' })
+    endBatch(ended, second.batchId, plugins.map((p) => ok(p.id)))
+    expect(await runEnrichBatch(payload, ended, second, LATER())).toMatchObject({ status: 'stale-prompt', applied: 0 })
+    expect((await reload(plugins[0].id)).ai?.tagline ?? null).toBeNull()
+  })
+})
+
+// Controller requirements for Task 9 (cost guard, missing key warning, taxonomy snapshot).
+describe('enrich-all cost guard and warnings', () => {
+  it('never takes more than maxPerPass plugins in one pass, highest health first, and says so', async () => {
+    const fake = fakeEnrichClient()
+    const direct = await runEnrichAll(payload, fake, LATER(), { maxPerPass: 2 })
+    expect(direct).toMatchObject({ status: 'direct', stale: 6, direct: [plugins[1].id, plugins[3].id] })
+    expect(direct.warning).toMatch(/2 of 6/)
+    const batch = await runEnrichAll(payload, fake, LATER(), { batchMin: 1, maxPerPass: 3 })
+    expect(batch.batch?.items.map((i) => i.id)).toEqual([plugins[1].id, plugins[3].id, plugins[2].id])
+    expect(fake.batches.get(batch.batch!.batchId)!.items).toHaveLength(3)
+    expect(batch.warning).toMatch(/3 of 6/)
+  })
+
+  it('reads the per-pass maximum from ENRICH_MAX_PER_PASS, defaulting to 500', () => {
+    expect(maxPerPassFromEnv({})).toBe(DEFAULT_MAX_PER_PASS)
+    expect(DEFAULT_MAX_PER_PASS).toBe(500)
+    expect(maxPerPassFromEnv({ ENRICH_MAX_PER_PASS: '120' })).toBe(120)
+    expect(maxPerPassFromEnv({ ENRICH_MAX_PER_PASS: 'lots' })).toBe(500)
+    expect(maxPerPassFromEnv({ ENRICH_MAX_PER_PASS: '0' })).toBe(500)
+  })
+
+  it('cancels an abandoned batch best-effort, never throwing (ruling F10)', async () => {
+    const fake = fakeEnrichClient()
+    const input = (await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })).batch!
+    expect(await cancelBatchQuietly(fake, input.batchId)).toBe(true)
+    expect(fake.batches.get(input.batchId)!.cancelled).toBe(true)
+    expect(await cancelBatchQuietly(fake, 'msgbatch_unknown')).toBe(false)
+    expect(await cancelBatchQuietly(null, input.batchId)).toBe(false)
+  })
+
+  it('without an API key it is a no-op with a clear warning, not a failure', async () => {
+    const r = await runEnrichAll(payload, null, LATER())
+    expect(r).toMatchObject({ status: 'no-api-key', stale: 0, direct: [], batch: null })
+    expect(r.warning).toMatch(/ANTHROPIC_API_KEY/)
+  })
+})
+
+describe('taxonomy snapshot per pass', () => {
+  it('a tag created after submission changes neither the fingerprint nor the collected results', async () => {
+    const fake = fakeEnrichClient()
+    const r = await runEnrichAll(payload, fake, LATER(), { batchMin: 1 })
+    const input = r.batch!
+    await payload.create({ collection: 'tags', overrideAccess: true, depth: 0, context: { skipRevalidate: true }, data: { title: 'Mid pass', slug: 'mid-pass', createdBy: 'ai' } })
+    endBatch(fake, input.batchId, plugins.map((p) => ok(p.id))) // every answer proposes the same new tag
+    const out = await runEnrichBatch(payload, fake, input, LATER())
+    expect(out).toMatchObject({ status: 'done', applied: 6, failed: 0, retryDirect: [] })
+    const created = await payload.find({ collection: 'tags', overrideAccess: true, where: { slug: { equals: 'presigned-uploads' } } })
+    expect(created.totalDocs).toBe(1)
+  })
+})
