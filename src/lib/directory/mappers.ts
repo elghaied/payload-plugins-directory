@@ -11,7 +11,7 @@ function repoOf(doc: Plugin): Repository {
   return doc.repository
 }
 
-function categoryOf(doc: Plugin): { slug: string; title: string; path: string } | undefined {
+export function categoryOf(doc: Plugin): { slug: string; title: string; path: string } | undefined {
   const c = doc.category
   if (!c || typeof c !== 'object') return undefined
   // Ruling F1: no silent slug fallback; the query must request _h_slugPath.
@@ -36,6 +36,8 @@ function aiOverviewOf(doc: Plugin): PluginDetail['ai'] {
 
 export function toSummary(doc: Plugin): PluginSummary {
   const repo = repoOf(doc)
+  const category = categoryOf(doc)
+  const tags = tagsOf(doc)
   const majors = (doc.payloadMajors ?? []) as PayloadMajor[]
   return {
     slug: doc.slug,
@@ -61,8 +63,8 @@ export function toSummary(doc: Plugin): PluginSummary {
     latestVersion: doc.npm?.latestVersion ?? undefined,
     unpackedSize: doc.npm?.unpackedSize ?? undefined,
     healthScore: doc.healthScore ?? undefined,
-    ...(categoryOf(doc) ? { categoryPath: categoryOf(doc)!.path } : {}),
-    ...(tagsOf(doc).length ? { tags: tagsOf(doc).map((t) => t.slug) } : {}),
+    ...(category ? { categoryPath: category.path } : {}),
+    ...(tags.length ? { tags: tags.map((t) => t.slug) } : {}),
   }
 }
 

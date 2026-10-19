@@ -26,7 +26,8 @@ export const getPluginSummaries = unstable_cache(
       limit: 0,
       pagination: false,
       select: SUMMARY_SELECT,
-      populate: { categories: { slug: true, _h_slugPath: true }, tags: { slug: true } },
+      // No `populate`: in this beta a populate select either keeps `category` as a bare id or truncates _h_slugPath
+      // to the category's own slug (parent not selected). Unrestricted depth-1 population yields the real path.
       context: { computeHierarchyPaths: true },
       sort: '-healthScore',
     })

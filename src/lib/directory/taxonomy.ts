@@ -17,6 +17,7 @@ export const getCategoryNodes = unstable_cache(
   async (): Promise<CategoryNode[]> => {
     const res = await (await payload()).find({
       collection: 'categories',
+      context: { computeHierarchyPaths: true },
       overrideAccess: false,
       user: null,
       depth: 0,

@@ -1,64 +1,69 @@
-import { describe, expect, it } from 'vitest'
-import {
-  buildCategoryOptions, buildTagOptions, categoryPageData, matchesCategory, matchesTag, rankForCategory, UNCATEGORIZED,
-} from '@/lib/directory/filters'
-import type { PluginSummary } from '@/lib/directory/types'
-import { categoryFilterHref, categoryHref, tagHref } from '@/lib/taxonomy/links'
-import { toCategoryNodes } from '@/taxonomy/tree'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import type { Payload } from 'payload'
+import { createPlugin, createRepo } from './helpers/directory'
+import { getTestPayload, resetDatabase } from './helpers/payload'
+import { createTestTaxonomy } from './helpers/taxonomy'
 
-const nodes = toCategoryNodes([
-  { id: 1, slug: 'storage-media', title: 'Storage & Media', _h_slugPath: 'storage-media' },
-  { id: 2, slug: 'cloud-storage', title: 'Cloud storage', parent: 1, _h_slugPath: 'storage-media/cloud-storage' },
-  { id: 3, slug: 'media-management', title: 'Media & images', parent: 1, _h_slugPath: 'storage-media/media-management' },
-  { id: 4, slug: 'other', title: 'Other' },
-])
-const p = (slug: string, over: Partial<PluginSummary> = {}) => ({ slug, name: slug, healthScore: 50, weeklyDownloads: 0, ...over }) as PluginSummary
-const plugins = [
-  p('a', { categoryPath: 'storage-media/cloud-storage', tags: ['s3'], healthScore: 80, weeklyDownloads: 10 }),
-  p('b', { categoryPath: 'storage-media/cloud-storage', tags: ['s3', 'seo'], healthScore: 80, weeklyDownloads: 50 }),
-  p('c', { categoryPath: 'storage-media/media-management', healthScore: 90 }),
-  p('d'),
-]
+vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }))
 
-describe('home filters', () => {
-  const options = buildCategoryOptions(nodes, plugins)
-  it('builds category options with depth and subtree counts', () => {
-    expect(options.map((o) => [o.slug, o.depth, o.count])).toEqual([
-      ['other', 0, 0], ['storage-media', 0, 3], ['cloud-storage', 1, 2], ['media-management', 1, 1],
-    ])
-  })
-  it('matches a category subtree, uncategorized and all', () => {
-    expect(plugins.filter((x) => matchesCategory(x, 'storage-media', options)).map((x) => x.slug)).toEqual(['a', 'b', 'c'])
-    expect(plugins.filter((x) => matchesCategory(x, 'cloud-storage', options)).map((x) => x.slug)).toEqual(['a', 'b'])
-    expect(plugins.filter((x) => matchesCategory(x, UNCATEGORIZED, options)).map((x) => x.slug)).toEqual(['d'])
-    expect(plugins.filter((x) => matchesCategory(x, 'all', options))).toHaveLength(4)
-    expect(plugins.filter((x) => matchesCategory(x, 'unknown', options))).toHaveLength(0)
-  })
-  it('matches tags and lists only used tags, most used first', () => {
-    expect(plugins.filter((x) => matchesTag(x, 'seo')).map((x) => x.slug)).toEqual(['b'])
-    expect(plugins.filter((x) => matchesTag(x, 'all'))).toHaveLength(4)
-    expect(buildTagOptions([{ slug: 'seo', title: 'SEO' }, { slug: 's3', title: 'Amazon S3' }, { slug: 'x', title: 'Unused' }], plugins)).toEqual([
-      { slug: 's3', title: 'Amazon S3', count: 2 }, { slug: 'seo', title: 'SEO', count: 1 },
-    ])
-  })
+let payload: Payload
+beforeAll(async () => {
+  payload = await getTestPayload()
+  await resetDatabase(payload)
+  const tax = await createTestTaxonomy(payload)
+  const repo = await createRepo(payload)
+  const make = (slug: string, over: Record<string, unknown>) => createPlugin(payload, repo.id, { slug, name: slug, ...over } as never)
+  await make('a', { category: tax.cloud.id, healthScore: 80, npm: { weeklyDownloads: 10 }, _h_tags: [tax.s3.id], ai: { tagline: 'AI says A', summary: 'About A.', features: ['F'], useCases: ['U'] } })
+  await make('b', { category: tax.cloud.id, healthScore: 80, npm: { weeklyDownloads: 50 }, customTagline: 'Maintainer says B', ai: { tagline: 'AI says B' } })
+  await make('c', { category: tax.media.id, healthScore: 90 })
+  await make('hidden', { category: tax.cloud.id, healthScore: 99, visibility: 'hidden', _h_tags: [tax.seo.id] })
+  const trashed = await make('trashed', { category: tax.cloud.id, healthScore: 99 })
+  await payload.update({ collection: 'plugins', id: trashed.id, overrideAccess: true, data: { deletedAt: new Date().toISOString() } })
+  await make('d', { description: 'Author D' })
 })
+afterAll(async () => resetDatabase(payload))
 
-describe('category pages', () => {
-  it('ranks by health, then downloads, then name', () => {
-    expect([...plugins].sort(rankForCategory).map((x) => x.slug)).toEqual(['c', 'b', 'a', 'd'])
+describe('taxonomy queries', () => {
+  it('puts tagline precedence, category path and tags on summaries', async () => {
+    const { getPluginSummaries } = await import('@/lib/directory/queries')
+    const bySlug = Object.fromEntries((await getPluginSummaries()).map((s) => [s.slug, s]))
+    expect(Object.keys(bySlug).sort()).toEqual(['a', 'b', 'c', 'd'])
+    expect(bySlug.a).toMatchObject({ description: 'AI says A', categoryPath: 'storage-media/cloud-storage', tags: ['s3'] })
+    expect(bySlug.b.description).toBe('Maintainer says B')
+    expect(bySlug.d).toMatchObject({ description: 'Author D' })
+    expect(bySlug.d).not.toHaveProperty('categoryPath')
   })
-  it('builds the page for a path: trail, children with counts, subtree plugins ranked', () => {
-    const page = categoryPageData('storage-media', nodes, plugins)!
-    expect(page.node.slug).toBe('storage-media')
-    expect(page.trail.map((n) => n.slug)).toEqual(['storage-media'])
-    expect(page.children.map((c) => [c.slug, c.count])).toEqual([['cloud-storage', 2], ['media-management', 1]])
-    expect(page.plugins.map((x) => x.slug)).toEqual(['c', 'b', 'a'])
-    expect(categoryPageData('storage-media/cloud-storage', nodes, plugins)!.trail.map((n) => n.slug)).toEqual(['storage-media', 'cloud-storage'])
-    expect(categoryPageData('nope', nodes, plugins)).toBeNull()
+
+  it('builds category pages from listed plugins only, ranked by health then downloads', async () => {
+    const { getCategoryPage } = await import('@/lib/directory/taxonomy')
+    const page = await getCategoryPage('storage-media')
+    expect(page?.plugins.map((p) => p.slug)).toEqual(['c', 'b', 'a'])
+    expect(page?.children.map((c) => [c.slug, c.count])).toEqual([['cloud-storage', 2], ['media-management', 1]])
+    expect((await getCategoryPage('storage-media/cloud-storage'))?.trail.map((n) => n.slug)).toEqual(['storage-media', 'cloud-storage'])
+    expect(await getCategoryPage('does-not/exist')).toBeNull()
   })
-  it('builds links', () => {
-    expect(categoryHref('storage-media/cloud-storage')).toBe('/categories/storage-media/cloud-storage')
-    expect(tagHref('s3')).toBe('/?tag=s3')
-    expect(categoryFilterHref('cloud-storage')).toBe('/?category=cloud-storage')
+
+  it('reads real nested _h_slugPath values for the category tree', async () => {
+    const { getCategoryNodes } = await import('@/lib/directory/taxonomy')
+    const nodes = await getCategoryNodes()
+    expect(nodes.find((n) => n.slug === 'cloud-storage')?.path).toBe('storage-media/cloud-storage')
+    expect(nodes.find((n) => n.slug === 'storage-media')?.path).toBe('storage-media')
+  })
+
+  it('offers home filter options with counts that ignore hidden and trashed plugins', async () => {
+    const { getHomeFilterOptions } = await import('@/lib/directory/taxonomy')
+    const { categories, tags } = await getHomeFilterOptions()
+    expect(categories.find((c) => c.slug === 'cloud-storage')?.count).toBe(2)
+    expect(tags).toEqual([{ slug: 's3', title: 'Amazon S3', count: 1 }])
+  })
+
+  it('returns the AI overview, author description and taxonomy on the detail', async () => {
+    const { getPluginDetail } = await import('@/lib/directory/queries')
+    expect(await getPluginDetail('a')).toMatchObject({
+      authorDescription: '',
+      ai: { summary: 'About A.', features: ['F'], useCases: ['U'], generated: true },
+      category: { slug: 'cloud-storage', title: 'Cloud storage', path: 'storage-media/cloud-storage' },
+      tagList: [{ slug: 's3', title: 'Amazon S3' }],
+    })
   })
 })

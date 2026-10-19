@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { toDetail, toSummary } from '@/lib/directory/mappers'
+import { categoryOf, toDetail, toSummary } from '@/lib/directory/mappers'
 import { pluginTagline } from '@/lib/directory/tagline'
 
 const repo = {
@@ -49,5 +49,23 @@ describe('taxonomy on summaries and details', () => {
   it('marks admin-locked overview text as not generated, and has no overview without AI text', () => {
     expect(toDetail({ ...doc, locks: { summary: true, features: true, useCases: true } } as never).ai?.generated).toBe(false)
     expect(toDetail({ ...doc, ai: {} } as never)).not.toHaveProperty('ai')
+  })
+})
+
+describe('safety', () => {
+  it('categoryOf throws when the category was loaded without _h_slugPath', () => {
+    expect(() => categoryOf({ ...doc, category: { id: 2, slug: 'cloud-storage', title: 'Cloud storage' } } as never)).toThrow(/_h_slugPath/)
+    expect(() => toSummary({ ...doc, category: { id: 2, slug: 'x', title: 'X' } } as never)).toThrow(/_h_slugPath/)
+  })
+  it('never leaks admin-only fields to public summaries or details', () => {
+    const full = {
+      ...doc,
+      ai: { tagline: 'T', summary: 'S', features: ['F'], useCases: ['U'], failure: 'boom', failedKey: 'k', failedAt: 'x', promptHash: 'h' },
+      syncTrashReason: 'gone', locks: { summary: true },
+    }
+    for (const out of [toSummary(full as never), toDetail(full as never)]) {
+      const json = JSON.stringify(out)
+      for (const k of ['failure', 'failedKey', 'failedAt', 'promptHash', 'syncTrashReason', 'locks', 'boom']) expect(json).not.toContain(k)
+    }
   })
 })
