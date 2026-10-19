@@ -21,6 +21,11 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      # Maintainer sign-in (web only; the worker never needs these). Deploy note: create the GitHub OAuth App with
+      # callback URL ${SERVER_URL}/auth/github/callback and set SESSION_SECRET to `openssl rand -hex 32`.
+      GITHUB_OAUTH_CLIENT_ID: ${GITHUB_OAUTH_CLIENT_ID}
+      GITHUB_OAUTH_CLIENT_SECRET: ${GITHUB_OAUTH_CLIENT_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
       # Read at runtime (Payload serverURL / allowed origins, noindex decision).
       # NEXT_PUBLIC_* values are inlined at build time, so they cannot configure a prebuilt image.
       SERVER_URL: https://payloaddirectory.dev

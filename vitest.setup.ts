@@ -9,3 +9,6 @@ import { vi } from 'vitest'
 vi.stubGlobal('fetch', async (input: unknown) => {
   throw new Error(`Network access is disabled in tests (${String(input)})`)
 })
+
+// Session tokens are signed in unit and integration tests; set unconditionally so a real secret in `.env` is never used.
+process.env.SESSION_SECRET = 'test-session-secret-0123456789abcdef-0123456789'

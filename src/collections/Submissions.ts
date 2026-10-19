@@ -1,10 +1,8 @@
 import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 import { ValidationError } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
+import { relationId } from '@/lib/relationId'
 import { listedPluginsWhere } from './Plugins'
-
-const relationId = (value: unknown): number | string | undefined =>
-  typeof value === 'object' && value !== null ? (value as { id?: number | string }).id : (value as number | string | undefined)
 
 // Field-level access on `submittedBy` strips client values for non-admins (it runs in the
 // beforeValidate field pass); this collection hook runs afterwards and stamps the real owner.

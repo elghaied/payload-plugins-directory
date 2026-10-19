@@ -1,6 +1,8 @@
 import { isUsableSecret, MIN_SECRET_LENGTH } from './revalidate'
 import { getServerURL, isProductionSite, PRODUCTION_HOST } from './serverUrl'
 
+const SESSION_SECRET_MIN_LENGTH = 32
+
 type Env = Record<string, string | undefined>
 export type ProcessRole = 'web' | 'worker'
 
@@ -10,7 +12,7 @@ export function runtimeEnvWarnings(env: Env, role: ProcessRole): string[] {
   const warnings: string[] = []
   const serverURL = getServerURL(env)
   if (!serverURL) {
-    warnings.push('SERVER_URL is not set: Payload has no allowed origins, and every page is served with noindex.')
+    warnings.push('SERVER_URL is not set: Payload has no allowed origins, the cross-origin check on maintainer session writes is off, and every page is served with noindex.')
   } else if (!isProductionSite(serverURL)) {
     warnings.push(`SERVER_URL is ${serverURL}, not https://${PRODUCTION_HOST}: every page is served with noindex.`)
   }
@@ -23,6 +25,17 @@ export function runtimeEnvWarnings(env: Env, role: ProcessRole): string[] {
   } else if (!isUsableSecret(env.REVALIDATE_SECRET)) {
     // Values are never logged.
     warnings.push(`REVALIDATE_SECRET is shorter than ${MIN_SECRET_LENGTH} characters: it is ignored, so revalidation fails closed.`)
+  }
+  if (role === 'web') {
+    // Values are never logged.
+    if (!env.SESSION_SECRET) {
+      warnings.push('SESSION_SECRET is not set: maintainer sign-in fails closed.')
+    } else if (env.SESSION_SECRET.length < SESSION_SECRET_MIN_LENGTH) {
+      warnings.push(`SESSION_SECRET is shorter than ${SESSION_SECRET_MIN_LENGTH} characters: maintainer sign-in fails closed.`)
+    }
+    if (!env.GITHUB_OAUTH_CLIENT_ID || !env.GITHUB_OAUTH_CLIENT_SECRET) {
+      warnings.push('GITHUB_OAUTH_CLIENT_ID or GITHUB_OAUTH_CLIENT_SECRET is not set: GitHub sign-in is unavailable.')
+    }
   }
   if (role === 'worker') {
     if (!env.GITHUB_TOKEN) warnings.push('GITHUB_TOKEN is not set: unauthenticated GitHub allows 60 requests per hour, far too few for discover and sync.')
