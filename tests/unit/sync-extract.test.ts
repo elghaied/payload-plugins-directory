@@ -137,6 +137,23 @@ describe('extractPlugins', () => {
     }))
     expect(result.plugins.map((p) => [p.slug, p.path])).toEqual([['74-seo', 'packages/seo']])
   })
+
+  it('skips directories whose slug would not be a valid plugin slug, without requesting them', async () => {
+    const pj = pkg({ name: 'x', peerDependencies: { payload: '^3.0.0' } })
+    const long = 'a'.repeat(210)
+    const f = fakeFetch({
+      [raw('acme/odd', 'package.json')]: pkg({ name: 'odd', workspaces: ['packages/*'] }),
+      [contents('acme/odd', 'packages')]: json([
+        dirEntry('seo', 'packages/seo'), dirEntry('has space', 'packages/has space'), dirEntry('plügin', 'packages/plügin'),
+        dirEntry('a:b', 'packages/a:b'), dirEntry(long, `packages/${long}`),
+      ]),
+      [raw('acme/odd', 'packages/seo/package.json')]: pj,
+    }, { notFoundPrefixes: [`${RAW}/acme/odd/main/packages/seo/`] })
+    const result = await extractPlugins(ghRepo(75, 'acme/odd'), createGitHubClient({ fetch: f }))
+    expect(result.plugins.map((p) => p.slug)).toEqual(['75-seo'])
+    // Only the valid directory is read; the others are never requested.
+    expect(f.calls.filter((c) => c.url.startsWith(`${RAW}/acme/odd/main/packages/`) && !c.url.includes('/seo/'))).toEqual([])
+  })
 })
 
 describe('extractOfficialPlugins', () => {
@@ -164,6 +181,15 @@ describe('extractOfficialPlugins', () => {
         description: 'Official Payload CMS form builder plugin', payloadVersionRange: null, readme: undefined,
       }),
     ])
+  })
+
+  it('skips plugin directories whose slug would not be valid', async () => {
+    const result = await extractOfficialPlugins(payloadRepo, gh({
+      [contents('payloadcms/payload', 'packages')]: json([dirEntry('plugin-seo', 'packages/plugin-seo'), dirEntry('plugin-a b', 'packages/plugin-a b')]),
+      [raw('payloadcms/payload', 'packages/plugin-seo/package.json')]: pkg({ name: '@payloadcms/plugin-seo' }),
+      [raw('payloadcms/payload', 'packages/plugin-a%20b/package.json')]: pkg({ name: '@payloadcms/plugin-ab' }),
+    }))
+    expect(result.plugins.map((p) => p.slug)).toEqual(['official-plugin-seo'])
   })
 
   it('refuses an empty plugin listing rather than reporting every official plugin as removed', async () => {

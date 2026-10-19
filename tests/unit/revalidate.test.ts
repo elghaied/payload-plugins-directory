@@ -101,6 +101,19 @@ describe('postRevalidate', () => {
     expect(new Headers(f.calls[0].init?.headers).get('authorization')).toBe(`Bearer ${SECRET}`)
     expect(JSON.parse(String(f.calls[1].init?.body))).toEqual({ tags: [`plugin:p${MAX_TAGS}`] })
   })
+  it('drops and reports invalid tags instead of failing the whole batch', async () => {
+    const f = fakeFetch({ [url]: { json: { revalidated: [] } } })
+    const dropped: string[][] = []
+    const count = await postRevalidate(['plugins', 'plugin:7-has space', 'plugin:ok', 'bogus'], {
+      fetch: f, url, secret: SECRET, onInvalid: (tags) => dropped.push(tags),
+    })
+    expect(count).toBe(2)
+    expect(JSON.parse(String(f.calls[0].init?.body))).toEqual({ tags: ['plugins', 'plugin:ok'] })
+    expect(dropped).toEqual([['plugin:7-has space', 'bogus']])
+    const idle = fakeFetch()
+    expect(await postRevalidate(['bogus'], { fetch: idle, url, secret: SECRET })).toBe(0)
+    expect(idle.calls).toHaveLength(0)
+  })
   it('throws on a non-2xx answer without leaking the secret, and sends nothing for an empty list', async () => {
     const err = await postRevalidate(['plugins'], { fetch: fakeFetch({ [url]: { status: 401 } }), url, secret: SECRET }).catch((e: Error) => e)
     expect(err).toBeInstanceOf(Error)

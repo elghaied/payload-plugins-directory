@@ -9,7 +9,14 @@ export const categoryTag = (slug: string): string => `category:${slug}`
 /** Tags of the pages that read the daily snapshots (Phase 3 trending and stats); revalidated after each snapshot. */
 export const SNAPSHOT_TAGS = ['trending', 'stats'] as const
 
-export const CACHE_TAG_PATTERN = /^(?:plugins|home|stats|trending|(?:plugin|category):[A-Za-z0-9][A-Za-z0-9._-]{0,200})$/
+const SLUG_SOURCE = '[A-Za-z0-9][A-Za-z0-9._-]{0,200}'
+export const CACHE_TAG_PATTERN = new RegExp(`^(?:plugins|home|stats|trending|(?:plugin|category):${SLUG_SOURCE})$`)
+const SLUG_PATTERN = new RegExp(`^${SLUG_SOURCE}$`)
+
+/** A slug usable in a `plugin:<slug>` / `category:<slug>` cache tag (and in a URL). */
+export function isValidSlug(slug: unknown): slug is string {
+  return typeof slug === 'string' && SLUG_PATTERN.test(slug)
+}
 
 export function isValidCacheTag(tag: unknown): tag is string {
   return typeof tag === 'string' && CACHE_TAG_PATTERN.test(tag)

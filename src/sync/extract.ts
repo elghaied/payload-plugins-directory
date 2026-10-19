@@ -1,3 +1,4 @@
+import { isValidSlug } from '@/lib/cacheTags'
 import type { PackageJson } from '@/types'
 import { InvalidGitHubPathError, type GitHubClient, type GitHubRepo } from './github'
 import { getPayloadVersion, getWorkspaceDirs, isLikelyPlugin, isMonorepo } from './packages'
@@ -79,7 +80,8 @@ async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Pro
       if (error instanceof InvalidGitHubPathError) continue
       throw error
     }
-    const subdirs = listing.filter((e) => e.type === 'dir').slice(0, MAX_SUBDIRS_PER_DIR)
+    // A directory name becomes part of the slug: skip names that would not make a valid slug / cache tag.
+    const subdirs = listing.filter((e) => e.type === 'dir' && isValidSlug(`${repo.id}-${e.name}`)).slice(0, MAX_SUBDIRS_PER_DIR)
     for (let i = 0; i < subdirs.length; i += BATCH) {
       const batch = await Promise.all(
         subdirs.slice(i, i + BATCH).map(async (entry): Promise<ExtractedPlugin | null> => {
@@ -146,7 +148,7 @@ export async function extractPlugins(repo: GitHubRepo, gh: GitHubClient): Promis
 export async function extractOfficialPlugins(repo: GitHubRepo, gh: GitHubClient): Promise<Extraction> {
   const ref = repo.default_branch
   const dirs = ((await gh.listDirectory(repo.full_name, 'packages', ref)) ?? []).filter(
-    (e) => e.type === 'dir' && e.name.startsWith('plugin-'),
+    (e) => e.type === 'dir' && e.name.startsWith('plugin-') && isValidSlug(`official-${e.name}`),
   )
   if (dirs.length === 0) {
     throw new Error(`No packages/plugin-* directories found in ${repo.full_name}; refusing to treat every official plugin as removed.`)

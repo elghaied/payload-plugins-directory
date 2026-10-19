@@ -283,7 +283,12 @@ const revalidateTask: TaskConfig<'revalidate'> = {
       if (!isUsableSecret(secret)) {
         throw new SyncConfigError(`REVALIDATE_SECRET is missing or shorter than ${MIN_SECRET_LENGTH} characters; the worker cannot call /api/revalidate`)
       }
-      const count = await postRevalidate(input.tags ?? [], { fetch: deps.fetch, url: `${deps.env.internalWebUrl}/api/revalidate`, secret })
+      const count = await postRevalidate(input.tags ?? [], {
+        fetch: deps.fetch,
+        url: `${deps.env.internalWebUrl}/api/revalidate`,
+        secret,
+        onInvalid: (tags) => req.payload.logger.warn({ msg: `Revalidate: dropped ${tags.length} invalid cache tag(s)`, tags: tags.map((t) => t.slice(0, 80)) }),
+      })
       return { status: 'ok', count }
     })
     return { output }
