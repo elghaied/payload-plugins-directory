@@ -16,6 +16,7 @@ import {
   Box,
   Layers,
   Flag,
+  BadgeCheck,
 } from "lucide-react";
 import { getPluginDetail } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
@@ -520,6 +521,13 @@ export default async function PluginDetailPage({
               <ExternalLink className="h-4 w-4" />
             </a>
           )}
+          <Link
+            href={`/claim/${encodeURIComponent(plugin.slug)}`}
+            className="inline-flex items-center justify-center gap-2 py-3 px-6 border rounded-lg transition-colors text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          >
+            <BadgeCheck className="h-4 w-4" />
+            Claim this plugin
+          </Link>
           {!plugin.isOfficial && (
             <a
               href={`https://github.com/elghaied/payload-plugins-directory/issues/new?title=${encodeURIComponent(`Report: ${plugin.name}`)}&body=${encodeURIComponent(`**Plugin ID:** ${plugin.slug}\n**Name:** ${plugin.name}\n**Owner:** ${plugin.owner}\n**URL:** ${plugin.url}\n\n**Reason for report:**\n`)}&labels=report`}
