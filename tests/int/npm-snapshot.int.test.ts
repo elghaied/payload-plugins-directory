@@ -56,6 +56,14 @@ describe('runNpmStats', () => {
     expect(official.healthScore).toBeGreaterThan(0)
   })
 
+  it('queues no revalidate job of its own: its writes pass skipRevalidate (the task queues the tags)', async () => {
+    await fixture()
+    const r = await runNpmStats(payload, {}, ctx(routes()))
+    expect(r.updated.length).toBeGreaterThan(0)
+    const jobs = await payload.find({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'revalidate' } } })
+    expect(jobs.totalDocs).toBe(0)
+  })
+
   it('changes nothing on an unchanged second run', async () => {
     await fixture()
     await runNpmStats(payload, {}, ctx(routes()))

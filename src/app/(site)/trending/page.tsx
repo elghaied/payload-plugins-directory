@@ -109,6 +109,8 @@ export default async function TrendingPage() {
     console.error("[trending] getTrendingData failed", error);
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+        {/* A failed render answers 200: keep it out of the index (React hoists this into <head>). */}
+        <meta name="robots" content="noindex" />
         <div className="container mx-auto px-4 py-8 max-w-5xl">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Trending</h1>
           <p className="text-muted-foreground mt-4">Trending data is unavailable right now.</p>

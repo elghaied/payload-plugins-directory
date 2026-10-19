@@ -1,5 +1,5 @@
 import { daysBetween, formatDay } from './days'
-import { coverage, TREND_WINDOW_DAYS, type Coverage, type Point } from './growth'
+import { coverage, HISTORY_DAYS, TREND_WINDOW_DAYS, type Coverage, type Point } from './growth'
 
 export const MIN_CHART_SPAN_DAYS = TREND_WINDOW_DAYS
 
@@ -16,6 +16,7 @@ export const signed = (n: number) => (n > 0 ? `+${compactNumber(n)}` : n < 0 ? `
 
 export function insufficientMessage(cov: Coverage, needed = MIN_CHART_SPAN_DAYS): string {
   const head = `Trends appear after ${needed} days of data.`
+  if (cov.outdated) return `Snapshot data is out of date: there is no snapshot from the last ${HISTORY_DAYS} days.`
   if (cov.daysCollected === 0 || !cov.firstDay) return `${head} Daily snapshots have not started yet.`
   const n = cov.daysCollected
   if (n >= needed) {
@@ -72,11 +73,12 @@ export type ChartModel =
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 
-export function buildChartModel(series: Point[], metric: string, minSpanDays = MIN_CHART_SPAN_DAYS): ChartModel {
+/** `outdated`: snapshots exist for this series, but none inside the chart window (a stall longer than HISTORY_DAYS). */
+export function buildChartModel(series: Point[], metric: string, minSpanDays = MIN_CHART_SPAN_DAYS, outdated = false): ChartModel {
   const byDay = new Map<string, Point>()
   for (const p of series) byDay.set(p.date, p) // last value for a day wins
   const points = [...byDay.values()].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
-  const cov = coverage(points.map((p) => p.date), minSpanDays)
+  const cov = { ...coverage(points.map((p) => p.date), minSpanDays), ...(outdated && points.length === 0 ? { outdated: true } : {}) }
   if (!cov.ready || points.length < 2) {
     return { kind: 'insufficient', coverage: cov, message: insufficientMessage(cov, minSpanDays) }
   }

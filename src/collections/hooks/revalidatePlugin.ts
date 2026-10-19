@@ -6,6 +6,8 @@ import { QUEUES } from '@/sync/queues'
  * Admin edits (visibility, trash, tagline, category, tags, slug) must reach the public pages within about a minute,
  * not after the 1 h data cache. One `revalidate` job per write, through `req` so it commits with the write.
  * No `category:<slug>` tag: no cached query listens to it, and LIST_TAG already covers category pages.
+ * The job is queued through `req`, so its insert runs in the same transaction as the admin save: if the queue insert
+ * fails, the save fails too (catching it would need a savepoint). That is deliberate: failing loudly beats 1 h of silent staleness.
  * System writers that queue their own revalidation (sync, enrich, seeds) pass `context.skipRevalidate`.
  */
 const skip = (context: unknown) => Boolean((context as { skipRevalidate?: boolean } | undefined)?.skipRevalidate)

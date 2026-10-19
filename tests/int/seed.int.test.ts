@@ -112,3 +112,26 @@ describe('seedDirectory', () => {
     expect(listed.docs[0].visibility).toBe('listed')
   })
 })
+
+describe('seed revalidation', () => {
+  const revalidates = async () =>
+    (await payload.find({ collection: 'payload-jobs', overrideAccess: true, sort: 'createdAt', where: { taskSlug: { equals: 'revalidate' } } })).docs.map((j) => j.input)
+
+  it('queues no revalidate job for a plain seed or re-seed (every seed write passes skipRevalidate)', async () => {
+    await resetDatabase(payload)
+    await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, []))
+    await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, []))
+    expect(await revalidates()).toEqual([])
+  })
+
+  it('does not skip revalidation when a re-seed forces an existing plugin to hidden', async () => {
+    await resetDatabase(payload)
+    await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, []))
+    await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, ['684372049-translator']))
+    expect(await revalidates()).toEqual([{ tags: ['plugins', 'plugin:684372049-translator'] }])
+    // The forced-hidden plugin is now hidden; the next identical re-seed still tightens (and re-queues) rather than going stale.
+    const doc = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: '684372049-translator' } } })
+    expect(doc.docs[0].visibility).toBe('hidden')
+  })
+})
+

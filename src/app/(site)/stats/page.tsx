@@ -91,6 +91,8 @@ export default async function StatsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+      {/* A degraded render answers 200: keep it out of the index (React hoists this into <head>). */}
+      {!growth && <meta name="robots" content="noindex" />}
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
@@ -134,6 +136,7 @@ export default async function StatsPage() {
                 metric="Total stars"
                 tone="stars"
                 series={growth.stars}
+                outdated={growth.outdated?.stars}
                 footnote="Across repositories of listed plugins; a monorepo is counted once."
               />
               <TrendChart
@@ -141,6 +144,7 @@ export default async function StatsPage() {
                 metric="Total weekly downloads"
                 tone="downloads"
                 series={growth.downloads}
+                outdated={growth.outdated?.downloads}
                 footnote="Sum of npm weekly downloads across listed plugins."
               />
             </div>

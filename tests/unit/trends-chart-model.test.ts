@@ -15,6 +15,15 @@ describe('number formatting', () => {
   })
 })
 
+describe('outdated series', () => {
+  it('says the data is out of date instead of "not started" when snapshots exist outside the window', () => {
+    const model = buildChartModel([], 'Stars', undefined, true)
+    expect(model).toMatchObject({ kind: 'insufficient', message: expect.stringContaining('out of date') })
+    expect((model as { message: string }).message).not.toContain('not started')
+    expect(buildChartModel([], 'Stars')).toMatchObject({ message: expect.stringContaining('not started') })
+  })
+})
+
 describe('insufficientMessage', () => {
   it('explains that collection has not started', () => {
     expect(insufficientMessage(coverage([]))).toBe('Trends appear after 7 days of data. Daily snapshots have not started yet.')

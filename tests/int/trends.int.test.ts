@@ -8,9 +8,11 @@ import { seedDirectory } from '@/cli/seed'
 import { addDays, utcToday } from '@/lib/trends/days'
 
 const cacheKeys = vi.hoisted(() => [] as string[][])
+const cacheOptions = vi.hoisted(() => new Map<string, { tags?: string[]; revalidate?: number }>())
 vi.mock('next/cache', () => ({
-  unstable_cache: (fn: unknown, keyParts: string[]) => {
+  unstable_cache: (fn: unknown, keyParts: string[], options?: { tags?: string[]; revalidate?: number }) => {
     cacheKeys.push(keyParts)
+    cacheOptions.set(keyParts[0], options ?? {})
     return fn
   },
 }))
@@ -93,9 +95,12 @@ describe('trend queries', () => {
     const enchants = data.recentlyUpdated.find((r) => r.fullName === 'r1tsuu/payload-enchants')
     expect(enchants?.plugins.map((p) => p.slug)).toEqual(['684372049-better-localized-fields'])
     expect(data.lastSnapshotDay).toBeNull()
-    expect(await getEcosystemGrowth()).toEqual({ stars: [], downloads: [], lastSnapshotDay: null })
+    expect(await getEcosystemGrowth()).toEqual({
+      stars: [], downloads: [], lastSnapshotDay: null, outdated: { stars: false, downloads: false },
+    })
     expect(await getPluginTrends('official-plugin-seo')).toEqual({
       stars: [], downloads: [], sharedRepository: { fullName: 'payloadcms/payload', pluginCount: 2 },
+      outdated: { stars: false, downloads: false },
     })
   })
 
@@ -167,5 +172,33 @@ describe('trend queries', () => {
     expect(data.stars.map((m) => [m.fullName, m.growth.delta])).toEqual([['payloadcms/payload', 70]])
     expect(data.downloads.map((m) => [m.slug, m.growth.delta])).toEqual([['official-plugin-form-builder', 700]])
     expect((await getEcosystemGrowth()).lastSnapshotDay).toBe(lastDay)
+  })
+
+  it('a stall longer than the chart window reads as out of date, not as not started', async () => {
+    await insertRepoSnapshots(payload, repoId['payloadcms/payload'], daily(addDays(today, -200), [45000, 45010]))
+    await insertPluginSnapshots(payload, pluginId['official-plugin-form-builder'], daily(addDays(today, -200), [50000, 50100]))
+    const { getTrendingData, getEcosystemGrowth, getPluginTrends } = await queries()
+    const data = await getTrendingData()
+    expect(data.starsCoverage).toMatchObject({ daysCollected: 0, ready: false, outdated: true })
+    expect(data.downloadsCoverage).toMatchObject({ daysCollected: 0, ready: false, outdated: true })
+    expect(data.lastSnapshotDay).toBeNull()
+    expect(await getEcosystemGrowth()).toMatchObject({ stars: [], downloads: [], outdated: { stars: true, downloads: true } })
+    expect(await getPluginTrends('official-plugin-seo')).toMatchObject({ outdated: { stars: true, downloads: false } })
+  })
+
+  it('does not call a hidden plugin\'s old snapshots an outdated series of the listed set', async () => {
+    await insertPluginSnapshots(payload, pluginId['684372049-translator'], daily(addDays(today, -200), [1, 2]))
+    const { getTrendingData } = await queries()
+    expect((await getTrendingData()).downloadsCoverage.outdated).toBeUndefined()
+  })
+
+  it('tags every trend cache as specified and revalidates hourly', async () => {
+    const { getPluginTrends } = await queries()
+    await getPluginTrends('official-plugin-seo')
+    const opt = (key: string) => cacheOptions.get(key)
+    expect(opt('listed-plugin-refs')).toEqual({ tags: ['plugins'], revalidate: 3600 })
+    expect(opt('trending-data')).toEqual({ tags: ['trending', 'plugins'], revalidate: 3600 })
+    expect(opt('ecosystem-growth')).toEqual({ tags: ['stats', 'plugins'], revalidate: 3600 })
+    expect(opt('plugin-trends')).toEqual({ tags: ['trending', 'plugins', 'plugin:official-plugin-seo'], revalidate: 3600 })
   })
 })

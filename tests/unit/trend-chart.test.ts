@@ -13,6 +13,11 @@ describe('TrendChart', () => {
     expect(html).not.toContain('<svg')
     expect(html).not.toContain('+0')
   })
+  it('says the data is out of date for a long stall', () => {
+    const html = renderToStaticMarkup(createElement(TrendChart, { title: 'Stars', metric: 'Stars', tone: 'stars', series: [], outdated: true }))
+    expect(html).toContain('out of date')
+    expect(html).not.toContain('have not started yet')
+  })
   it('renders an accessible chart with a data table once a week of data exists', () => {
     const html = renderToStaticMarkup(
       createElement(TrendChart, { title: 'Weekly downloads', metric: 'Weekly downloads', tone: 'downloads', series: week }),

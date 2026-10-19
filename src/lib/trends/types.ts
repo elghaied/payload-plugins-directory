@@ -76,6 +76,8 @@ export type PluginTrends = {
   downloads: Point[]
   /** Set when the repository backs more than one listed plugin (its stars are shared). */
   sharedRepository: { fullName: string; pluginCount: number } | null
+  /** Snapshots exist for the series but none in the chart window (a long stall), so an empty series is not "not started". */
+  outdated: { stars: boolean; downloads: boolean }
 }
 
 export type EcosystemGrowth = {
@@ -83,4 +85,6 @@ export type EcosystemGrowth = {
   downloads: Point[]
   /** Latest day present in either series; null when both are empty. */
   lastSnapshotDay: Day | null
+  /** Per series: rows exist for the listed set but none inside the chart window (a stall longer than 90 days). */
+  outdated: { stars: boolean; downloads: boolean }
 }

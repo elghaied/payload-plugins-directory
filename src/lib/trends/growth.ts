@@ -2,7 +2,7 @@ import { addDays, asDay, daysBetween, type Day } from './days'
 
 export type Point = { date: Day; value: number }
 export type Growth = { from: Point; to: Point; delta: number; pct: number | null }
-export type Coverage = { daysCollected: number; firstDay: Day | null; lastDay: Day | null; spanDays: number; ready: boolean }
+export type Coverage = { daysCollected: number; firstDay: Day | null; lastDay: Day | null; spanDays: number; ready: boolean; outdated?: boolean }
 
 /** "This week" = the value on asOf compared with the value 7 UTC days earlier. */
 export const TREND_WINDOW_DAYS = 7

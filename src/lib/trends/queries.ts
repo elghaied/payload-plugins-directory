@@ -74,6 +74,21 @@ async function downloadDays(pluginIds: number[], since: Day): Promise<Day[]> {
   return rows.map((r) => asDay(r.date))
 }
 
+/** Any row at all, any date: tells a long stall ("out of date") from "never started". Restricted to the listed ids. */
+async function hasStarSnapshots(repoIds: number[]): Promise<boolean> {
+  if (repoIds.length === 0) return false
+  const rows = await (await db()).select({ id: repositorySnapshots.repositoryId }).from(repositorySnapshots)
+    .where(inArray(repositorySnapshots.repositoryId, repoIds)).limit(1)
+  return rows.length > 0
+}
+
+async function hasDownloadSnapshots(pluginIds: number[]): Promise<boolean> {
+  if (pluginIds.length === 0) return false
+  const rows = await (await db()).select({ id: pluginSnapshots.pluginId }).from(pluginSnapshots)
+    .where(and(inArray(pluginSnapshots.pluginId, pluginIds), isNotNull(pluginSnapshots.weeklyDownloads))).limit(1)
+  return rows.length > 0
+}
+
 async function starRows(repoIds: number[], since: Day) {
   if (repoIds.length === 0) return []
   return (await db())
@@ -105,8 +120,12 @@ async function loadTrending(today: Day): Promise<TrendingData> {
   const repoIds = unique(refs.map((r) => r.repository.id))
   const pluginIds = refs.map((r) => r.id)
   const [sDays, dDays] = await Promise.all([starDays(repoIds, since), downloadDays(pluginIds, since)])
-  const starsCoverage = coverage(sDays)
-  const downloadsCoverage = coverage(dDays)
+  const [starsOutdated, downloadsOutdated] = await Promise.all([
+    sDays.length === 0 ? hasStarSnapshots(repoIds) : false,
+    dDays.length === 0 ? hasDownloadSnapshots(pluginIds) : false,
+  ])
+  const starsCoverage = { ...coverage(sDays), ...(starsOutdated ? { outdated: true } : {}) }
+  const downloadsCoverage = { ...coverage(dDays), ...(downloadsOutdated ? { outdated: true } : {}) }
   // Rank as of the last snapshot day present, not today, so a stalled snapshot job degrades to "data as of".
   const [starRowsData, downloadRowsData] = await Promise.all([
     starsCoverage.ready && starsCoverage.lastDay ? starRows(repoIds, rankingSince(starsCoverage.lastDay)) : [],
@@ -145,10 +164,15 @@ export async function getPluginTrends(slug: string): Promise<PluginTrends | null
     async (): Promise<PluginTrends> => {
       const since = addDays(utcToday(), -HISTORY_DAYS)
       const [stars, downloads] = await Promise.all([starRows([ref.repository.id], since), downloadRows([ref.id], since)])
+      const [starsOutdated, downloadsOutdated] = await Promise.all([
+        stars.length === 0 ? hasStarSnapshots([ref.repository.id]) : false,
+        downloads.length === 0 ? hasDownloadSnapshots([ref.id]) : false,
+      ])
       return {
         stars: groupSeries(stars).get(ref.repository.id) ?? [],
         downloads: groupSeries(downloads).get(ref.id) ?? [],
         sharedRepository: pluginCount > 1 ? { fullName: ref.repository.fullName, pluginCount } : null,
+        outdated: { stars: starsOutdated, downloads: downloadsOutdated },
       }
     },
     ['plugin-trends', slug, String(ref.id), String(ref.repository.id), String(pluginCount)],
@@ -194,12 +218,17 @@ export const getEcosystemGrowth = unstable_cache(
             )
             .groupBy(pluginSnapshots.date),
     ])
+    const [starsOutdated, downloadsOutdated] = await Promise.all([
+      starTotals.length === 0 ? hasStarSnapshots(repoIds) : false,
+      downloadTotals.length === 0 ? hasDownloadSnapshots(pluginIds) : false,
+    ])
     const stars = ecosystemSeries(starTotals)
     const downloads = ecosystemSeries(downloadTotals)
     return {
       stars,
       downloads,
       lastSnapshotDay: later(stars.at(-1)?.date ?? null, downloads.at(-1)?.date ?? null),
+      outdated: { stars: starsOutdated, downloads: downloadsOutdated },
     }
   },
   ['ecosystem-growth'],

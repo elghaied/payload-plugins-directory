@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const state = vi.hoisted(() => ({ growth: null as unknown, fail: false }))
 vi.mock('@/lib/directory/queries', () => ({
@@ -22,6 +22,8 @@ beforeEach(() => {
   state.fail = false
   vi.spyOn(console, 'error').mockImplementation(() => {})
 })
+
+afterEach(() => vi.restoreAllMocks())
 
 describe('stats page', () => {
   it('renders per request with its own canonical and og:url', () => {
@@ -46,5 +48,15 @@ describe('stats page', () => {
     expect(html).toContain('Growth data is unavailable right now.')
     expect(html).not.toContain('Daily snapshots have not started yet.')
     expect(html).toContain('Payload Version Adoption')
+    expect(html).toContain('<meta name="robots" content="noindex"/>')
+  })
+  it('stays indexable when growth loads', async () => {
+    expect(await render()).not.toContain('noindex')
+  })
+  it('says the data is out of date per series for a stall longer than the window', async () => {
+    state.growth = { stars: [], downloads: [], lastSnapshotDay: null, outdated: { stars: true, downloads: false } }
+    const html = await render()
+    expect(html).toContain('out of date')
+    expect(html).toContain('Daily snapshots have not started yet.')
   })
 })

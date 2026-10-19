@@ -15,12 +15,12 @@ const TONE_CLASS: Record<TrendTone, string> = {
   downloads: 'text-violet-600 dark:text-violet-500',
 }
 
-type Props = { title: string; metric: string; series: Point[]; tone: TrendTone; footnote?: string }
+type Props = { title: string; metric: string; series: Point[]; tone: TrendTone; footnote?: string; outdated?: boolean }
 
-export function TrendChart({ title, metric, series, tone, footnote }: Props) {
+export function TrendChart({ title, metric, series, tone, footnote, outdated }: Props) {
   const titleId = useId()
   const [active, setActive] = useState<number | null>(null)
-  const model = buildChartModel(series, metric)
+  const model = buildChartModel(series, metric, undefined, outdated)
 
   const caption = (
     <figcaption id={titleId} className="text-xs font-medium text-muted-foreground">

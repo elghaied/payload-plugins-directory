@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Coverage } from '@/lib/trends/growth'
 import type { TrendingData } from '@/lib/trends/types'
 
@@ -25,11 +25,13 @@ const render = async (data: TrendingData) => {
   state.data = data
   return renderToStaticMarkup((await TrendingPage()) as never)
 }
+let errorSpy: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
   state.data = null
   state.fail = false
-  vi.spyOn(console, 'error').mockImplementation(() => {})
+  errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 })
+afterEach(() => errorSpy.mockRestore())
 
 describe('trending page', () => {
   it('renders per request with its own canonical and og:url', () => {
@@ -70,6 +72,17 @@ describe('trending page', () => {
     state.fail = true
     const html = renderToStaticMarkup((await TrendingPage()) as never)
     expect(html).toContain('Trending data is unavailable right now.')
+    expect(html).not.toContain('Daily snapshots have not started yet.')
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+    expect(html).toContain('<meta name="robots" content="noindex"/>')
+  })
+  it('stays indexable when the query succeeds', async () => {
+    expect(await render(base())).not.toContain('noindex')
+  })
+  it('says the data is out of date for a stall longer than the window', async () => {
+    const stalled = { ...none, outdated: true } as Coverage
+    const html = await render(base({ starsCoverage: stalled, downloadsCoverage: stalled }))
+    expect(html).toContain('out of date')
     expect(html).not.toContain('Daily snapshots have not started yet.')
   })
 })

@@ -52,9 +52,11 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
       // over an admin's choice. The blocklist can only tighten it: a blocklisted slug is forced 'hidden'.
       // New plugins (create branch) take visibility from the blocklist as mapped.
       const { visibility, ...rest } = data
-      const updateData = visibility === 'hidden' ? data : rest
+      const forcedHidden = visibility === 'hidden'
+      const updateData = forcedHidden ? data : rest
+      // A forced 'hidden' is the one seed write that must reach the public pages: it does not skip the Plugins revalidation hook.
       // trash: true — updateByID otherwise 404s on a trashed plugin. `data` has no deletedAt, so it stays trashed.
-      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, context: { skipRevalidate: true }, data: updateData })
+      await payload.update({ collection: 'plugins', id: existing.docs[0].id, overrideAccess: true, trash: true, context: forcedHidden ? undefined : { skipRevalidate: true }, data: updateData })
       counts.pluginsUpdated++
     } else {
       await payload.create({

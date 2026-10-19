@@ -357,6 +357,7 @@ export default async function PluginDetailPage({
                     metric="Stars"
                     tone="stars"
                     series={trends.stars}
+                    outdated={trends.outdated?.stars}
                     footnote={
                       trends.sharedRepository
                         ? `Shared by ${trends.sharedRepository.pluginCount} plugins in ${trends.sharedRepository.fullName}.`
@@ -374,6 +375,7 @@ export default async function PluginDetailPage({
                       metric="Weekly downloads"
                       tone="downloads"
                       series={trends.downloads}
+                      outdated={trends.outdated?.downloads}
                       footnote="Each point is npm's rolling 7-day download count."
                     />
                   </CardContent>
