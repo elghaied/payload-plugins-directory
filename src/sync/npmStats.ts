@@ -132,10 +132,12 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
         const repo = repos.get(relId(p.repository) ?? -1)
         let fresh: StoredNpm | null = null
         if (info) {
+          const declared = Boolean(info.repositoryUrl?.trim())
           const registryRepo = normalizeGitHubUrl(info.repositoryUrl)
           // Data belongs to the plugin only if the registry says the package lives in this plugin's repository.
           // Without a repository field it is accepted only when no other plugin uses the name (legacy behaviour).
-          const owns = registryRepo ? registryRepo === repo?.fullName.toLowerCase() : (shared.get(name) ?? 0) <= 1
+          // A declared non-GitHub repository can never be a listed plugin's.
+          const owns = declared ? registryRepo !== null && registryRepo === repo?.fullName.toLowerCase() : (shared.get(name) ?? 0) <= 1
           if (owns) fresh = toStoredNpm(info)
           else {
             fresh = EMPTY_NPM // an impostor must not keep numbers it was given earlier

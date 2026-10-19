@@ -135,6 +135,14 @@ describe('runNpmStats', () => {
     expect((await bySlug('owner')).npm?.latestVersion).toBe('1.2.0')
   })
 
+  it('treats a non-GitHub registry repository as a mismatch', async () => {
+    const repo = await createRepo(payload, { fullName: 'acme/solo' })
+    await createPlugin(payload, repo.id, { slug: 'solo', packageName: 'solo-pkg', npm: { latestVersion: '1.0.0', weeklyDownloads: 5 } })
+    const r = await runNpmStats(payload, {}, ctx(npmRoutes('solo-pkg', { repositoryUrl: 'git+https://gitlab.com/x/y.git' })))
+    expect(r.mismatched).toEqual(['solo'])
+    expect(await bySlug('solo')).toMatchObject({ npm: { latestVersion: null, weeklyDownloads: null } })
+  })
+
   it('assigns data when the registry has no repository and one plugin uses the name', async () => {
     await fixture()
     const r = await runNpmStats(payload, { slugs: ['s1'] }, ctx(npmRoutes('payload-seo')))
