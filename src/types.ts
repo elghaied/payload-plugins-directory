@@ -1,33 +1,3 @@
-export interface GitHubContent {
-  name: string;
-  type: "dir" | "file";
-  path: string;
-}
-
-export interface GitHubRepo {
-  id: number;
-  name: string;
-  description: string | null;
-  stargazers_count: number;
-  forks_count: number;
-  updated_at: string;
-  pushed_at: string;
-  created_at: string;
-  html_url: string;
-  topics: string[];
-  owner: {
-    login: string;
-    avatar_url: string;
-  };
-  default_branch: string;
-  license: {
-    spdx_id: string;
-    name: string;
-  } | null;
-  open_issues_count: number;
-  archived: boolean;
-}
-
 export interface PackageJson {
   name?: string;
   description?: string;
