@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import { eq } from '@payloadcms/db-postgres/drizzle'
 import { pluginSnapshots, repositorySnapshots } from '@/db/snapshots'
@@ -93,6 +93,55 @@ describe('runNpmStats', () => {
     expect(await bySlug('s1')).toMatchObject({ healthScore: 33, npm: { latestVersion: '1.0.0', weeklyDownloads: 1 } })
   })
 
+  it('isolates a failing plugin update and records the slug', async () => {
+    await fixture()
+    const target = await bySlug('s1')
+    const real = payload.update.bind(payload)
+    const spy = vi.spyOn(payload, 'update').mockImplementation(((args: { id: number }) =>
+      args.id === target.id ? Promise.reject(new Error('boom')) : real(args as never)) as never)
+    try {
+      const r = await runNpmStats(payload, {}, ctx(routes()))
+      expect(r.failed).toEqual(['s1'])
+      expect(r.errors).toBe(1)
+      expect(r.updated).toEqual(['official-plugin-seo'])
+    } finally {
+      spy.mockRestore()
+    }
+    expect((await bySlug('official-plugin-seo')).npm?.latestVersion).toBe('4.0.0-beta.2')
+  })
+
+  it('records plugins with an invalid package name as failed', async () => {
+    const repo = await createRepo(payload, { fullName: 'acme/bad' })
+    await createPlugin(payload, repo.id, { slug: 'bad-name', packageName: 'Not A Valid Name!' })
+    const r = await runNpmStats(payload, {}, ctx({}))
+    expect(r).toMatchObject({ checked: 0, failed: ['bad-name'], errors: 1 })
+  })
+
+  it('propagates non-transient errors', async () => {
+    await fixture()
+    await expect(runNpmStats(payload, {}, ctx({ ...routes(), [`${REGISTRY}/payload-seo`]: () => { throw new RangeError('bug') } }))).rejects.toThrow('bug')
+  })
+
+  it('clears npm data of a plugin whose package belongs to another repository', async () => {
+    const real = await createRepo(payload, { fullName: 'acme/popular' })
+    const fake = await createRepo(payload, { fullName: 'evil/copycat' })
+    await createPlugin(payload, fake.id, { slug: 'impostor', packageName: 'popular-pkg', npm: { latestVersion: '9.9.9', weeklyDownloads: 999_999 } })
+    const r = await runNpmStats(payload, {}, ctx(npmRoutes('popular-pkg', { repositoryUrl: 'git+https://github.com/acme/popular.git' })))
+    expect(r.mismatched).toEqual(['impostor'])
+    expect(await bySlug('impostor')).toMatchObject({ npm: { latestVersion: null, weeklyDownloads: null } })
+    await createPlugin(payload, real.id, { slug: 'owner', packageName: 'popular-pkg2' })
+    const r2 = await runNpmStats(payload, { slugs: ['owner'] }, ctx(npmRoutes('popular-pkg2', { repositoryUrl: 'https://github.com/Acme/Popular' })))
+    expect(r2.mismatched).toEqual([])
+    expect((await bySlug('owner')).npm?.latestVersion).toBe('1.2.0')
+  })
+
+  it('assigns data when the registry has no repository and one plugin uses the name', async () => {
+    await fixture()
+    const r = await runNpmStats(payload, { slugs: ['s1'] }, ctx(npmRoutes('payload-seo')))
+    expect(r.mismatched).toEqual([])
+    expect((await bySlug('s1')).npm?.weeklyDownloads).toBe(500)
+  })
+
   it('turns a rate limit into a re-queue of the slugs not yet fetched', async () => {
     await fixture()
     const err = await runNpmStats(payload, {}, ctx({ ...routes(), [`${DOWNLOADS}/last-week/payload-seo`]: { status: 429 } })).catch((e: unknown) => e)
@@ -110,6 +159,11 @@ describe('runSnapshot', () => {
     const rows = await payload.db.drizzle.select().from(repositorySnapshots).where(eq(repositorySnapshots.repositoryId, seoRepo.id))
     expect(rows).toEqual([{ repositoryId: seoRepo.id, date: '2026-10-19', stars: 50, forks: 0, openIssues: 0 }])
     expect(await payload.db.drizzle.select().from(pluginSnapshots)).toHaveLength(2)
+    const s1 = await bySlug('s1')
+    await payload.update({ collection: 'plugins', id: s1.id, overrideAccess: true, data: { healthScore: 77, npm: { weeklyDownloads: 1234, latestVersion: '1.0.0' } } })
+    await runSnapshot(payload, NOW)
+    const pr = await payload.db.drizzle.select().from(pluginSnapshots).where(eq(pluginSnapshots.pluginId, s1.id))
+    expect(pr).toEqual([{ pluginId: s1.id, date: '2026-10-19', weeklyDownloads: 1234, healthScore: 77 }])
   })
 
   it('skips trashed plugins and repositories that only have trashed plugins', async () => {

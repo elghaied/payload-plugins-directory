@@ -4,8 +4,8 @@ import { revalidationTagsFor } from '@/lib/cacheTags'
 import { payloadMajorsFromRange } from '@/lib/versions'
 import type { SyncContext } from './context'
 import { scoreFor } from './health'
-import { RateLimitError } from './http'
-import type { NpmPackageInfo } from './npm'
+import { HttpError, RateLimitError } from './http'
+import { InvalidNpmPackageNameError, type NpmPackageInfo } from './npm'
 import { isValidPackageName, normalizeGitHubUrl } from './packages'
 import { relId, sameInstant } from './util'
 
@@ -17,11 +17,14 @@ export type NpmStatsResult = {
   errors: number
   /** Slugs whose lookup failed; they keep their previous npm fields and health. */
   failed: string[]
+  /** Slugs whose package belongs to another repository (or is ambiguous); their npm fields were cleared. */
+  mismatched: string[]
   revalidateTags: string[]
 }
 
 const BATCH = 10
 type StoredNpm = NonNullable<Plugin['npm']>
+const EMPTY_NPM: StoredNpm = { weeklyDownloads: null, monthlyDownloads: null, latestVersion: null, unpackedSize: null, lastPublish: null, dependencyCount: null }
 
 const key = (p: { packageName?: string | null }) => (p.packageName ?? '').toLowerCase()
 
@@ -51,6 +54,13 @@ function sameNpm(a: Plugin['npm'], b: StoredNpm): boolean {
 const sameSet = (a: readonly string[] | null | undefined, b: readonly string[]) =>
   [...(a ?? [])].sort().join() === [...b].sort().join()
 
+/** Failures that leave a package's data as it was: HTTP errors, fetch network errors (TypeError), timeouts. Anything else is a bug and propagates. */
+const isTransient = (err: unknown): boolean =>
+  err instanceof HttpError ||
+  err instanceof InvalidNpmPackageNameError ||
+  err instanceof TypeError ||
+  (err instanceof Error && (err.name === 'AbortError' || err.name === 'TimeoutError'))
+
 type Fetched = { info: NpmPackageInfo | null; failed: boolean }
 
 export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: SyncContext): Promise<NpmStatsResult> {
@@ -71,7 +81,8 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
   for (const p of all) if (isValidPackageName(p.packageName)) shared.set(key(p), (shared.get(key(p)) ?? 0) + 1)
 
   const wanted = input.slugs?.length ? new Set(input.slugs) : null
-  const targets = all.filter((p) => isValidPackageName(p.packageName) && (!wanted || wanted.has(p.slug)))
+  const inScope = all.filter((p) => !wanted || wanted.has(p.slug))
+  const targets = inScope.filter((p) => isValidPackageName(p.packageName))
   const repoIds = [...new Set(targets.map((t) => relId(t.repository)).filter((id): id is number => id !== null))]
   const repos = new Map(
     repoIds.length
@@ -79,7 +90,14 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
       : [],
   )
   const names = [...new Set(targets.map(key))]
-  const result: NpmStatsResult = { checked: 0, updated: [], errors: 0, failed: [], revalidateTags: [] }
+  const result: NpmStatsResult = { checked: 0, updated: [], errors: 0, failed: [], mismatched: [], revalidateTags: [] }
+  // A package name was set but is not a valid npm name: nothing can be fetched, so report it.
+  for (const p of inScope) {
+    if (p.packageName && !isValidPackageName(p.packageName)) {
+      result.errors++
+      result.failed.push(p.slug)
+    }
+  }
 
   for (let i = 0; i < names.length; i += BATCH) {
     let fetched: (readonly [string, Fetched])[]
@@ -89,7 +107,7 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
           try {
             return [name, { info: await ctx.npm.getPackage(name), failed: false }] as const
           } catch (err) {
-            if (err instanceof RateLimitError) throw err
+            if (!isTransient(err)) throw err // includes RateLimitError
             return [name, { info: null, failed: true }] as const // transient: this package keeps its previous data
           }
         }),
@@ -112,9 +130,18 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
       }
       for (const p of group) {
         const repo = repos.get(relId(p.repository) ?? -1)
-        const owns =
-          (shared.get(name) ?? 0) <= 1 || (repo !== undefined && normalizeGitHubUrl(info?.repositoryUrl) === repo.fullName.toLowerCase())
-        const fresh = info && owns ? toStoredNpm(info) : null
+        let fresh: StoredNpm | null = null
+        if (info) {
+          const registryRepo = normalizeGitHubUrl(info.repositoryUrl)
+          // Data belongs to the plugin only if the registry says the package lives in this plugin's repository.
+          // Without a repository field it is accepted only when no other plugin uses the name (legacy behaviour).
+          const owns = registryRepo ? registryRepo === repo?.fullName.toLowerCase() : (shared.get(name) ?? 0) <= 1
+          if (owns) fresh = toStoredNpm(info)
+          else {
+            fresh = EMPTY_NPM // an impostor must not keep numbers it was given earlier
+            result.mismatched.push(p.slug)
+          }
+        }
         const npm = fresh ?? p.npm
         const npmChanged = Boolean(fresh && !sameNpm(p.npm, fresh))
         const payloadMajors = payloadMajorsFromRange(p.payloadVersionRange ?? null, npm?.latestVersion ?? null)
@@ -122,18 +149,24 @@ export async function runNpmStats(payload: Payload, input: NpmStatsInput, ctx: S
         const majorsChanged = !sameSet(p.payloadMajors, payloadMajors)
         const healthChanged = healthScore !== p.healthScore
         if (!npmChanged && !majorsChanged && !healthChanged) continue
-        await payload.update({
-          collection: 'plugins',
-          id: p.id,
-          overrideAccess: true,
-          depth: 0,
-          data: {
-            ...(npmChanged && fresh ? { npm: fresh } : {}),
-            ...(majorsChanged ? { payloadMajors } : {}),
-            ...(healthChanged ? { healthScore } : {}),
-          },
-        })
-        result.updated.push(p.slug)
+        try {
+          await payload.update({
+            collection: 'plugins',
+            id: p.id,
+            overrideAccess: true,
+            depth: 0,
+            data: {
+              ...(npmChanged && fresh ? { npm: fresh } : {}),
+              ...(majorsChanged ? { payloadMajors } : {}),
+              ...(healthChanged ? { healthScore } : {}),
+            },
+          })
+          result.updated.push(p.slug)
+        } catch (err) {
+          if (err instanceof RateLimitError) throw err
+          result.errors++
+          result.failed.push(p.slug)
+        }
       }
     }
   }
