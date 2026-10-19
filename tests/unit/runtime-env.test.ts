@@ -18,6 +18,10 @@ describe('runtimeEnvWarnings', () => {
   it('warns that a missing SERVER_URL empties allowed origins and noindexes the site', () => {
     expect(runtimeEnvWarnings({ ...prod, SERVER_URL: '' }, 'web')).toEqual([expect.stringMatching(/SERVER_URL is not set.*noindex/)])
   })
+  it('mentions the cross-origin check for the web process only', () => {
+    expect(runtimeEnvWarnings({ ...prod, SERVER_URL: '' }, 'web')[0]).toMatch(/cross-origin/)
+    expect(runtimeEnvWarnings({ ...prod, SERVER_URL: '' }, 'worker')[0]).not.toMatch(/cross-origin/)
+  })
   it('warns when SERVER_URL is not the production host', () => {
     expect(runtimeEnvWarnings({ ...prod, SERVER_URL: 'https://next.payloaddirectory.dev' }, 'web')).toEqual([
       expect.stringMatching(/next\.payloaddirectory\.dev.*noindex/),

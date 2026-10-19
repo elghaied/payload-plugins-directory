@@ -25,9 +25,17 @@ describe('session tokens', () => {
     expect(await verifySessionToken(token, secret)).toBeNull()
   })
   it('rejects a tampered payload', async () => {
-    const [h, , s] = (await signSessionToken(claims, secret)).split('.')
-    const forged = Buffer.from(JSON.stringify({ sub: '1', gid: 1, iss: 'payload-directory', aud: 'maintainer-session' })).toString('base64url')
+    const token = await signSessionToken(claims, secret)
+    const [h, p, s] = token.split('.')
+    const real = JSON.parse(Buffer.from(p, 'base64url').toString())
+    // Same valid iat/exp/gid/iss/aud; only the subject changes, so only the signature can reject it.
+    const forged = Buffer.from(JSON.stringify({ ...real, sub: '1' })).toString('base64url')
+    expect(real.sub).toBe('7')
     expect(await verifySessionToken(`${h}.${forged}.${s}`, secret)).toBeNull()
+    expect(await verifySessionToken(`${h}.${p}.${s}`, secret)).toEqual(claims)
+    // Altered signature, untouched payload.
+    const badSig = `${s.slice(0, -2)}${s.endsWith('AA') ? 'BB' : 'AA'}`
+    expect(await verifySessionToken(`${h}.${p}.${badSig}`, secret)).toBeNull()
   })
   it('rejects an expired token (31 days old)', async () => {
     const now = new Date('2026-10-19T00:00:00Z')
@@ -59,6 +67,13 @@ describe('session tokens', () => {
     const session = await verifySession(token, secret, new Date('2026-10-02T00:00:00Z'))
     expect(session).toEqual({ ...claims, issuedAt: new Date('2026-10-01T12:00:00.000Z') })
     expect(await verifySession('garbage', secret)).toBeNull()
+  })
+  it('tolerates 5 s of clock skew: iat 3 s ahead is accepted, 30 s ahead is rejected', async () => {
+    const now = new Date('2026-10-19T00:00:00Z')
+    const soon = await signSessionToken(claims, secret, new Date(now.getTime() + 3000))
+    expect(await verifySessionToken(soon, secret, now)).toEqual(claims)
+    const later = await signSessionToken(claims, secret, new Date(now.getTime() + 30_000))
+    expect(await verifySessionToken(later, secret, now)).toBeNull()
   })
   it('rejects the wrong audience', async () => {
     const token = await new SignJWT({ gid: 4242 })

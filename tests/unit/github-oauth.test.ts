@@ -32,6 +32,13 @@ describe('authorizationURL', () => {
   })
 })
 
+describe('authorizationURL defaults', () => {
+  it('asks for read:user only when no scopes are given', () => {
+    const url = authorizationURL({ clientId: 'c', redirectUri: 'http://x/cb', state: 's', codeChallenge: 'ch' })
+    expect(url.searchParams.get('scope')).toBe('read:user')
+  })
+})
+
 describe('exchangeCode', () => {
   it('posts a form with Accept: application/json and returns the token', async () => {
     let seen: { url: string; init?: RequestInit } | undefined
@@ -43,6 +50,8 @@ describe('exchangeCode', () => {
     expect(seen?.url).toBe('https://github.com/login/oauth/access_token')
     expect(seen?.init?.method).toBe('POST')
     expect((seen?.init?.headers as Record<string, string>).Accept).toBe('application/json')
+    expect((seen?.init?.headers as Record<string, string>)['Content-Type']).toBe('application/x-www-form-urlencoded')
+    expect(seen?.init?.redirect).toBe('error')
     const form = new URLSearchParams(String(seen?.init?.body))
     expect(Object.fromEntries(form)).toEqual({
       client_id: 'cid', client_secret: 'sec-ret', code: 'the-code', redirect_uri: params.redirectUri, code_verifier: 'ver',
@@ -64,6 +73,16 @@ describe('exchangeCode', () => {
       await expect(exchangeCode(params, json(body))).rejects.toMatchObject({ name: 'OAuthError', reason: 'no-token' })
     }
     await expect(exchangeCode(params, async () => new Response('<html>'))).rejects.toMatchObject({ reason: 'no-token' })
+  })
+  it('treats a refused redirect as an OAuthError and never re-sends the secret', async () => {
+    const calls: string[] = []
+    const fetch: FetchFn = async (url, init) => {
+      calls.push(url)
+      if (init?.redirect === 'error') throw new TypeError('fetch failed: unexpected redirect')
+      return new Response(null, { status: 307, headers: { location: 'https://evil.example/' } })
+    }
+    await expect(exchangeCode(params, fetch)).rejects.toMatchObject({ name: 'OAuthError', reason: 'network' })
+    expect(calls).toEqual(['https://github.com/login/oauth/access_token'])
   })
   it('throws OAuthError on timeout', async () => {
     const hang: FetchFn = (_url, init) =>

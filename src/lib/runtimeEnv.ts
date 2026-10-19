@@ -1,7 +1,6 @@
+import { SESSION_SECRET_MIN_LENGTH } from './auth/session'
 import { isUsableSecret, MIN_SECRET_LENGTH } from './revalidate'
 import { getServerURL, isProductionSite, PRODUCTION_HOST } from './serverUrl'
-
-const SESSION_SECRET_MIN_LENGTH = 32
 
 type Env = Record<string, string | undefined>
 export type ProcessRole = 'web' | 'worker'
@@ -12,7 +11,11 @@ export function runtimeEnvWarnings(env: Env, role: ProcessRole): string[] {
   const warnings: string[] = []
   const serverURL = getServerURL(env)
   if (!serverURL) {
-    warnings.push('SERVER_URL is not set: Payload has no allowed origins, the cross-origin check on maintainer session writes is off, and every page is served with noindex.')
+    warnings.push(
+      role === 'web'
+        ? 'SERVER_URL is not set: Payload has no allowed origins, the cross-origin check on maintainer session writes is off, and every page is served with noindex.'
+        : 'SERVER_URL is not set: Payload has no allowed origins, and every page is served with noindex.',
+    )
   } else if (!isProductionSite(serverURL)) {
     warnings.push(`SERVER_URL is ${serverURL}, not https://${PRODUCTION_HOST}: every page is served with noindex.`)
   }

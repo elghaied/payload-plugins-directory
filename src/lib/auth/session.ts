@@ -4,9 +4,10 @@ type Env = Record<string, string | undefined>
 
 export const SESSION_COOKIE = 'pd_session'
 export const SESSION_MAX_AGE_SECONDS = 30 * 24 * 60 * 60
+const CLOCK_TOLERANCE_SECONDS = 5
 const ISSUER = 'payload-directory'
 const AUDIENCE = 'maintainer-session'
-const MIN_SECRET_LENGTH = 32
+export const SESSION_SECRET_MIN_LENGTH = 32
 const MAX_TOKEN_LENGTH = 2048
 
 export type SessionClaims = { maintainerId: number; githubId: number }
@@ -15,8 +16,8 @@ export type VerifiedSession = SessionClaims & { issuedAt: Date }
 
 export function getSessionSecret(env: Env = process.env): Uint8Array {
   const raw = env.SESSION_SECRET ?? ''
-  if (raw.length < MIN_SECRET_LENGTH) {
-    throw new Error(`SESSION_SECRET must be set to at least ${MIN_SECRET_LENGTH} characters.`)
+  if (raw.length < SESSION_SECRET_MIN_LENGTH) {
+    throw new Error(`SESSION_SECRET must be set to at least ${SESSION_SECRET_MIN_LENGTH} characters.`)
   }
   return new TextEncoder().encode(raw)
 }
@@ -45,6 +46,8 @@ export async function verifySession(token: string, secret: Uint8Array, now: Date
       issuer: ISSUER,
       audience: AUDIENCE,
       currentDate: now,
+      // Small tolerance so a fresh cookie is not bounced by clock drift between web replicas.
+      clockTolerance: CLOCK_TOLERANCE_SECONDS,
       maxTokenAge: SESSION_MAX_AGE_SECONDS,
       requiredClaims: ['sub', 'iat', 'exp', 'gid'],
     })

@@ -4,6 +4,8 @@ import { withTimeout } from '@/sync/http'
 
 const AUTHORIZE_URL = 'https://github.com/login/oauth/authorize'
 const TOKEN_URL = 'https://github.com/login/oauth/access_token'
+/** The only scope the directory asks for. */
+export const DEFAULT_SCOPES = ['read:user']
 export const OAUTH_TIMEOUT_MS = 10_000
 
 /** A failed GitHub OAuth exchange. Messages never contain the code, secret or token. */
@@ -37,13 +39,13 @@ export function authorizationURL(params: {
   redirectUri: string
   state: string
   codeChallenge: string
-  scopes: string[]
+  scopes?: string[]
 }): URL {
   const url = new URL(AUTHORIZE_URL)
   url.searchParams.set('client_id', params.clientId)
   url.searchParams.set('redirect_uri', params.redirectUri)
   url.searchParams.set('state', params.state)
-  url.searchParams.set('scope', params.scopes.join(' '))
+  url.searchParams.set('scope', (params.scopes ?? DEFAULT_SCOPES).join(' '))
   url.searchParams.set('code_challenge', params.codeChallenge)
   url.searchParams.set('code_challenge_method', 'S256')
   url.searchParams.set('allow_signup', 'true')
@@ -67,6 +69,8 @@ export async function exchangeCode(
   try {
     res = await withTimeout(fetch, timeoutMs)(TOKEN_URL, {
       method: 'POST',
+      // Never follow a redirect: a 307/308 would re-POST the client secret, code and verifier to another URL.
+      redirect: 'error',
       headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
     })
