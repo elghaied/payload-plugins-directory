@@ -4,7 +4,7 @@ import type { CurrentMaintainer } from '@/lib/auth/current'
 import type { GitHubOwner } from '@/lib/github/client'
 import { claimPlugin, isInstantClaim, type ClaimGitHub } from '@/lib/submissions/claim'
 import { MESSAGES } from '@/lib/submissions/messages'
-import { MAX_PENDING_PER_MAINTAINER } from '@/lib/submissions/limits'
+import { CLAIM_RECHECK_COOLDOWN_MS, MAX_PENDING_PER_MAINTAINER } from '@/lib/submissions/limits'
 import { relationId } from '@/lib/relationId'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
@@ -68,6 +68,15 @@ async function maintainersOf(slug: string) {
 const submissionsOf = (id: number) =>
   payload.find({ collection: 'submissions', overrideAccess: true, depth: 0, where: { submittedBy: { equals: id } } })
 
+/** Moves an own pending claim's last check out of (or into) the cooldown window. */
+async function setLastCheck(maintainerId: number, agoMs: number) {
+  const subs = await payload.find({ collection: 'submissions', overrideAccess: true, depth: 0, where: { and: [{ submittedBy: { equals: maintainerId } }, { status: { equals: 'pending' } }] } })
+  for (const doc of subs.docs) {
+    await payload.update({ collection: 'submissions', id: doc.id, overrideAccess: true, depth: 0, data: { lastClaimCheckAt: new Date(Date.now() - agoMs).toISOString() } })
+  }
+}
+const PAST_COOLDOWN = CLAIM_RECHECK_COOLDOWN_MS + 60_000
+
 async function makePlugin(slug: string, repoId: number, extra: Record<string, unknown> = {}) {
   return payload.create({
     collection: 'plugins', overrideAccess: true,
@@ -103,6 +112,7 @@ beforeAll(async () => {
     ['flaky', 102, 'flaky'],
     ['capped', 103, 'capped'],
     ['other', 104, 'other'],
+    ['cooldown', 105, 'cooldown'],
   ] as const) {
     const doc = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId, login } })
     m[key] = { ...doc, collection: 'maintainers' }
@@ -256,6 +266,7 @@ describe('claimPlugin', () => {
     expect(calls(g)).toBe(0)
   })
   it('re-submitting an own pending claim that still cannot be verified keeps it pending, with no new row', async () => {
+    await setLastCheck(m.stranger.id, PAST_COOLDOWN)
     expect(await claimPlugin({ payload, maintainer: m.stranger, slug: 'org-2', note: '', github: gh({ owner: org() }) })).toEqual({ status: 'pending' })
     expect((await submissionsOf(m.stranger.id)).docs).toHaveLength(1)
     expect(await maintainersOf('org-2')).toEqual([])
@@ -298,6 +309,7 @@ describe('claimPlugin', () => {
   })
   it('a queued claim is approved in place when a re-submit now verifies (same row, no duplicate)', async () => {
     expect(await claimPlugin({ payload, maintainer: m.other, slug: 'org-18', note: '', github: gh({ repoFail: 'unavailable' }) })).toEqual({ status: 'queued' })
+    await setLastCheck(m.other.id, PAST_COOLDOWN)
     const before = (await submissionsOf(m.other.id)).docs
     expect(before).toHaveLength(1)
     const res = await claimPlugin({ payload, maintainer: m.other, slug: 'org-18', note: '', github: gh({ owner: org(), userLogin: 'o', members: ['o'] }) })
@@ -308,12 +320,39 @@ describe('claimPlugin', () => {
     expect(await maintainersOf('org-18')).toEqual([m.other.id])
   })
   it('the cap does not block re-checking an own pending claim', async () => {
+    await setLastCheck(m.capped.id, PAST_COOLDOWN)
     const res = await claimPlugin({ payload, maintainer: m.capped, slug: 'org-6', note: '', github: gh({ owner: org(), userLogin: 'c', members: ['c'] }) })
     expect(res).toEqual({ status: 'claimed' })
     expect(await maintainersOf('org-6')).toEqual([m.capped.id])
   })
+  it('inside the cooldown a re-submit is a neutral pending with no GitHub call; after it, exactly one check', async () => {
+    const g = gh({ owner: org(), userLogin: 'cool', members: [] })
+    // Fresh claim: creation counts as a check, so an immediate re-submit is inside the window.
+    expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: g })).toEqual({ status: 'queued' })
+    const afterCreate = calls(g)
+    expect(afterCreate).toBeGreaterThan(0)
+    expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: g })).toEqual({ status: 'pending' })
+    expect(calls(g)).toBe(afterCreate)
+    // Just inside the window still makes no call, even if ownership would now verify.
+    await setLastCheck(m.cooldown.id, CLAIM_RECHECK_COOLDOWN_MS - 5_000)
+    const ok = gh({ owner: org(), userLogin: 'cool', members: ['cool'] })
+    expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: ok })).toEqual({ status: 'pending' })
+    expect(calls(ok)).toBe(0)
+    // After the window: one check; a failing one stays pending and restarts the window.
+    await setLastCheck(m.cooldown.id, PAST_COOLDOWN)
+    expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: g })).toEqual({ status: 'pending' })
+    expect(calls(g)).toBeGreaterThan(afterCreate)
+    const afterRecheck = calls(g)
+    expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: g })).toEqual({ status: 'pending' })
+    expect(calls(g)).toBe(afterRecheck)
+    // After the window again, a passing check approves the existing claim.
+    await setLastCheck(m.cooldown.id, PAST_COOLDOWN)
+    expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: ok })).toEqual({ status: 'claimed' })
+    expect(await maintainersOf('org-19')).toEqual([m.cooldown.id])
+  })
   it('a pending claim on an official plugin is never approved by a re-submit and makes no GitHub call', async () => {
     const g = gh({ owner: user(4242) })
+    await setLastCheck(m.soloOwner.id, PAST_COOLDOWN)
     expect(await claimPlugin({ payload, maintainer: m.soloOwner, slug: 'official', note: '', github: g })).toEqual({ status: 'pending' })
     expect(calls(g)).toBe(0)
     expect(await maintainersOf('official')).toEqual([])

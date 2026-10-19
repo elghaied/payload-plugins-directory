@@ -126,6 +126,12 @@ export const Submissions: CollectionConfig = {
       options: ['pending', 'approved', 'rejected', 'duplicate'],
       access: { create: adminOnly, update: adminOnly },
     },
+    {
+      name: 'lastClaimCheckAt',
+      type: 'date',
+      admin: { hidden: true, readOnly: true, condition: (data) => data?.type === 'claim' },
+      access: { create: adminOnly, update: adminOnly }, // readable by the owner: claimPlugin reads it as the maintainer
+    },
     { name: 'rejectionReason', type: 'textarea', access: { create: adminOnly, update: adminOnly } },
     ...adminOnlyAuthorship(),
   ],

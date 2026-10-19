@@ -496,6 +496,7 @@ export interface Submission {
   submittedBy: number | Maintainer;
   note?: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'duplicate';
+  lastClaimCheckAt?: string | null;
   rejectionReason?: string | null;
   createdBy?:
     | ({
@@ -1030,6 +1031,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   submittedBy?: T;
   note?: T;
   status?: T;
+  lastClaimCheckAt?: T;
   rejectionReason?: T;
   createdBy?: T;
   updatedBy?: T;

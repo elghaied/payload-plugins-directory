@@ -4,7 +4,7 @@ import type { CurrentMaintainer } from '@/lib/auth/current'
 import type { GitHubAuthClient } from '@/lib/github/client'
 import { relationId } from '@/lib/relationId'
 import type { Plugin, Repository } from '@/payload-types'
-import { MAX_PENDING_PER_MAINTAINER } from './limits'
+import { CLAIM_RECHECK_COOLDOWN_MS, MAX_PENDING_PER_MAINTAINER } from './limits'
 import { MESSAGES } from './messages'
 import { normalizeNote, validationMessage } from './submit'
 
@@ -115,6 +115,11 @@ export async function claimPlugin({
     // The maintainer's own pending claim (queued earlier, e.g. during a GitHub outage). The cap does not apply to
     // re-checking it. If ownership is now confirmed, approve THAT claim through the normal approval path (system write:
     // maintainers cannot update submissions); otherwise it stays pending. No duplicate row is ever created.
+    // Cooldown, counted from the last check (or creation, which itself ran one). Inside the window: neutral `pending`, no GitHub call.
+    const lastCheck = Date.parse(existing.lastClaimCheckAt ?? existing.createdAt)
+    if (!Number.isFinite(lastCheck) || Date.now() - lastCheck < CLAIM_RECHECK_COOLDOWN_MS) return { status: 'pending' }
+    // Stamp BEFORE calling GitHub so a slow or failing check still counts (system write: the field is admin-only).
+    await payload.update({ collection: 'submissions', id: existing.id, overrideAccess: true, depth: 0, data: { lastClaimCheckAt: new Date().toISOString() } })
     if (!(await isInstantClaim({ github, maintainer, plugin, repository: plugin.repository, onError }))) return { status: 'pending' }
     try {
       await payload.update({ collection: 'submissions', id: existing.id, overrideAccess: true, depth: 0, data: { status: 'approved' } })
