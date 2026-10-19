@@ -35,6 +35,27 @@ describe('trashPlugins', () => {
   })
 })
 
+describe('syncTrashReason lifecycle', () => {
+  const get = async (id: number) => payload.findByID({ collection: 'plugins', id, trash: true, overrideAccess: true, depth: 0 })
+
+  it('is set by sync trash, cleared by an admin restore, and cleared by a later admin trash', async () => {
+    const repo = await createRepo(payload)
+    const p = await createPlugin(payload, repo.id, { slug: 'lc' })
+    await trashPlugins(payload, { id: { equals: p.id } }, 'package-removed', T1)
+    expect((await get(p.id)).syncTrashReason).toBe('package-removed')
+
+    await payload.update({ collection: 'plugins', id: p.id, trash: true, overrideAccess: true, data: { deletedAt: null } })
+    expect((await get(p.id)).syncTrashReason ?? null).toBeNull()
+
+    // stale reason on a live plugin, then an admin trashes it
+    await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { syncTrashReason: 'package-removed' } })
+    await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { deletedAt: T2.toISOString() } })
+    const after = await get(p.id)
+    expect(after.deletedAt).toBe(T2.toISOString())
+    expect(after.syncTrashReason ?? null).toBeNull()
+  })
+})
+
 describe('job status', () => {
   const row = async (key: string) => (await payload.db.drizzle.select().from(jobStatus).where(eq(jobStatus.key, key)))[0]
 
@@ -45,6 +66,14 @@ describe('job status', () => {
     expect(await row('discover')).toMatchObject({
       lastSuccessAt: T3, lastFailureAt: T2, lastError: 'boom', details: { status: 'ok', discovered: 4 },
     })
+  })
+
+  it('never lets an older write overwrite a newer one', async () => {
+    await recordJobSuccess(payload, 'k', { v: 2 }, T2)
+    await recordJobSuccess(payload, 'k', { v: 1 }, T1)
+    await recordJobFailure(payload, 'k', new Error('new'), T2)
+    await recordJobFailure(payload, 'k', new Error('old'), T1)
+    expect(await row('k')).toMatchObject({ lastSuccessAt: T2, details: { v: 2 }, lastFailureAt: T2, lastError: 'new' })
   })
 
   it('stores the GitHub quota and ignores a missing one', async () => {

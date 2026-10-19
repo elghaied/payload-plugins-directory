@@ -24,6 +24,17 @@ export const Plugins: CollectionConfig = {
     update: isAdmin, // phase 4 adds claimed-maintainer updates of customTagline/logo
     delete: isAdmin,
   },
+  hooks: {
+    beforeChange: [
+      // A trash/restore that does not come from the sync trash helper is an admin decision: drop sync's
+      // reason so sync never treats an admin-trashed plugin as its own (and restores it).
+      ({ data, originalDoc, context }) => {
+        if (context.syncTrash || !('deletedAt' in data)) return data
+        if (Boolean(data.deletedAt) !== Boolean(originalDoc?.deletedAt)) data.syncTrashReason = null
+        return data
+      },
+    ],
+  },
   fields: [
     // Identity
     { name: 'slug', type: 'text', required: true, unique: true, index: true },
