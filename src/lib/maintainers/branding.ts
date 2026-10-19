@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto'
 import type { Payload } from 'payload'
 import { Forbidden } from 'payload'
 import sharp from 'sharp'
@@ -99,7 +100,7 @@ export async function saveBranding({
       overrideAccess: true,
       depth: 0,
       data: { alt: `${plugin.name} logo` },
-      file: { data: clean.data, mimetype: kind.mime, name: `${plugin.slug}-logo-${Date.now()}.${kind.ext}`, size: clean.data.length },
+      file: { data: clean.data, mimetype: kind.mime, name: `${plugin.slug}-logo-${Date.now()}-${randomBytes(3).toString('hex')}.${kind.ext}`, size: clean.data.length },
     })
     nextLogo = createdMedia = media.id
   } else if (removeLogo) {
