@@ -80,8 +80,8 @@ describe('classifyAnthropicError (ruling F16)', () => {
   const apiError = (status: number, h: Record<string, string> = {}, type = 'api_error') =>
     Anthropic.APIError.generate(status, { error: { type, message: 'x' } }, 'x', headers(h))
 
-  it('treats 400/401/403 as permanent: retrying cannot help', () => {
-    for (const status of [400, 401, 403]) {
+  it('treats 400/401/403/404 as permanent: retrying cannot help', () => {
+    for (const status of [400, 401, 403, 404]) {
       const err = apiError(status)
       expect(classifyAnthropicError(err, now)).toEqual({ kind: 'permanent', status })
       expect(isPermanentAnthropicError(err)).toBe(true)
@@ -89,6 +89,8 @@ describe('classifyAnthropicError (ruling F16)', () => {
     expect(apiError(400)).toBeInstanceOf(Anthropic.BadRequestError)
     expect(apiError(401)).toBeInstanceOf(Anthropic.AuthenticationError)
     expect(apiError(403)).toBeInstanceOf(Anthropic.PermissionDeniedError)
+    // An unknown or retired model id in directory-settings.ai.model.
+    expect(apiError(404)).toBeInstanceOf(Anthropic.NotFoundError)
   })
 
   it('treats 429, 5xx, overloaded (529) and connection failures as transient, with retry-after when sent', () => {
@@ -112,7 +114,7 @@ describe('classifyAnthropicError (ruling F16)', () => {
 
   it('leaves anything that is not an SDK error to the caller', () => {
     expect(classifyAnthropicError(new Error('HTTP 401'), now)).toEqual({ kind: 'other' })
-    expect(classifyAnthropicError(apiError(404), now)).toEqual({ kind: 'other' })
+    expect(classifyAnthropicError(apiError(409), now)).toEqual({ kind: 'other' })
     expect(isPermanentAnthropicError(new Error('authentication_error'))).toBe(false)
   })
 })
@@ -127,6 +129,21 @@ describe('interpretMessage', () => {
     expect(interpretMessage(maxTokensMessage())).toEqual({ ok: false, reason: 'max_tokens' })
     expect(interpretMessage(okMessage({}, { stop_reason: 'model_context_window_exceeded' }))).toEqual({
       ok: false, reason: 'stop:model_context_window_exceeded',
+    })
+  })
+  it('reads only the text after the last fallback block (pre-hop partial text is discarded)', () => {
+    const message = okMessage('', {
+      content: [
+        { type: 'thinking' },
+        { type: 'text', text: '{"category":"cloud-st' },
+        { type: 'fallback' },
+        { type: 'thinking' },
+        { type: 'text', text: '{"category":"other"}' },
+      ],
+    })
+    expect(interpretMessage(message)).toEqual({ ok: true, json: { category: 'other' } })
+    expect(interpretMessage(okMessage('', { content: [{ type: 'text', text: '{"a":' }, { type: 'fallback' }] }))).toEqual({
+      ok: false, reason: 'no-output',
     })
   })
   it('reports empty and non-JSON output', () => {

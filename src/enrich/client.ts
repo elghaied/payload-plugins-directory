@@ -63,7 +63,7 @@ export function enrichClientFromEnv(env: Record<string, string | undefined> = pr
 }
 
 export type AnthropicErrorClass =
-  /** Fails the same way on every attempt (bad request, bad key, no permission): do not retry (ruling F16). */
+  /** Fails the same way on every attempt (bad request, bad key, no permission, unknown model): do not retry (ruling F16). */
   | { kind: 'permanent'; status: number }
   /** Rate limit, server error, overloaded (529) or connection failure: retry, not before `retryAt` when known. */
   | { kind: 'transient'; status: number | null; retryAt: Date | null }
@@ -86,7 +86,9 @@ export function classifyAnthropicError(err: unknown, now: Date = new Date()): An
   if (
     err instanceof Anthropic.BadRequestError ||
     err instanceof Anthropic.AuthenticationError ||
-    err instanceof Anthropic.PermissionDeniedError
+    err instanceof Anthropic.PermissionDeniedError ||
+    // An unknown or retired model id (directory-settings.ai.model): fails until an admin changes it.
+    err instanceof Anthropic.NotFoundError
   ) {
     return { kind: 'permanent', status: err.status }
   }
