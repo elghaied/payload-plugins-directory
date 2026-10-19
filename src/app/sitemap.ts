@@ -2,24 +2,26 @@ import type { MetadataRoute } from "next";
 import { getPluginSummaries } from "@/lib/directory/queries";
 import { getCategoryIndex } from "@/lib/directory/taxonomy";
 import { categoryHref } from "@/lib/taxonomy/links";
+import { getServerURL } from "@/lib/serverUrl";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const base = getServerURL();
   const [plugins, categories] = await Promise.all([getPluginSummaries(), getCategoryIndex()]);
 
   // Empty categories are thin pages: only categories with at least one listed plugin are submitted.
   const categoryUrls: MetadataRoute.Sitemap = categories
     .filter((c) => c.count > 0)
     .map((c) => ({
-      url: `https://payloaddirectory.dev${categoryHref(c.path)}`,
+      url: `${base}${categoryHref(c.path)}`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.6,
     }));
 
   const pluginUrls: MetadataRoute.Sitemap = plugins.map((plugin) => ({
-    url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
+    url: `${base}/plugins/${plugin.slug}`,
     lastModified: plugin.lastUpdate ? new Date(plugin.lastUpdate) : undefined,
     changeFrequency: "weekly",
     priority: 0.7,
@@ -27,25 +29,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     {
-      url: "https://payloaddirectory.dev",
+      url: base,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
     },
     {
-      url: "https://payloaddirectory.dev/stats",
+      url: `${base}/stats`,
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 0.6,
     },
     {
-      url: "https://payloaddirectory.dev/about",
+      url: `${base}/about`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.4,
     },
     {
-      url: "https://payloaddirectory.dev/categories",
+      url: `${base}/categories`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.6,

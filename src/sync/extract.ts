@@ -1,4 +1,5 @@
 import { isValidSlug } from '@/lib/cacheTags'
+import { NO_DESCRIPTION } from '@/lib/directory/tagline'
 import type { PackageJson } from '@/types'
 import { InvalidGitHubPathError, type GitHubClient, type GitHubRepo, type RawFileLimit } from './github'
 import { getPayloadVersion, getWorkspaceDirs, isLikelyPlugin, isMonorepo } from './packages'
@@ -23,7 +24,6 @@ export type Extraction = { plugins: ExtractedPlugin[]; isMonorepo: boolean }
 type ReadPackage = { json: PackageJson }
 
 const README_NAMES = ['README.md', 'readme.md', 'Readme.md']
-const NO_DESCRIPTION = 'No description available'
 const BATCH = 5
 /** Caps on GitHub requests driven by an untrusted package.json. */
 export const MAX_WORKSPACE_DIRS = 20

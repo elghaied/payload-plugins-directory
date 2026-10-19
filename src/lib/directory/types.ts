@@ -34,6 +34,8 @@ export type PluginSummary = {
 export type PluginDetail = PluginSummary & {
   /** The author's own description (GitHub/npm), shown below the AI overview. */
   authorDescription: string
+  /** The claimed maintainer's own tagline, shown in the detail header; absent when unset. */
+  customTagline?: string
   readme?: string
   /** Full README for the "Full README" disclosure; `readme` stays the short preview. */
   readmeFull?: string

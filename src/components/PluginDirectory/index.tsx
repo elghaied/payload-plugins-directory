@@ -1064,9 +1064,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
           </DrawerHeader>
           <div className="px-4 pb-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Version</label>
+              <label htmlFor="filter-drawer-version" className="text-sm font-medium">Version</label>
               <Select value={versionFilter} onValueChange={(v) => { handleVersionChange(v as VersionFilter); }}>
-                <SelectTrigger aria-label="Filter by version">
+                <SelectTrigger id="filter-drawer-version" aria-label="Filter by version">
                   <SelectValue placeholder="All Versions" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1081,9 +1081,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Source</label>
+              <label htmlFor="filter-drawer-source" className="text-sm font-medium">Source</label>
               <Select value={sourceFilter} onValueChange={(v) => { handleSourceChange(v as SourceFilter); }}>
-                <SelectTrigger aria-label="Filter by source">
+                <SelectTrigger id="filter-drawer-source" aria-label="Filter by source">
                   <SelectValue placeholder="All Sources" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1095,9 +1095,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">License</label>
+              <label htmlFor="filter-drawer-license" className="text-sm font-medium">License</label>
               <Select value={licenseFilter} onValueChange={handleLicenseChange}>
-                <SelectTrigger aria-label="Filter by license">
+                <SelectTrigger id="filter-drawer-license" aria-label="Filter by license">
                   <SelectValue placeholder="All Licenses" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1123,9 +1123,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             />
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Sort</label>
+              <label htmlFor="filter-drawer-sort" className="text-sm font-medium">Sort</label>
               <Select value={sortBy} onValueChange={handleSortChange}>
-                <SelectTrigger aria-label="Sort plugins">
+                <SelectTrigger id="filter-drawer-sort" aria-label="Sort plugins">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>

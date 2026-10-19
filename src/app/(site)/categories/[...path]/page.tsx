@@ -1,18 +1,41 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
 import { PluginListCard } from "@/components/PluginListCard";
+import { truncateAtWord } from "@/lib/directory/readme";
 import { getCategoryPage } from "@/lib/directory/taxonomy";
+import { getServerURL } from "@/lib/serverUrl";
 import { categoryHref } from "@/lib/taxonomy/links";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ path: string[] }> };
 
+/** Decoded segments, or null when one is not a single path segment (a "/" or "%2F" inside it, or bad encoding). */
+function segmentsOf(path: string[]): string[] | null {
+  const out: string[] = [];
+  for (const raw of path) {
+    let seg: string;
+    try {
+      seg = decodeURIComponent(raw);
+    } catch {
+      return null;
+    }
+    if (!seg || seg.includes("/")) return null;
+    out.push(seg);
+  }
+  return out;
+}
+
+/** One lookup per request for generateMetadata and the page (React.cache keys on the joined path). */
+const loadPath = cache(async (path: string) => getCategoryPage(path));
+
 async function load(params: Props["params"]) {
-  const { path } = await params;
-  const data = await getCategoryPage(path.join("/"));
+  const segments = segmentsOf((await params).path);
+  if (!segments) notFound();
+  const data = await loadPath(segments.join("/"));
   if (!data) notFound();
   return data;
 }
@@ -20,13 +43,13 @@ async function load(params: Props["params"]) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { node } = await load(params);
   const title = `${node.title} plugins for Payload CMS — Payload Plugin Directory`;
-  const description = (node.intro ?? `Payload CMS plugins in ${node.title}.`).slice(0, 160);
+  const description = truncateAtWord(node.intro ?? `Payload CMS plugins in ${node.title}.`, 160);
   return { title, description, openGraph: { title, description, type: "website" }, twitter: { card: "summary", title, description } };
 }
 
 export default async function CategoryPage({ params }: Props) {
   const { node, trail, children, plugins } = await load(params);
-  const base = "https://payloaddirectory.dev";
+  const base = getServerURL();
   const jsonLd = [
     {
       "@context": "https://schema.org",
@@ -66,7 +89,7 @@ export default async function CategoryPage({ params }: Props) {
         <header className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{node.title}</h1>
           {node.intro && <p className="mt-2 text-muted-foreground leading-relaxed max-w-3xl">{node.intro}</p>}
-          <p className="mt-2 text-sm text-muted-foreground">{plugins.length} plugins, ranked by health score, then weekly downloads.</p>
+          <p className="mt-2 text-sm text-muted-foreground">{plugins.length} {plugins.length === 1 ? "plugin" : "plugins"}, ranked by health score, then weekly downloads.</p>
         </header>
 
         {children.length > 0 && (

@@ -63,9 +63,26 @@ describe('safety', () => {
       ai: { tagline: 'T', summary: 'S', features: ['F'], useCases: ['U'], failure: 'boom', failedKey: 'k', failedAt: 'x', promptHash: 'h' },
       syncTrashReason: 'gone', locks: { summary: true },
     }
+    const keysOf = (v: unknown): string[] =>
+      Array.isArray(v) ? v.flatMap(keysOf) : v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => [k, ...keysOf(x)]) : []
     for (const out of [toSummary(full as never), toDetail(full as never)]) {
-      const json = JSON.stringify(out)
-      for (const k of ['failure', 'failedKey', 'failedAt', 'promptHash', 'syncTrashReason', 'locks', 'boom']) expect(json).not.toContain(k)
+      const keys = keysOf(out)
+      for (const k of ['failure', 'failedKey', 'failedAt', 'promptHash', 'syncTrashReason', 'locks']) expect(keys).not.toContain(k)
+      expect(JSON.stringify(out)).not.toContain('boom')
     }
+  })
+})
+
+describe('final fix C2: detail fields', () => {
+  it('drops the sync placeholder author description and exposes the maintainer tagline', () => {
+    expect(toDetail({ ...doc, description: 'No description available' } as never).authorDescription).toBe('')
+    expect(toDetail({ ...doc, description: '  ' } as never).authorDescription).toBe('')
+    expect(toDetail({ ...doc, customTagline: ' Mine ' } as never).customTagline).toBe('Mine')
+    expect(toDetail(doc as never)).not.toHaveProperty('customTagline')
+  })
+  it('notes "generated" only when the summary itself is machine-written', () => {
+    expect(toDetail({ ...doc, locks: { summary: true } } as never).ai?.generated).toBe(false)
+    expect(toDetail({ ...doc, ai: { ...doc.ai, summary: '' } } as never).ai?.generated).toBe(false)
+    expect(toDetail(doc as never).ai?.generated).toBe(true)
   })
 })

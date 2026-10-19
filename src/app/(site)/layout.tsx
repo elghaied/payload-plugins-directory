@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/Navbar";
+import { getServerURL } from "@/lib/serverUrl";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
   variable: "--font-geist-sans",
@@ -14,11 +15,10 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
+const siteMetadata: Metadata = {
   title: "Payload CMS Plugin Directory — Discover Community & Official Plugins",
   description:
     "Browse and discover 160+ Payload CMS plugins. Filter by version (v1, v2, v3), sort by stars, forks, or recent updates. Find official and community plugins for your Payload project.",
-  metadataBase: new URL("https://payloaddirectory.dev"),
   alternates: {
     canonical: "/",
     types: { "application/rss+xml": "/feed.xml" },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     title: "Payload CMS Plugin Directory",
     description:
       "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",
-    url: "https://payloaddirectory.dev",
+    url: "/",
     siteName: "Payload Plugin Directory",
     type: "website",
     locale: "en_US",
@@ -48,6 +48,17 @@ export const metadata: Metadata = {
     "payload plugin directory",
   ],
 };
+
+/** Absolute URLs come from SERVER_URL at request time (one image serves staging and production). */
+export function generateMetadata(): Metadata {
+  let metadataBase: URL | undefined;
+  try {
+    metadataBase = new URL(getServerURL());
+  } catch {
+    metadataBase = undefined; // unset or malformed (local): Next falls back to the request host
+  }
+  return { ...siteMetadata, ...(metadataBase ? { metadataBase } : {}) };
+}
 
 export default function RootLayout({
   children,

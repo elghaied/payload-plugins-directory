@@ -1,4 +1,5 @@
 import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
+import { getServerURL } from "@/lib/serverUrl";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ function escapeXml(str: string): string {
 }
 
 export async function GET() {
+  const base = getServerURL();
   const plugins = await getPluginSummaries();
   const metadata = await getDirectoryMeta();
 
@@ -27,7 +29,7 @@ export async function GET() {
       (p) => `
     <item>
       <title>${escapeXml(p.name)}</title>
-      <link>${escapeXml(`https://payloaddirectory.dev/plugins/${p.slug}`)}</link>
+      <link>${escapeXml(`${base}/plugins/${p.slug}`)}</link>
       <description>${escapeXml(p.description)}</description>
       <pubDate>${new Date(p.createdAt).toUTCString()}</pubDate>
       <guid isPermaLink="false">${p.slug}</guid>
@@ -39,10 +41,10 @@ export async function GET() {
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Payload CMS Plugin Directory</title>
-    <link>https://payloaddirectory.dev</link>
+    <link>${escapeXml(base)}</link>
     <description>New Payload CMS plugins</description>
     <lastBuildDate>${new Date(metadata.lastUpdated).toUTCString()}</lastBuildDate>
-    <atom:link href="https://payloaddirectory.dev/feed.xml" rel="self" type="application/rss+xml" />${items}
+    <atom:link href="${escapeXml(`${base}/feed.xml`)}" rel="self" type="application/rss+xml" />${items}
   </channel>
 </rss>`;
 

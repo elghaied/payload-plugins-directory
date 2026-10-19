@@ -22,7 +22,7 @@ export function TaxonomyFilters({ categories, tags, category, tag, uncategorized
 
   const categorySelect = (
     <Select value={category} onValueChange={onCategoryChange}>
-      <SelectTrigger className={inline ? "hidden sm:flex w-48" : undefined} aria-label="Filter by category">
+      <SelectTrigger id={inline ? undefined : "filter-drawer-category"} className={inline ? "hidden sm:flex w-48" : undefined} aria-label="Filter by category">
         <SelectValue placeholder="All Categories">
           {category === "all" ? "All Categories" : category === UNCATEGORIZED ? "Uncategorized" : usedCategories.find((c) => c.slug === category)?.title}
         </SelectValue>
@@ -46,7 +46,7 @@ export function TaxonomyFilters({ categories, tags, category, tag, uncategorized
 
   const tagSelect = (
     <Select value={tag} onValueChange={onTagChange}>
-      <SelectTrigger className={inline ? "hidden sm:flex w-40" : undefined} aria-label="Filter by tag">
+      <SelectTrigger id={inline ? undefined : "filter-drawer-tag"} className={inline ? "hidden sm:flex w-40" : undefined} aria-label="Filter by tag">
         <SelectValue placeholder="All Tags">
           {tag === "all" ? "All Tags" : tags.find((t) => t.slug === tag)?.title}
         </SelectValue>
@@ -73,12 +73,12 @@ export function TaxonomyFilters({ categories, tags, category, tag, uncategorized
   return (
     <>
       <div className="space-y-2">
-        <label className="text-sm font-medium">Category</label>
+        <label htmlFor="filter-drawer-category" className="text-sm font-medium">Category</label>
         {categorySelect}
       </div>
       {tags.length > 0 && (
         <div className="space-y-2">
-          <label className="text-sm font-medium">Tag</label>
+          <label htmlFor="filter-drawer-tag" className="text-sm font-medium">Tag</label>
           {tagSelect}
         </div>
       )}

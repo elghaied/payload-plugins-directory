@@ -18,6 +18,8 @@ import {
   Flag,
 } from "lucide-react";
 import { getPluginDetail } from "@/lib/directory/queries";
+import { capReadme } from "@/lib/directory/readme";
+import { getServerURL } from "@/lib/serverUrl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
@@ -77,13 +79,14 @@ export default async function PluginDetailPage({
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
   const trail = plugin.category ? trailFor(await getCategoryNodes(), plugin.category.path) : [];
+  const readmeFull = plugin.readmeFull ? capReadme(plugin.readmeFull) : null;
 
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: plugin.name,
     description: plugin.description,
-    url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
+    url: `${getServerURL()}/plugins/${plugin.slug}`,
     applicationCategory: "Plugin",
     operatingSystem: "Node.js",
     ...(plugin.category ? { applicationSubCategory: plugin.category.title } : {}),
@@ -159,7 +162,11 @@ export default async function PluginDetailPage({
                   </Badge>
                 )}
               </div>
-              {plugin.category && (
+              {plugin.customTagline && (
+                <p className="mt-2 text-muted-foreground">{plugin.customTagline}</p>
+              )}
+              {/* Only a category that resolves in the current tree (its trail) gets a badge: no link to a 404. */}
+              {plugin.category && trail.length > 0 && (
                 <Link
                   href={categoryHref(plugin.category.path)}
                   className="inline-flex mt-2 text-xs px-2 py-0.5 rounded-full border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
@@ -366,12 +373,23 @@ export default async function PluginDetailPage({
               <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
                 {plugin.readme}
               </pre>
-              {plugin.readmeFull && plugin.readmeFull.length > plugin.readme.length && (
+              {readmeFull && readmeFull.text.length > plugin.readme.length && (
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Full README</summary>
                   <pre className="mt-3 whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
-                    {plugin.readmeFull}
+                    {readmeFull.text}
                   </pre>
+                  {readmeFull.truncated && (
+                    <a
+                      href={plugin.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 mt-3 text-sm text-muted-foreground hover:text-foreground"
+                    >
+                      View full README on GitHub
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  )}
                 </details>
               )}
             </CardContent>

@@ -2,12 +2,14 @@ import { Suspense } from "react";
 import { PluginDirectory } from "@/components/PluginDirectory";
 import { getHomeFilterOptions } from "@/lib/directory/taxonomy";
 import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
+import { getServerURL } from "@/lib/serverUrl";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const [plugins, metadata, filters] = await Promise.all([getPluginSummaries(), getDirectoryMeta(), getHomeFilterOptions()]);
 
+  const base = getServerURL();
   const topPlugins = [...plugins]
     .sort((a, b) => b.stars - a.stars)
     .slice(0, 20);
@@ -17,7 +19,7 @@ export default async function Page() {
     "@type": "CollectionPage",
     name: "Payload CMS Plugin Directory",
     description: `Browse and discover ${metadata.totalCount}+ Payload CMS plugins.`,
-    url: "https://payloaddirectory.dev",
+    url: base,
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: metadata.totalCount,
@@ -28,7 +30,7 @@ export default async function Page() {
           "@type": "SoftwareApplication",
           name: plugin.name,
           description: plugin.description,
-          url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
+          url: `${base}/plugins/${plugin.slug}`,
           applicationCategory: "Plugin",
           operatingSystem: "Node.js",
           author: {

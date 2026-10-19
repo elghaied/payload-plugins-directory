@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/directory/queries', () => ({
   getPluginSummaries: async () => [{ slug: 'a', lastUpdate: '2026-10-01T00:00:00.000Z' }],
@@ -12,6 +12,9 @@ vi.mock('@/lib/directory/taxonomy', () => ({
 }))
 
 import sitemap from '@/app/sitemap'
+
+beforeEach(() => vi.stubEnv('SERVER_URL', 'https://payloaddirectory.dev'))
+afterEach(() => vi.unstubAllEnvs())
 
 describe('sitemap', () => {
   it('lists the categories index and every non-empty category page', async () => {

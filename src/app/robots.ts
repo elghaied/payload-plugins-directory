@@ -13,6 +13,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://payloaddirectory.dev/sitemap.xml",
+    sitemap: `${getServerURL()}/sitemap.xml`,
   };
 }

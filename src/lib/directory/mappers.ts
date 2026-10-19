@@ -1,5 +1,5 @@
 import { readmePreview } from './readme'
-import { pluginTagline } from './tagline'
+import { authorDescriptionOf, pluginTagline } from './tagline'
 import type { Plugin, Repository } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
 import type { PluginDetail, PluginSummary } from './types'
@@ -29,8 +29,8 @@ function aiOverviewOf(doc: Plugin): PluginDetail['ai'] {
   const useCases = doc.ai?.useCases ?? []
   if (!summary && features.length === 0 && useCases.length === 0) return undefined
   const locks = doc.locks ?? {}
-  // The "generated from the README" note is shown while any displayed part is still machine-written.
-  const generated = (Boolean(summary) && !locks.summary) || (features.length > 0 && !locks.features) || (useCases.length > 0 && !locks.useCases)
+  // "Summary generated from the README" describes the summary: shown only while the summary itself is machine-written.
+  const generated = Boolean(summary) && !locks.summary
   return { summary, features, useCases, generated }
 }
 
@@ -73,7 +73,8 @@ export function toDetail(doc: Plugin): PluginDetail {
   const category = categoryOf(doc)
   return {
     ...toSummary(doc),
-    authorDescription: doc.description ?? '',
+    authorDescription: authorDescriptionOf(doc.description),
+    ...(doc.customTagline?.trim() ? { customTagline: doc.customTagline.trim() } : {}),
     readme: readmePreview(doc.readme),
     readmeFull: doc.readme ?? undefined,
     payloadVersionRange: doc.payloadVersionRange ?? null,

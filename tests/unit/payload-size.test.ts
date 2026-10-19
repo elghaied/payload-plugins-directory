@@ -20,11 +20,12 @@ describe('home payload', () => {
   it('stays small when every plugin is categorised and tagged (raw <= 400 KB, gzip <= 60 KB)', () => {
     const { repositories, plugins } = mapLegacy(data as LegacyPluginsData, [])
     const repos = new Map(repositories.map((r, i) => [r.fullName, { id: i, ...r }]))
-    const category = { id: 1, slug: 's3', title: 'S3', _h_slugPath: 'storage/s3' }
-    const _h_tags = [1, 2, 3].map((id) => ({ id, slug: `tag-${id}`, title: `Tag ${id}` }))
+    // Varied per plugin (a realistic spread of ~30 categories and ~60 tags): identical values would compress unrealistically well.
+    const categoryFor = (i: number) => ({ id: i % 30, slug: `category-${i % 30}`, title: `Category ${i % 30}`, _h_slugPath: `group-${i % 8}/category-${i % 30}` })
+    const tagsFor = (i: number) => [i, i * 7 + 3, i * 13 + 5].map((n) => ({ id: n % 60, slug: `tag-slug-${n % 60}`, title: `Tag ${n % 60}` }))
     const json = JSON.stringify(
       plugins.map(({ repositoryFullName, ...p }, i) =>
-        toSummary({ id: i, ...p, category, _h_tags, repository: repos.get(repositoryFullName) } as never),
+        toSummary({ id: i, ...p, category: categoryFor(i), _h_tags: tagsFor(i), repository: repos.get(repositoryFullName) } as never),
       ),
     )
     expect(Buffer.byteLength(json)).toBeLessThanOrEqual(400_000)
