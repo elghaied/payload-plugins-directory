@@ -55,15 +55,16 @@ export function groupSeries(rows: { id: number; date: unknown; value: number | n
 }
 
 /**
- * Per-day totals from `sum(col) / count(col) group by date` rows (count the column, not `*`, so NULL rows are not "reporting"). A day where noticeably fewer entities
- * reported than the running peak (a snapshot run that died halfway) is dropped rather than plotted as a dip.
+ * Per-day totals from `sum(col) / count(col) group by date` rows (count the column, not `*`,
+ * so NULL rows are not "reporting"). A day where noticeably fewer entities reported than the
+ * running peak (a snapshot run that died halfway) is dropped rather than plotted as a dip.
  */
 export function ecosystemSeries(
   rows: { date: unknown; total: number | string | null; reporting: number | string }[],
   minShare = 0.9,
 ): Point[] {
   const sorted = rows
-    .map((r) => ({ date: asDay(r.date), total: r.total === null ? null : Number(r.total), reporting: Number(r.reporting) }))
+    .map((r) => ({ date: asDay(r.date), total: r.total == null ? null : Number(r.total), reporting: Number(r.reporting) }))
     .sort(byDate)
   let peak = 0
   const out: Point[] = []

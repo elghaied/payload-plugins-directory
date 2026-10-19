@@ -108,6 +108,12 @@ describe('newThisMonth', () => {
     ]
     expect(newThisMonth(refs, today).map((n) => [n.slug, n.reason])).toEqual([['a', 'new-repository']])
   })
+  it('breaks same-day ties by name then slug, regardless of input order', () => {
+    const mk = (id: number, slug: string, name: string) =>
+      ref(id, slug, repo(id, `o/r${id}`), { name, firstSeenAt: '2026-10-15T00:00:00Z' })
+    const refs = [mk(4, 'z2', 'Same'), mk(3, 'a1', 'Same'), mk(2, 'b', 'Beta'), ref(1, 'base', repo(1, 'o/base'))]
+    expect(newThisMonth(refs, '2026-10-19').map((n) => n.slug)).toEqual(['b', 'a1', 'z2'])
+  })
   it('sorts newest first', () => {
     const refs = [
       ref(1, 'base', repo(1, 'o/base')),

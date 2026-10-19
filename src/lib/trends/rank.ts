@@ -6,7 +6,8 @@ import type { DownloadMover, ListedPluginRef, NewPlugin, PluginLink, RecentRepo,
 export const MIN_GROWTH_DELTA = 2
 
 const cmp = (a: string, b: string) => a.localeCompare(b, 'en')
-const byName = (a: { name: string }, b: { name: string }) => cmp(a.name, b.name)
+const byName = (a: { name: string; slug: string }, b: { name: string; slug: string }) =>
+  cmp(a.name, b.name) || cmp(a.slug, b.slug)
 
 function compareGrowth(a: Growth, b: Growth, aName: string, bName: string): number {
   if (b.delta !== a.delta) return b.delta - a.delta
@@ -96,7 +97,7 @@ export function newThisMonth(refs: ListedPluginRef[], today: Day, windowDays = 3
     })
   }
   return out
-    .sort((a, b) => (a.addedOn < b.addedOn ? 1 : a.addedOn > b.addedOn ? -1 : a.name.localeCompare(b.name)))
+    .sort((a, b) => (a.addedOn < b.addedOn ? 1 : a.addedOn > b.addedOn ? -1 : byName(a, b)))
     .slice(0, limit)
 }
 
@@ -108,6 +109,6 @@ export function recentlyUpdated(refs: ListedPluginRef[], limit = 12): RecentRepo
     out.push({ fullName: repo.fullName, owner: repo.owner, ownerAvatar: repo.ownerAvatar, pushedAt: repo.pushedAt, plugins: links(plugins) })
   }
   return out
-    .sort((a, b) => Date.parse(b.pushedAt) - Date.parse(a.pushedAt) || a.fullName.localeCompare(b.fullName))
+    .sort((a, b) => Date.parse(b.pushedAt) - Date.parse(a.pushedAt) || cmp(a.fullName, b.fullName))
     .slice(0, limit)
 }

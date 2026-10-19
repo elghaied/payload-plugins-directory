@@ -78,7 +78,7 @@ describe('ecosystemSeries', () => {
     expect(
       ecosystemSeries([
         { date: '2026-10-18', total: null, reporting: 0 },
-        { date: '2026-10-19', total: null, reporting: 10 },
+        { date: '2026-10-19', total: null, reporting: 0 },
         { date: '2026-10-20', total: 7, reporting: 10 },
       ]),
     ).toEqual([{ date: '2026-10-20', value: 7 }])
