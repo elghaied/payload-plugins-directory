@@ -1,6 +1,7 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import Anthropic from '@anthropic-ai/sdk'
+import { jobStatus } from '@/db/jobStatus'
 import { recordEnrichmentFailure } from '@/enrich/apply'
 import {
   cancelBatchQuietly,
@@ -9,6 +10,7 @@ import {
   DEFAULT_MAX_PER_PASS,
   DIRECT_MAX,
   findStalePlugins,
+  INFLIGHT_KEY,
   maxPerPassFromEnv,
   readInflight,
   runEnrichAll,
@@ -226,24 +228,67 @@ describe('durable in-flight batch marker', () => {
     const fake = fakeEnrichClient()
     const t = LATER()
     const first = await runEnrichAll(payload, fake, t, { batchMin: 1 })
-    expect(await readInflight(payload)).toEqual({ state: 'submitted', batchId: first.batch!.batchId, at: t.toISOString() })
+    expect(await readInflight(payload)).toMatchObject({ state: 'submitted', batchId: first.batch!.batchId, at: t.toISOString() })
     expect(await jobs()).toBe(0) // nothing queued the poller: only the marker guards
     expect((await runEnrichAll(payload, fake, at(t, 60), { batchMin: 1 })).status).toBe('batch-in-flight')
     expect((await runEnrichAll(payload, fake, at(t, 24 * 60), { batchMin: 1, force: true })).status).toBe('batch-in-flight')
     expect(fake.batches.size).toBe(1)
   })
 
-  it('a create that failed after the submitting marker blocks for 1 h, then is cleared with a warning', async () => {
+  const failingCreate = (err: unknown) => ({ ...fakeEnrichClient(), createBatch: async () => { throw err } })
+
+  it('a create with an unknown outcome (connection lost) keeps the submitting marker for the full 25 h', async () => {
     const t = LATER()
-    const broken = { ...fakeEnrichClient(), createBatch: async () => { throw new Error('response lost') } }
-    await expect(runEnrichAll(payload, broken, t, { batchMin: 1 })).rejects.toThrow('response lost')
-    expect(await readInflight(payload)).toEqual({ state: 'submitting', at: t.toISOString() })
+    const lost = new Anthropic.APIConnectionError({ message: 'socket hang up' })
+    await expect(runEnrichAll(payload, failingCreate(lost), t, { batchMin: 1 })).rejects.toThrow('socket hang up')
+    expect(await readInflight(payload)).toMatchObject({ state: 'submitting', at: t.toISOString() })
+    expect(await readInflight(payload)).not.toHaveProperty('notCreated')
+    const fake = fakeEnrichClient()
+    expect((await runEnrichAll(payload, fake, at(t, 61), { batchMin: 1 })).status).toBe('batch-in-flight')
+    expect((await runEnrichAll(payload, fake, at(t, 24 * 60 + 59), { batchMin: 1 })).status).toBe('batch-in-flight')
+    const r = await runEnrichAll(payload, fake, at(t, 25 * 60 + 1), { batchMin: 1 })
+    expect(r.status).toBe('batch')
+    expect(r.warning).toMatch(/older than 25 h/)
+    expect(fake.batches.size).toBe(1)
+  })
+
+  it('a create the API rejected with an HTTP status clears the marker at once', async () => {
+    const t = LATER()
+    const rejected = Anthropic.APIError.generate(500, { error: { type: 'api_error', message: 'boom' } }, 'boom', new Headers())
+    await expect(runEnrichAll(payload, failingCreate(rejected), t, { batchMin: 1 })).rejects.toBeInstanceOf(Anthropic.InternalServerError)
+    expect(await readInflight(payload)).toBeNull()
+    const fake = fakeEnrichClient()
+    expect((await runEnrichAll(payload, fake, at(t, 1), { batchMin: 1 })).status).toBe('batch')
+  })
+
+  it('a submitting marker flagged notCreated (its delete failed) is cleared after 1 h with a warning', async () => {
+    const t = LATER()
+    const details = { state: 'submitting', at: t.toISOString(), claim: 'c1', notCreated: true }
+    await payload.db.drizzle.insert(jobStatus).values({ key: INFLIGHT_KEY, details, updatedAt: t })
     const fake = fakeEnrichClient()
     expect((await runEnrichAll(payload, fake, at(t, 59), { batchMin: 1 })).status).toBe('batch-in-flight')
     const r = await runEnrichAll(payload, fake, at(t, 61), { batchMin: 1 })
     expect(r.status).toBe('batch')
-    expect(r.warning).toMatch(/submitting/)
+    expect(r.warning).toMatch(/rejected/)
     expect((await readInflight(payload))?.batchId).toBe(r.batch!.batchId)
+  })
+
+  it('claims atomically: two overlapping passes create exactly one batch, also when both clear an expired marker', async () => {
+    const t = LATER()
+    const slow = fakeEnrichClient()
+    const create = slow.createBatch.bind(slow)
+    slow.createBatch = async (items) => {
+      await new Promise((r) => setTimeout(r, 50))
+      return create(items)
+    }
+    const statuses = (await Promise.all([1, 2].map(() => runEnrichAll(payload, slow, t, { batchMin: 1 })))).map((r) => r.status)
+    expect(statuses.sort()).toEqual(['batch', 'batch-in-flight'])
+    expect(slow.batches.size).toBe(1)
+
+    const later = at(t, 26 * 60) // the marker above has expired: both runs see it and try to clear it
+    const again = (await Promise.all([1, 2].map(() => runEnrichAll(payload, slow, later, { batchMin: 1 })))).map((r) => r.status)
+    expect(again.sort()).toEqual(['batch', 'batch-in-flight'])
+    expect(slow.batches.size).toBe(2)
   })
 
   it('a submitted marker older than 25 h is cleared with a warning', async () => {

@@ -103,6 +103,16 @@ export function classifyAnthropicError(err: unknown, now: Date = new Date()): An
   return { kind: 'other' }
 }
 
+/**
+ * The API answered with an HTTP status, so the request was certainly not executed (batch create: no batch exists).
+ * Connection errors, timeouts and aborts are APIErrors without a status: their outcome is unknown.
+ */
+export const isDefiniteCreateFailure = (err: unknown): boolean =>
+  err instanceof Anthropic.APIError &&
+  !(err instanceof Anthropic.APIConnectionError) &&
+  !(err instanceof Anthropic.APIUserAbortError) &&
+  typeof err.status === 'number'
+
 /** The batch id is unknown to the API (404): there is nothing left to poll or collect. */
 export const isBatchNotFound = (err: unknown): boolean => err instanceof Anthropic.NotFoundError
 

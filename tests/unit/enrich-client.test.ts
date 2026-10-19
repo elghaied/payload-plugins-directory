@@ -5,6 +5,7 @@ import {
   createEnrichClient,
   enrichClientFromEnv,
   FALLBACK_BETA,
+  isDefiniteCreateFailure,
   isPermanentAnthropicError,
   type AnthropicLike,
 } from '@/enrich/client'
@@ -72,6 +73,18 @@ describe('createEnrichClient', () => {
     expect(enrichClientFromEnv({})).toBeNull()
     expect(enrichClientFromEnv({ ANTHROPIC_API_KEY: '' })).toBeNull()
     expect(enrichClientFromEnv({ ANTHROPIC_API_KEY: 'sk-test' })).not.toBeNull() // constructs only; sends nothing
+  })
+})
+
+describe('isDefiniteCreateFailure', () => {
+  it('is true only when the API answered with an HTTP status (no batch was created)', () => {
+    for (const status of [400, 401, 429, 500, 529]) {
+      expect(isDefiniteCreateFailure(Anthropic.APIError.generate(status, { error: { type: 'x', message: 'x' } }, 'x', new Headers()))).toBe(true)
+    }
+    expect(isDefiniteCreateFailure(new Anthropic.APIConnectionError({ message: 'lost' }))).toBe(false)
+    expect(isDefiniteCreateFailure(new Anthropic.APIConnectionTimeoutError())).toBe(false)
+    expect(isDefiniteCreateFailure(new Anthropic.APIUserAbortError())).toBe(false)
+    expect(isDefiniteCreateFailure(new Error('anything else'))).toBe(false)
   })
 })
 

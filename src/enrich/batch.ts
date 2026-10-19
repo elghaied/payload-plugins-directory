@@ -1,7 +1,8 @@
-import { eq } from '@payloadcms/db-postgres/drizzle'
+import { and, eq, isNull, sql } from '@payloadcms/db-postgres/drizzle'
+import { randomUUID } from 'node:crypto'
 import type { Payload, Where } from 'payload'
 import { jobStatus } from '@/db/jobStatus'
-import { isBatchNotFound } from './client'
+import { isBatchNotFound, isDefiniteCreateFailure } from './client'
 import { allLocked, failureKey, findActivePlugin, loadEnrichContext, toPluginInput } from './context'
 import { settleMessage } from './enrichPlugin'
 import { buildRequest } from './prompt'
@@ -25,46 +26,89 @@ export function maxPerPassFromEnv(env: Record<string, string | undefined> = proc
 }
 
 /**
- * Durable in-flight batch marker (controller ruling), one job_status row. Written before the batch is created
- * (`submitting`) and after (`submitted` + batchId); while it is younger than INFLIGHT_MAX_MS no other batch is
+ * Durable in-flight batch marker (controller ruling), one job_status row. Claimed atomically (insert-if-absent) as
+ * `submitting` before the batch is created, then set to `submitted` + batchId. While it exists no other batch is
  * submitted, independent of payload-jobs (a crash between create and queueing the poller still blocks).
  */
 export const INFLIGHT_KEY = 'enrich-batch-inflight'
 /** Batches expire after 24 h; a marker older than this cannot belong to a running batch. */
 export const INFLIGHT_MAX_MS = 25 * 3_600_000
-/** A `submitting` marker without batchId this old means the process died before (or while) creating the batch. */
+/**
+ * A `submitting` marker flagged `notCreated` (the API answered the create with an HTTP error, so no batch exists)
+ * is cleared after this long if its immediate delete did not happen. Unflagged ones (unknown outcome) last 25 h.
+ */
 export const SUBMITTING_MAX_MS = 3_600_000
 
-export type InflightMarker = { state: 'submitting' | 'submitted'; at: string; batchId?: string }
-
-export async function readInflight(payload: Payload): Promise<InflightMarker | null> {
-  const rows = await payload.db.drizzle.select().from(jobStatus).where(eq(jobStatus.key, INFLIGHT_KEY))
-  if (!rows[0]) return null
-  const d = rows[0].details as Partial<InflightMarker> | null
-  // An unreadable row counts as an abandoned 'submitting' marker, so enrich-all clears it with a warning.
-  if (!d || (d.state !== 'submitting' && d.state !== 'submitted') || typeof d.at !== 'string') {
-    return { state: 'submitting', at: new Date(0).toISOString() }
-  }
-  return { state: d.state, at: d.at, ...(typeof d.batchId === 'string' ? { batchId: d.batchId } : {}) }
+export type InflightMarker = {
+  state: 'submitting' | 'submitted'
+  at: string
+  /** Unique per claim: later updates and deletes touch only this run's marker. */
+  claim: string
+  batchId?: string
+  notCreated?: boolean
 }
 
-async function writeInflight(payload: Payload, marker: InflightMarker, now: Date): Promise<void> {
-  await payload.db.drizzle
+type InflightRow = { marker: InflightMarker; raw: unknown }
+
+async function readInflightRow(payload: Payload): Promise<InflightRow | null> {
+  const rows = await payload.db.drizzle.select().from(jobStatus).where(eq(jobStatus.key, INFLIGHT_KEY))
+  if (!rows[0]) return null
+  const raw: unknown = rows[0].details
+  const d = raw as Partial<InflightMarker> | null
+  // An unreadable row counts as older than 25 h, so enrich-all clears it with a warning.
+  if (!d || (d.state !== 'submitting' && d.state !== 'submitted') || typeof d.at !== 'string') {
+    return { marker: { state: 'submitting', at: new Date(0).toISOString(), claim: '' }, raw }
+  }
+  return {
+    marker: {
+      state: d.state,
+      at: d.at,
+      claim: typeof d.claim === 'string' ? d.claim : '',
+      ...(typeof d.batchId === 'string' ? { batchId: d.batchId } : {}),
+      ...(d.notCreated === true ? { notCreated: true } : {}),
+    },
+    raw,
+  }
+}
+
+export async function readInflight(payload: Payload): Promise<InflightMarker | null> {
+  return (await readInflightRow(payload))?.marker ?? null
+}
+
+const markerKey = eq(jobStatus.key, INFLIGHT_KEY)
+const claimIs = (claim: string) => and(markerKey, sql`${jobStatus.details}->>'claim' = ${claim}`)
+
+/** Insert-if-absent: true only for the one run that created the row. */
+async function claimInflight(payload: Payload, marker: InflightMarker, now: Date): Promise<boolean> {
+  const rows = await payload.db.drizzle
     .insert(jobStatus)
     .values({ key: INFLIGHT_KEY, details: marker, lastSuccessAt: now, updatedAt: now })
-    .onConflictDoUpdate({ target: jobStatus.key, set: { details: marker, lastSuccessAt: now, updatedAt: now } })
+    .onConflictDoNothing({ target: jobStatus.key })
+    .returning({ key: jobStatus.key })
+  return rows.length === 1
+}
+
+async function updateClaim(payload: Payload, claim: string, marker: InflightMarker, now: Date): Promise<void> {
+  await payload.db.drizzle.update(jobStatus).set({ details: marker, lastSuccessAt: now, updatedAt: now }).where(claimIs(claim))
+}
+
+async function deleteClaim(payload: Payload, claim: string): Promise<void> {
+  await payload.db.drizzle.delete(jobStatus).where(claimIs(claim))
+}
+
+/** Deletes the marker only if it is still exactly the one observed, so two runs cannot both clear (and both claim). */
+async function deleteObserved(payload: Payload, raw: unknown): Promise<boolean> {
+  const cond = raw == null ? isNull(jobStatus.details) : sql`${jobStatus.details} = ${JSON.stringify(raw)}::jsonb`
+  const rows = await payload.db.drizzle.delete(jobStatus).where(and(markerKey, cond)).returning({ key: jobStatus.key })
+  return rows.length === 1
 }
 
 /**
- * Removes the marker. With a batchId, only when the marker belongs to that batch (a newer batch's marker stays).
+ * Removes the marker of this batch (a single conditional DELETE; any other batch's marker stays).
  * Task 10 calls this when enrich-batch exhausts its retries, after cancelBatchQuietly.
  */
-export async function clearInflight(payload: Payload, batchId?: string): Promise<void> {
-  if (batchId !== undefined) {
-    const marker = await readInflight(payload)
-    if (marker?.batchId !== batchId) return
-  }
-  await payload.db.drizzle.delete(jobStatus).where(eq(jobStatus.key, INFLIGHT_KEY))
+export async function clearInflight(payload: Payload, batchId: string): Promise<void> {
+  await payload.db.drizzle.delete(jobStatus).where(and(markerKey, sql`${jobStatus.details}->>'batchId' = ${batchId}`))
 }
 
 const NO_API_KEY_WARNING = 'ANTHROPIC_API_KEY is not set: AI enrichment is skipped and plugins stay uncategorized.'
@@ -162,17 +206,19 @@ export async function runEnrichAll(
   if (ctx.leaves.length === 0) return result('no-categories')
   if (!opts.force && (await lastTaxonomyEdit(payload)) > now.getTime() - DEBOUNCE_MS) return result('debounced')
   const warnings: string[] = []
-  const marker = await readInflight(payload)
-  if (marker) {
+  const observed = await readInflightRow(payload)
+  if (observed) {
+    const { marker } = observed
     const age = now.getTime() - (Date.parse(marker.at) || 0)
-    const abandoned = !marker.batchId && age > SUBMITTING_MAX_MS
-    if (!abandoned && age < INFLIGHT_MAX_MS) return result('batch-in-flight')
-    const w = abandoned
-      ? `Cleared an enrich batch marker stuck in 'submitting' since ${marker.at} (the process stopped before the batch was created).`
+    const notCreated = marker.state === 'submitting' && marker.notCreated === true && age > SUBMITTING_MAX_MS
+    if (!notCreated && age < INFLIGHT_MAX_MS) return result('batch-in-flight')
+    // Another run may be clearing the same marker: only the one whose conditional delete wins goes on.
+    if (!(await deleteObserved(payload, observed.raw))) return result('batch-in-flight')
+    const w = notCreated
+      ? `Cleared an enrich batch marker left in 'submitting' since ${marker.at} after a create the API rejected.`
       : `Cleared an enrich batch marker older than 25 h (batch ${marker.batchId ?? 'unknown'}, ${marker.at}).`
     payload.logger.warn(w)
     warnings.push(w)
-    await clearInflight(payload)
   }
   if ((await pendingJobs(payload, 'enrich-batch')).length > 0) return result('batch-in-flight')
 
@@ -206,10 +252,23 @@ export async function runEnrichAll(
     submitted.push({ id: s.id, contentHash: plugin.contentHash })
   }
   if (items.length === 0) return result('nothing-stale', warn())
-  // Marker first: if the create succeeds but its response (or this process) is lost, the next pass still waits.
-  await writeInflight(payload, { state: 'submitting', at: now.toISOString() }, now)
-  const info = await client.createBatch(items)
-  await writeInflight(payload, { state: 'submitted', batchId: info.id, at: now.toISOString() }, now)
+  // Claim the marker atomically before creating: of two overlapping runs only one gets here with a claim.
+  const at = now.toISOString()
+  const claim = randomUUID()
+  if (!(await claimInflight(payload, { state: 'submitting', at, claim }, now))) return result('batch-in-flight', warn())
+  let info: Awaited<ReturnType<EnrichClient['createBatch']>>
+  try {
+    info = await client.createBatch(items)
+  } catch (err) {
+    if (isDefiniteCreateFailure(err)) {
+      // The API answered with an HTTP error: no batch exists. Flag first (cleared after 1 h if the delete fails).
+      await updateClaim(payload, claim, { state: 'submitting', at, claim, notCreated: true }, now)
+      await deleteClaim(payload, claim)
+    }
+    // Otherwise (connection lost, timeout, abort, anything else) the batch may exist: the marker stays for 25 h.
+    throw err
+  }
+  await updateClaim(payload, claim, { state: 'submitted', at, claim, batchId: info.id }, now)
   return result('batch', {
     stale: stale.length,
     batch: { batchId: info.id, fingerprint: ctx.fingerprint, model: ctx.settings.model, items: submitted },
