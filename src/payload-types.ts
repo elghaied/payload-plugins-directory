@@ -488,6 +488,10 @@ export interface Submission {
   id: number;
   type: 'listing' | 'claim';
   url?: string | null;
+  /**
+   * owner/repo (lower-case). Filled on approval; enter it by hand when an npm package cannot be resolved.
+   */
+  repositoryFullName?: string | null;
   plugin?: (number | null) | Plugin;
   submittedBy: number | Maintainer;
   note?: string | null;
@@ -1021,6 +1025,7 @@ export interface TagsSelect<T extends boolean = true> {
 export interface SubmissionsSelect<T extends boolean = true> {
   type?: T;
   url?: T;
+  repositoryFullName?: T;
   plugin?: T;
   submittedBy?: T;
   note?: T;

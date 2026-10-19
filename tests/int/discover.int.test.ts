@@ -214,7 +214,8 @@ describe('runDiscover', () => {
       'https://www.npmjs.com/package/payload-good',
     ]
     for (const url of urls) {
-      await payload.create({ collection: 'submissions', overrideAccess: true, data: { type: 'listing', url, status: 'approved', submittedBy: m.id } })
+      // Straight to the adapter: the collection now rejects invalid URLs, but discover must survive rows that predate that (or are edited in the DB).
+      await payload.db.create({ collection: 'submissions', data: { type: 'listing', url, status: 'approved', submittedBy: m.id } })
     }
     const warn = vi.spyOn(payload.logger, 'warn').mockImplementation(() => undefined)
     try {

@@ -8,6 +8,7 @@ import * as migration_20261019_041900_taxonomy_ai from './20261019_041900_taxono
 import * as migration_20261019_050500_seed_taxonomy from './20261019_050500_seed_taxonomy';
 import * as migration_20261019_052800_enrich_jobs from './20261019_052800_enrich_jobs';
 import * as migration_20261019_094206_maintainer_revocation from './20261019_094206_maintainer_revocation';
+import * as migration_20261019_101513_maintainers from './20261019_101513_maintainers';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20261019_094206_maintainer_revocation.up,
     down: migration_20261019_094206_maintainer_revocation.down,
-    name: '20261019_094206_maintainer_revocation'
+    name: '20261019_094206_maintainer_revocation',
+  },
+  {
+    up: migration_20261019_101513_maintainers.up,
+    down: migration_20261019_101513_maintainers.down,
+    name: '20261019_101513_maintainers'
   },
 ];

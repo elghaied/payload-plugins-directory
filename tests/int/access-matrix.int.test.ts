@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createPayloadRequest, Forbidden, handleEndpoints, NotFound, ValidationError, type Payload } from 'payload'
 import type { Maintainer } from '@/payload-types'
+import { findPluginForRepository, findRepositoryIds } from '@/lib/submissions/duplicates'
 import { getSessionSecret, signSessionToken, SESSION_COOKIE } from '@/lib/auth/session'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
@@ -204,8 +205,9 @@ describe('submissions', () => {
     expect(relId(b.submittedBy)).toBe(maintainerB.id)
   })
   it("a maintainer sees only their own submissions", async () => {
-    const res = await payload.find({ collection: 'submissions', overrideAccess: false, user: maintainerA })
-    expect(res.docs.map((d) => d.id)).toEqual([submissionA])
+    const res = await payload.find({ collection: 'submissions', overrideAccess: false, user: maintainerA, depth: 0 })
+    expect(res.docs.every((d) => relId(d.submittedBy) === maintainerA.id)).toBe(true)
+    expect(res.docs.map((d) => d.id)).toContain(submissionA)
     expect(res.docs.map((d) => d.id)).not.toContain(submissionB)
   })
   it('a maintainer cannot set status or rejectionReason on create', async () => {
@@ -247,6 +249,151 @@ describe('submissions', () => {
         data: { type: 'claim', plugin: hiddenId, submittedBy: maintainerA.id, status: 'pending' },
       }),
     ).rejects.toThrow(ValidationError)
+  })
+  it('stores the canonical URL', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerB,
+      data: { type: 'listing', url: 'github.com/B/Four.git', submittedBy: maintainerB.id, status: 'pending' },
+    })
+    expect(doc.url).toBe('https://github.com/b/four')
+  })
+  it('rejects a listing URL outside github.com / npmjs.com', async () => {
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user: maintainerB,
+        data: { type: 'listing', url: 'https://evil.example/a/b', submittedBy: maintainerB.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
+  })
+  it('rejects a duplicate of a pending listing (even from another maintainer)', async () => {
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user: maintainerB,
+        data: { type: 'listing', url: 'https://github.com/A/One', submittedBy: maintainerB.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
+  })
+  it('rejects a listing for a repository that is already listed', async () => {
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user: maintainerB,
+        data: { type: 'listing', url: 'https://github.com/acme/plugin', submittedBy: maintainerB.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
+  })
+  it('strips `plugin` from a maintainer listing submission', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerB,
+      data: { type: 'listing', url: 'https://github.com/b/five', plugin: listedId, submittedBy: maintainerB.id, status: 'pending' },
+    })
+    const stored = await payload.findByID({ collection: 'submissions', id: doc.id, overrideAccess: true, depth: 0 })
+    expect(stored.plugin ?? null).toBeNull()
+  })
+  it('rejects a second pending claim for the same plugin', async () => {
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user: maintainerA,
+        data: { type: 'claim', plugin: listedId, submittedBy: maintainerA.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
+  })
+  it('a maintainer cannot set repositoryFullName', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerB,
+      data: { type: 'listing', url: 'https://github.com/b/six', repositoryFullName: 'evil/repo', submittedBy: maintainerB.id, status: 'pending' },
+    })
+    const stored = await payload.findByID({ collection: 'submissions', id: doc.id, overrideAccess: true })
+    expect(stored.repositoryFullName ?? null).toBeNull()
+  })
+  it('a maintainer cannot update a submission (no re-targeting a claim after create)', async () => {
+    const own = await payload.find({ collection: 'submissions', overrideAccess: false, user: maintainerA, limit: 1 })
+    await expect(
+      payload.update({ collection: 'submissions', id: own.docs[0].id, overrideAccess: false, user: maintainerA, data: { plugin: hiddenId } }),
+    ).rejects.toThrow(Forbidden)
+  })
+  it('caps a maintainer at 10 pending requests', async () => {
+    const fresh = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 5000, login: 'spammer' } })
+    const user = { ...fresh, collection: 'maintainers' } as const
+    for (let i = 0; i < 10; i++) {
+      await payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user,
+        data: { type: 'listing', url: `https://github.com/spam/r${i}`, submittedBy: fresh.id, status: 'pending' },
+      })
+    }
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user,
+        data: { type: 'listing', url: 'https://github.com/spam/r10', submittedBy: fresh.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
+  })
+  it('submissions read by their maintainer carry no createdBy/updatedBy', async () => {
+    const res = await payload.find({ collection: 'submissions', overrideAccess: false, user: maintainerA })
+    for (const doc of res.docs) {
+      expect(doc).not.toHaveProperty('createdBy')
+      expect(doc).not.toHaveProperty('updatedBy')
+    }
+  })
+
+  it('rejects a repository already known when the stored name differs in case, among many similar names', async () => {
+    for (let i = 0; i < 25; i++) {
+      await payload.create({
+        collection: 'repositories',
+        overrideAccess: true,
+        data: { fullName: `Dup/Plugin-${i}`, owner: 'Dup', url: `https://github.com/Dup/Plugin-${i}` },
+      })
+    }
+    const repo = await payload.create({
+      collection: 'repositories',
+      overrideAccess: true,
+      data: { fullName: 'Dup/Plugin', owner: 'Dup', url: 'https://github.com/Dup/Plugin' },
+    })
+    await payload.create({
+      collection: 'plugins',
+      overrideAccess: true,
+      data: { slug: 'dup-plugin', name: 'dup-plugin', repository: repo.id, url: repo.url, visibility: 'listed', source: 'topic' },
+    })
+    expect(await findRepositoryIds(payload, 'dup/plugin')).toEqual([repo.id])
+    expect(await findPluginForRepository(payload, 'dup/plugin')).toMatchObject({ slug: 'dup-plugin' })
+    await expect(
+      payload.create({
+        collection: 'submissions',
+        overrideAccess: false,
+        user: maintainerB,
+        data: { type: 'listing', url: 'https://github.com/dup/plugin', submittedBy: maintainerB.id, status: 'pending' },
+      }),
+    ).rejects.toThrow(ValidationError)
+  })
+  it('a maintainer cannot set approval fields on create', async () => {
+    const doc = await payload.create({
+      collection: 'submissions',
+      overrideAccess: false,
+      user: maintainerB,
+      data: { type: 'listing', url: 'https://github.com/b/seven', status: 'approved', rejectionReason: 'x', repositoryFullName: 'evil/repo', submittedBy: maintainerA.id },
+    })
+    const stored = await payload.findByID({ collection: 'submissions', id: doc.id, overrideAccess: true, depth: 0 })
+    expect(stored).toMatchObject({ status: 'pending' })
+    expect(stored.repositoryFullName ?? null).toBeNull()
+    expect(stored.rejectionReason ?? null).toBeNull()
+    expect(relId(stored.submittedBy)).toBe(maintainerB.id)
   })
 })
 
