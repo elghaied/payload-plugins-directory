@@ -94,6 +94,13 @@ function windowText(cov: Coverage) {
   return `${formatDay(addDays(cov.lastDay, -TREND_WINDOW_DAYS))} – ${formatDay(cov.lastDay, true)} (UTC snapshots)`;
 }
 
+/** Not ready: the usual collecting message. Ready but no entity has a baseline snapshot: say so, never "nothing grew". */
+function comparisonMessage(cov: Coverage, comparable: boolean) {
+  if (!cov.ready || !cov.lastDay) return insufficientMessage(cov);
+  if (comparable) return insufficientMessage(cov);
+  return `Not enough data to compare yet: there is no snapshot from about a week before ${formatDay(cov.lastDay, true)}.`;
+}
+
 export default async function TrendingPage() {
   let data: TrendingData;
   try {
@@ -128,30 +135,30 @@ export default async function TrendingPage() {
           <Section
             title="Fastest-growing · stars"
             description={
-              data.starsCoverage.ready
+              data.starsCoverage.ready && data.starsComparable
                 ? `${windowText(data.starsCoverage)}. A repository with several plugins is counted once.`
                 : undefined
             }
           >
-            {data.starsCoverage.ready ? (
+            {data.starsCoverage.ready && data.starsComparable ? (
               <RankedList rows={data.stars.map(starRow)} empty="No repository gained stars this week." />
             ) : (
-              <TrendEmpty message={insufficientMessage(data.starsCoverage)} />
+              <TrendEmpty message={comparisonMessage(data.starsCoverage, data.starsComparable)} />
             )}
           </Section>
 
           <Section
             title="Fastest-growing · downloads"
             description={
-              data.downloadsCoverage.ready
+              data.downloadsCoverage.ready && data.downloadsComparable
                 ? `${windowText(data.downloadsCoverage)}. Change in npm weekly downloads.`
                 : undefined
             }
           >
-            {data.downloadsCoverage.ready ? (
+            {data.downloadsCoverage.ready && data.downloadsComparable ? (
               <RankedList rows={data.downloads.map(downloadRow)} empty="No plugin gained weekly downloads this week." />
             ) : (
-              <TrendEmpty message={insufficientMessage(data.downloadsCoverage)} />
+              <TrendEmpty message={comparisonMessage(data.downloadsCoverage, data.downloadsComparable)} />
             )}
           </Section>
 

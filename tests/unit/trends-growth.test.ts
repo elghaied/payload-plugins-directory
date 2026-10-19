@@ -91,4 +91,16 @@ describe('ecosystemSeries', () => {
     ])
     expect(out.map((p) => p.date)).toEqual(['2026-10-17', '2026-10-19'])
   })
+  it('recovers after a permanent drop in reporting entities instead of freezing at the old peak', () => {
+    const rows = Array.from({ length: 30 }, (_, i) => ({
+      date: addDays('2026-09-01', i),
+      total: i < 10 ? 1000 : 800,
+      reporting: i < 10 ? 100 : 80, // 20% of packages lose npm data for good on day 10
+    }))
+    const out = ecosystemSeries(rows)
+    expect(out.at(-1)?.date).toBe('2026-09-30') // not frozen at 2026-09-10
+    expect(out.at(-1)?.value).toBe(800)
+    // The transition days stay hidden until the old level leaves the 7-day window, so the step is not drawn as a dip.
+    expect(out.map((p) => p.date)).not.toContain('2026-09-11')
+  })
 })

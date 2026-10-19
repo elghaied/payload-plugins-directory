@@ -349,7 +349,7 @@ export default async function PluginDetailPage({
             <h2 id="trends-heading" className="text-xs font-medium text-muted-foreground mb-3">
               Trends (last {HISTORY_DAYS} days)
             </h2>
-            <div className={`grid gap-4 ${plugin.packageName ? "sm:grid-cols-2" : ""}`}>
+            <div className={`grid gap-4 ${plugin.npm ? "sm:grid-cols-2" : ""}`}>
               <Card>
                 <CardContent className="p-4">
                   <TrendChart
@@ -365,7 +365,8 @@ export default async function PluginDetailPage({
                   />
                 </CardContent>
               </Card>
-              {plugin.packageName && (
+              {/* Same condition as the stats grid: snapshots only store non-NULL downloads, so a package without npm data never gets any. */}
+              {plugin.npm && (
                 <Card>
                   <CardContent className="p-4">
                     <TrendChart

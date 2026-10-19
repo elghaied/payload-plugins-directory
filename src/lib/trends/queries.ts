@@ -5,7 +5,9 @@ import { and, gte, inArray, isNotNull, sql } from '@payloadcms/db-postgres/drizz
 import { pluginSnapshots, repositorySnapshots } from '@/db/snapshots'
 import { LIST_TAG, pluginTag, SNAPSHOT_TAGS } from '@/lib/cacheTags'
 import { addDays, asDay, utcToday, type Day } from './days'
-import { BASELINE_TOLERANCE_DAYS, coverage, ecosystemSeries, groupSeries, HISTORY_DAYS, TREND_WINDOW_DAYS } from './growth'
+import {
+  BASELINE_TOLERANCE_DAYS, coverage, ecosystemSeries, groupSeries, growthOverWindow, HISTORY_DAYS, TREND_WINDOW_DAYS, type Point,
+} from './growth'
 import { newThisMonth, rankDownloadGrowth, rankStarGrowth, recentlyUpdated } from './rank'
 import { toListedRef } from './refs'
 import type { EcosystemGrowth, ListedPluginRef, PluginTrends, TrendingData } from './types'
@@ -110,15 +112,19 @@ async function loadTrending(today: Day): Promise<TrendingData> {
     starsCoverage.ready && starsCoverage.lastDay ? starRows(repoIds, rankingSince(starsCoverage.lastDay)) : [],
     downloadsCoverage.ready && downloadsCoverage.lastDay ? downloadRows(pluginIds, rankingSince(downloadsCoverage.lastDay)) : [],
   ])
+  const starSeries = groupSeries(starRowsData)
+  const downloadSeries = groupSeries(downloadRowsData)
+  const comparable = (series: Map<number, Point[]>, asOf: Day | null) =>
+    asOf !== null && [...series.values()].some((s) => growthOverWindow(s, asOf) !== null)
   return {
     today,
     lastSnapshotDay: later(starsCoverage.lastDay, downloadsCoverage.lastDay),
     starsCoverage,
     downloadsCoverage,
-    stars: starsCoverage.ready ? rankStarGrowth(refs, groupSeries(starRowsData), starsCoverage.lastDay) : [],
-    downloads: downloadsCoverage.ready
-      ? rankDownloadGrowth(refs, groupSeries(downloadRowsData), downloadsCoverage.lastDay)
-      : [],
+    starsComparable: comparable(starSeries, starsCoverage.lastDay),
+    downloadsComparable: comparable(downloadSeries, downloadsCoverage.lastDay),
+    stars: starsCoverage.ready ? rankStarGrowth(refs, starSeries, starsCoverage.lastDay) : [],
+    downloads: downloadsCoverage.ready ? rankDownloadGrowth(refs, downloadSeries, downloadsCoverage.lastDay) : [],
     newThisMonth: newThisMonth(refs, today),
     recentlyUpdated: recentlyUpdated(refs),
   }

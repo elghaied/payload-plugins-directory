@@ -8,6 +8,8 @@ export type Coverage = { daysCollected: number; firstDay: Day | null; lastDay: D
 export const TREND_WINDOW_DAYS = 7
 /** If the baseline day is missing (a failed snapshot run), accept up to this many days earlier. */
 export const BASELINE_TOLERANCE_DAYS = 2
+/** A day is compared with the best `reporting` count of this many preceding days. */
+const RECENT_PEAK_DAYS = 7
 /** History shown in charts. */
 export const HISTORY_DAYS = 90
 
@@ -57,7 +59,7 @@ export function groupSeries(rows: { id: number; date: unknown; value: number | n
 /**
  * Per-day totals from `sum(col) / count(col) group by date` rows (count the column, not `*`,
  * so NULL rows are not "reporting"). A day where noticeably fewer entities reported than the
- * running peak (a snapshot run that died halfway) is dropped rather than plotted as a dip.
+ * recent peak (a snapshot run that died halfway) is dropped rather than plotted as a dip.
  */
 export function ecosystemSeries(
   rows: { date: unknown; total: number | string | null; reporting: number | string }[],
@@ -66,10 +68,13 @@ export function ecosystemSeries(
   const sorted = rows
     .map((r) => ({ date: asDay(r.date), total: r.total == null ? null : Number(r.total), reporting: Number(r.reporting) }))
     .sort(byDate)
-  let peak = 0
   const out: Point[] = []
-  for (const r of sorted) {
-    peak = Math.max(peak, r.reporting)
+  for (let i = 0; i < sorted.length; i++) {
+    const r = sorted[i]
+    // Judge the day against the entities that reported recently (the preceding RECENT_PEAK_DAYS days), not the
+    // all-time peak: if more than 10% of packages permanently stop reporting, the chart must recover after a week.
+    let peak = r.reporting
+    for (let j = i - 1; j >= 0 && daysBetween(sorted[j].date, r.date) <= RECENT_PEAK_DAYS; j--) peak = Math.max(peak, sorted[j].reporting)
     // total === null: every value was unknown that day; skip it rather than plot a false 0.
     if (r.total !== null && r.reporting > 0 && r.reporting >= peak * minShare) out.push({ date: r.date, value: r.total })
   }

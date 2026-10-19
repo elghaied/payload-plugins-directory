@@ -62,6 +62,9 @@ export type TrendingData = {
   lastSnapshotDay: Day | null
   starsCoverage: Coverage
   downloadsCoverage: Coverage
+  /** False when coverage is ready but no listed entity has a snapshot about a week before the last day (missed runs). */
+  starsComparable: boolean
+  downloadsComparable: boolean
   stars: StarMover[]
   downloads: DownloadMover[]
   newThisMonth: NewPlugin[]

@@ -1,11 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
+import { revalidateRepositoryChange, revalidateRepositoryDelete } from './hooks/revalidateRepository'
 import { DESCRIPTION_MAX_CHARS } from '@/sync/limits'
 
 export const Repositories: CollectionConfig = {
   slug: 'repositories',
   admin: { useAsTitle: 'fullName', group: 'Directory', defaultColumns: ['fullName', 'stars', 'pushedAt', 'isArchived'] },
   access: { read: anyone, create: isAdmin, update: isAdmin, delete: isAdmin },
+  hooks: { afterChange: [revalidateRepositoryChange], afterDelete: [revalidateRepositoryDelete] },
   versions: false,
   authorship: false, // system-synced; no per-user attribution to track (or leak)
   fields: [

@@ -71,9 +71,19 @@ describe('plugin detail page', () => {
       expect(await render({ packageName: 'payload-s3' })).not.toContain('Trends (last')
     })
 
-    it('shows the insufficient-data state for both charts when a package exists', async () => {
+    const npm = { latestVersion: '1.0.0', weeklyDownloads: 5, dependencyCount: 0 } as never
+
+    it('hides the downloads chart for a package without npm data', async () => {
       state.trends = empty
-      const html = await render({ packageName: 'payload-s3' })
+      const html = await render({ packageName: 'unpublished-pkg', npm: undefined })
+      expect(html).toContain('GitHub stars')
+      expect(html).not.toContain('npm weekly downloads')
+      expect(html).not.toContain('sm:grid-cols-2')
+    })
+
+    it('shows the insufficient-data state for both charts when npm data exists', async () => {
+      state.trends = empty
+      const html = await render({ packageName: 'payload-s3', npm })
       expect(html).toContain('Trends (last 90 days)')
       expect(html).toContain('GitHub stars')
       expect(html).toContain('npm weekly downloads')

@@ -204,7 +204,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
   // Free the unique full name held by another repository's row; its plugins are left to discovery.
   if (stale) {
     await payload.update({
-      collection: 'repositories', id: stale.id, overrideAccess: true, depth: 0,
+      collection: 'repositories', id: stale.id, overrideAccess: true, depth: 0, context: SKIP,
       data: { fullName: `${stale.fullName}~stale-${stale.githubId}` },
     })
   }
@@ -214,8 +214,8 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     ? { ...repoData, pushedAt: existing?.pushedAt ?? null, lastSyncedAt: existing?.lastSyncedAt ?? null }
     : repoData
   const repo = existing
-    ? await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, data: firstWrite })
-    : await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, data: firstWrite })
+    ? await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, context: SKIP, data: firstWrite })
+    : await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, context: SKIP, data: firstWrite })
   result.repositoryId = repo.id
   result.contentReRead = extraction !== null
   const aliasTags = await loadAliasTags(payload)
@@ -283,7 +283,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       : { repository: { equals: repo.id } }
     result.trashed = await trashPlugins(payload, removed, 'package-removed', now)
     await payload.update({
-      collection: 'repositories', id: repo.id, overrideAccess: true, depth: 0,
+      collection: 'repositories', id: repo.id, overrideAccess: true, depth: 0, context: SKIP,
       data: { pushedAt: repoData.pushedAt, lastSyncedAt: repoData.lastSyncedAt },
     })
   } else {

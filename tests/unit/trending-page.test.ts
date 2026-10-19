@@ -19,7 +19,7 @@ import TrendingPage, * as trending from '@/app/(site)/trending/page'
 const none: Coverage = { ready: false, firstDay: null, lastDay: null, daysCollected: 0 } as Coverage
 const base = (extra: Partial<TrendingData> = {}): TrendingData => ({
   today: '2026-10-19', lastSnapshotDay: null, starsCoverage: none, downloadsCoverage: none,
-  stars: [], downloads: [], newThisMonth: [], recentlyUpdated: [], ...extra,
+  starsComparable: false, downloadsComparable: false, stars: [], downloads: [], newThisMonth: [], recentlyUpdated: [], ...extra,
 })
 const render = async (data: TrendingData) => {
   state.data = data
@@ -45,6 +45,15 @@ describe('trending page', () => {
   it('shows "Data as of" only when the last snapshot is more than 2 days old', async () => {
     expect(await render(base({ lastSnapshotDay: '2026-10-15' }))).toContain('Data as of Oct 15, 2026')
     expect(await render(base({ lastSnapshotDay: '2026-10-17' }))).not.toContain('Data as of')
+  })
+  it('does not claim nothing grew when the 7-day baseline is missing', async () => {
+    const ready = { ready: true, firstDay: '2026-09-01', lastDay: '2026-10-19', daysCollected: 40, spanDays: 48 } as Coverage
+    const html = await render(base({ starsCoverage: ready, downloadsCoverage: ready, lastSnapshotDay: '2026-10-19' }))
+    expect(html).not.toContain('No repository gained stars this week.')
+    expect(html).not.toContain('No plugin gained weekly downloads this week.')
+    expect(html).toContain('Not enough data to compare yet')
+    const ok = await render(base({ starsCoverage: ready, downloadsCoverage: ready, starsComparable: true, downloadsComparable: true }))
+    expect(ok).toContain('No repository gained stars this week.')
   })
   it('says so in words for an empty list', async () => {
     expect(await render(base())).toContain('No new plugins in the last 30 days.')

@@ -26,13 +26,14 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
         collection: 'repositories',
         id: existing.docs[0].id,
         overrideAccess: true,
+        context: { skipRevalidate: true },
         data: githubId === undefined ? rest : { ...rest, githubId },
       })
       repoIds.set(repo.fullName, existing.docs[0].id)
       counts.repositoriesUpdated++
       continue
     }
-    const created = await payload.create({ collection: 'repositories', overrideAccess: true, data: repo })
+    const created = await payload.create({ collection: 'repositories', overrideAccess: true, context: { skipRevalidate: true }, data: repo })
     repoIds.set(repo.fullName, created.id)
     counts.repositoriesCreated++
   }

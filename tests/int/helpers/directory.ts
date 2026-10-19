@@ -10,6 +10,7 @@ export async function createRepo(payload: Payload, over: Partial<Repository> = {
     collection: 'repositories',
     overrideAccess: true,
     depth: 0,
+    context: { skipRevalidate: true },
     data: { fullName: `acme/repo-${n}`, owner: 'acme', url: `https://github.com/acme/repo-${n}`, stars: 10, ...over } as never,
   })
 }
