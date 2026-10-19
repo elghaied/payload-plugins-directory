@@ -1,4 +1,5 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
+import { isUnchangedMaintainerBranding } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import { LIST_TAG, pluginTag } from '@/lib/cacheTags'
 import { QUEUES } from '@/sync/queues'
 
@@ -14,6 +15,8 @@ const skip = (context: unknown) => Boolean((context as { skipRevalidate?: boolea
 
 export const revalidatePluginChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req, context }) => {
   if (skip(context)) return doc
+  // A maintainer save that changed neither tagline nor logo is a no-op. Decided per document here (never via the shared context), so bulk updates stay correct.
+  if (isUnchangedMaintainerBranding(req, previousDoc, doc)) return doc
   const tags = [LIST_TAG, pluginTag(doc.slug)]
   if (previousDoc?.slug && previousDoc.slug !== doc.slug) tags.push(pluginTag(previousDoc.slug))
   await req.payload.jobs.queue({ task: 'revalidate', input: { tags: [...new Set(tags)] }, queue: QUEUES.default, overrideAccess: true, req })

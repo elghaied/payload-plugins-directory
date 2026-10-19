@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
-import { createPayloadRequest, Forbidden, handleEndpoints, NotFound, ValidationError, type Payload } from 'payload'
+import { createPayloadRequest, Forbidden, handleEndpoints, NotFound, ValidationError, type Payload, type Where } from 'payload'
 import type { Maintainer } from '@/payload-types'
 import { findPluginForRepository, findRepositoryIds } from '@/lib/submissions/duplicates'
 import { getSessionSecret, signSessionToken, SESSION_COOKIE } from '@/lib/auth/session'
@@ -562,11 +562,11 @@ describe('plugins (maintainer edits)', () => {
   })
 
   it('normalises customTagline on every path (NFKC, invisible characters, trim, clamp, empty -> null)', async () => {
-    const doc = await edit(maintainerA, listedId, { customTagline: '  ‮Fａst​   forms\u0007  ' })
+    const doc = await edit(maintainerA, listedId, { customTagline: '  \u202eF\uff41st\u200b   forms\u0007  ' })
     expect(doc.customTagline).toBe('Fast forms')
     const clamped = await edit(admin, listedId, { customTagline: 'x'.repeat(500) })
     expect(clamped.customTagline).toHaveLength(120)
-    const cleared = await edit(maintainerA, listedId, { customTagline: '  ​ ' })
+    const cleared = await edit(maintainerA, listedId, { customTagline: '  \u200b ' })
     expect(cleared.customTagline).toBeNull()
   })
 
@@ -578,9 +578,9 @@ describe('plugins (maintainer edits)', () => {
       file: { data: PNG_1X1, mimetype: 'image/png', name: 'logo.png', size: PNG_1X1.length },
     })
     await expect(edit(maintainerA, listedId, { logo: media.id })).rejects.toThrow(Forbidden)
-    const ok = await edit(maintainerA, listedId, { logo: media.id }, { brandingWrite: true })
+    const ok = await edit(maintainerA, listedId, { logo: media.id }, { maintainerBranding: true })
     expect(relId(ok.logo)).toBe(media.id)
-    const cleared = await edit(maintainerA, listedId, { logo: null }, { brandingWrite: true })
+    const cleared = await edit(maintainerA, listedId, { logo: null }, { maintainerBranding: true })
     expect(cleared.logo ?? null).toBeNull()
   })
 
@@ -603,6 +603,62 @@ describe('plugins (maintainer edits)', () => {
         expect(await patch(maintainerA.id, 42, body)).toBe(403)
       }
       expect(await patch(maintainerB.id, 43, { customTagline: 'nope' })).toBe(403)
+    })
+  })
+
+  describe('bulk updates by a maintainer', () => {
+    const bulk = (where: Where, data: Record<string, unknown>, context?: Record<string, unknown>) =>
+      payload.update({ collection: 'plugins', where, sort: 'slug', overrideAccess: false, user: maintainerA, data, depth: 0, context })
+    const jobTags = async () => (await revalidateJobs()).map((j) => (j as { tags: string[] }).tags)
+    let bulkA: number
+    let bulkB: number
+    beforeAll(async () => {
+      const repo = (await payload.find({ collection: 'repositories', overrideAccess: true, limit: 1 })).docs[0]
+      const make = async (slug: string, extra: Record<string, unknown> = {}) =>
+        (
+          await payload.create({
+            collection: 'plugins',
+            overrideAccess: true,
+            context: { skipRevalidate: true },
+            data: { slug, name: slug, repository: repo.id, url: repo.url, visibility: 'listed', source: 'topic', maintainers: [maintainerA.id], ...extra },
+          })
+        ).id
+      bulkA = await make('bulk-a', { customTagline: 'Shared line' })
+      bulkB = await make('bulk-b')
+    })
+
+    it('touches only the listed plugins the maintainer maintains (hidden ones are skipped)', async () => {
+      const res = await bulk({ slug: { in: ['listed-one', 'hidden-one', 'bulk-a', 'bulk-b'] } }, { customTagline: 'Own plugins' })
+      expect(res.docs.map((d) => d.slug)).toEqual(['bulk-a', 'bulk-b', 'listed-one'])
+      expect(res.errors).toHaveLength(0)
+      const hidden = await payload.findByID({ collection: 'plugins', id: hiddenId, overrideAccess: true, depth: 0 })
+      expect(hidden.customTagline).not.toBe('Own plugins')
+    })
+    it('a disallowed key rejects the whole bulk request, touching nothing', async () => {
+      await expect(bulk({ slug: { in: ['listed-one', 'bulk-a'] } }, { customTagline: 'nope', visibility: 'hidden' })).rejects.toThrow(Forbidden)
+      await expect(bulk({ slug: { in: ['listed-one', 'bulk-a'] } }, { name: 'nope' })).rejects.toThrow(Forbidden)
+      const stored = await payload.findByID({ collection: 'plugins', id: bulkA, overrideAccess: true, depth: 0 })
+      expect(stored).toMatchObject({ visibility: 'listed', name: 'bulk-a', customTagline: 'Own plugins' })
+    })
+    it('an unchanged plugin does not suppress revalidation of a changed one in the same bulk update', async () => {
+      await payload.update({ collection: 'plugins', id: bulkA, overrideAccess: true, context: { skipRevalidate: true }, data: { customTagline: 'Shared line' } })
+      await payload.update({ collection: 'plugins', id: bulkB, overrideAccess: true, context: { skipRevalidate: true }, data: { customTagline: 'Other line' } })
+      const before = (await jobTags()).length
+      const res = await bulk({ slug: { in: ['bulk-a', 'bulk-b'] } }, { customTagline: 'Shared line' })
+      expect(res.docs).toHaveLength(2)
+      const added = (await jobTags()).slice(before)
+      expect(added).toEqual([['plugins', 'plugin:bulk-b']])
+    })
+    it('a reused context object does not leak a skip into the next call', async () => {
+      const ctx = { maintainerBranding: true }
+      const edit1 = () => payload.update({ collection: 'plugins', id: bulkA, overrideAccess: false, user: maintainerA, data: { customTagline: 'Shared line' }, depth: 0, context: ctx })
+      await edit1()
+      const before = (await jobTags()).length
+      await edit1() // unchanged: no job
+      expect(await jobTags()).toHaveLength(before)
+      await payload.update({ collection: 'plugins', id: bulkA, overrideAccess: false, user: maintainerA, data: { customTagline: 'Changed line' }, depth: 0, context: ctx })
+      expect((await jobTags()).slice(before)).toEqual([['plugins', 'plugin:bulk-a']])
+      expect(ctx).toEqual({ maintainerBranding: true })
     })
   })
 

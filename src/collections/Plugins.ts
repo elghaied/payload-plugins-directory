@@ -1,7 +1,7 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
-import { restrictMaintainerPluginEdits, skipUnchangedBrandingRevalidate } from '@/collections/hooks/restrictMaintainerPluginEdits'
+import { restrictMaintainerPluginEdits } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import { revalidatePluginChange, revalidatePluginDelete } from '@/collections/hooks/revalidatePlugin'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
 import { normalizeTagline } from '@/lib/maintainers/branding'
@@ -48,7 +48,6 @@ export const Plugins: CollectionConfig = {
         return data
       },
       lockAdminEditedAiFields,
-      skipUnchangedBrandingRevalidate,
     ],
     afterChange: [revalidatePluginChange],
     afterDelete: [revalidatePluginDelete],
