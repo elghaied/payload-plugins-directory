@@ -226,7 +226,8 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         payloadVersionRange: p.payloadVersionRange,
         payloadMajors: payloadMajorsFromRange(p.payloadVersionRange, prev?.npm?.latestVersion ?? latestVersions.get(p.slug) ?? null),
         healthScore: scoreFor(repoData, { isOfficial: p.isOfficial, npm: prev?.npm, ignoreIssues: official }, now),
-        _h_tags: mergeTagIds(prev?._h_tags, aliasTagIds([...repoData.topics, ...p.keywords], aliasTags)),
+        // Locked tags belong to the admin: sync leaves them exactly as they are (an admin may have removed one).
+        ...(prev?.locks?.tags ? {} : { _h_tags: mergeTagIds(prev?._h_tags, aliasTagIds([...repoData.topics, ...p.keywords], aliasTags)) }),
       }
       if (!prev) {
         // Only creation sets visibility; admins own it afterwards (updates never write it).
@@ -268,9 +269,13 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     for (const p of known) {
       if (p.deletedAt) continue
       const healthScore = scoreFor(repoData, { isOfficial: p.isOfficial, npm: p.npm, ignoreIssues: p.source === 'official' }, now)
-      const tags = mergeTagIds(p._h_tags, topicTagIds)
-      if (healthScore === p.healthScore && sameIds(tags, p._h_tags)) continue
-      await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, depth: 0, data: { healthScore, _h_tags: tags } })
+      const tags = p.locks?.tags ? null : mergeTagIds(p._h_tags, topicTagIds) // locked: never touched
+      const tagsChanged = tags !== null && !sameIds(tags, p._h_tags)
+      if (healthScore === p.healthScore && !tagsChanged) continue
+      await payload.update({
+        collection: 'plugins', id: p.id, overrideAccess: true, depth: 0,
+        data: { healthScore, ...(tagsChanged ? { _h_tags: tags } : {}) },
+      })
       result.updated.push(p.slug)
     }
   }

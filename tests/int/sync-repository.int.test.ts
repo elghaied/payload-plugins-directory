@@ -162,6 +162,23 @@ describe('runSyncRepository', () => {
     expect((await plugin('31-meta'))._h_tags?.map((t) => (typeof t === 'object' ? t.id : t))).toEqual([seoTag.id])
   })
 
+  it('never adds tags to a plugin whose tags an admin locked, on content and metadata-only syncs', async () => {
+    const seoTag = await payload.create({ collection: 'tags', overrideAccess: true, data: { title: 'SEO', slug: 'seo', aliases: ['seo'] } })
+    const ids = async () => ((await plugin('7-root'))._h_tags ?? []).map((t) => (typeof t === 'object' ? t.id : t))
+    // Unlocked control: the `seo` topic maps to the tag.
+    await sync(seoRoutes())
+    expect(await ids()).toEqual([seoTag.id])
+    // The admin removes the tag and locks tags.
+    const doc = await plugin('7-root')
+    await payload.update({ collection: 'plugins', id: doc.id, overrideAccess: true, data: { _h_tags: [], locks: { tags: true } } })
+    // Content re-read (new push).
+    expect((await sync(seoRoutes({ ...SEO, pushed_at: '2026-10-19T09:00:00Z' }))).contentReRead).toBe(true)
+    expect(await ids()).toEqual([])
+    // Metadata-only sync (same push).
+    expect((await sync({ [repoById(7)]: json({ ...SEO, pushed_at: '2026-10-19T09:00:00Z', stargazers_count: 99 }) })).contentReRead).toBe(false)
+    expect(await ids()).toEqual([])
+  })
+
   it('matches a seeded repository by full name and fills its githubId', async () => {
     const seeded = await createRepo(payload, { fullName: 'acme/payload-seo', owner: 'acme', url: 'https://github.com/acme/payload-seo' })
     await createPlugin(payload, seeded.id, { slug: '7-root', packageName: 'payload-seo' })
