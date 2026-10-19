@@ -7,7 +7,7 @@ import { insufficientMessage, signed } from "@/lib/trends/chartModel";
 import { addDays, daysBetween, formatDay } from "@/lib/trends/days";
 import { TREND_WINDOW_DAYS, type Coverage } from "@/lib/trends/growth";
 import { getTrendingData } from "@/lib/trends/queries";
-import type { DownloadMover, NewPlugin, RecentRepo, StarMover } from "@/lib/trends/types";
+import type { DownloadMover, NewPlugin, RecentRepo, StarMover, TrendingData } from "@/lib/trends/types";
 
 export const dynamic = "force-dynamic";
 
@@ -95,7 +95,20 @@ function windowText(cov: Coverage) {
 }
 
 export default async function TrendingPage() {
-  const data = await getTrendingData();
+  let data: TrendingData;
+  try {
+    data = await getTrendingData();
+  } catch (error) {
+    console.error("[trending] getTrendingData failed", error);
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+        <div className="container mx-auto px-4 py-8 max-w-5xl">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Trending</h1>
+          <p className="text-muted-foreground mt-4">Trending data is unavailable right now.</p>
+        </div>
+      </div>
+    );
+  }
   const stale = data.lastSnapshotDay !== null && daysBetween(data.lastSnapshotDay, data.today) > 2;
 
   return (

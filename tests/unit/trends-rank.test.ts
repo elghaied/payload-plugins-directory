@@ -154,4 +154,17 @@ describe('newThisMonth bulk imports', () => {
     const fresh = [1, 2, 3].map((i) => ref(1000 + i, `n${i}`, repo(1000 + i, `o/n${i}`), { firstSeenAt: '2026-10-15T12:00:00Z' }))
     expect(newThisMonth([...seed, ...fresh], asOf).map((n) => n.slug)).toEqual(['n1', 'n2', 'n3'])
   })
+  const onDay = (count: number, day: string, offset: number) =>
+    Array.from({ length: count }, (_, i) => ref(offset + i, `d${offset + i}`, repo(offset + i, `o/d${offset + i}`), { firstSeenAt: `${day}T12:00:00Z` }))
+  it('boundary at 340 listed (limit 17): 17 shown, 18 skipped', () => {
+    const seed = onDay(340 - 17, '2026-10-01', 0)
+    expect(newThisMonth([...seed, ...onDay(17, '2026-10-15', 1000)], asOf, 30, 100)).toHaveLength(17)
+    const seed2 = onDay(340 - 18, '2026-10-01', 0)
+    expect(newThisMonth([...seed2, ...onDay(18, '2026-10-15', 1000)], asOf, 30, 100)).toEqual([])
+  })
+  it('floor of 10 on a small set: 10 shown, 11 skipped', () => {
+    const seed = onDay(5, '2026-10-01', 0)
+    expect(newThisMonth([...seed, ...onDay(10, '2026-10-15', 1000)], asOf, 30, 100)).toHaveLength(10)
+    expect(newThisMonth([...seed, ...onDay(11, '2026-10-15', 1000)], asOf, 30, 100)).toEqual([])
+  })
 })

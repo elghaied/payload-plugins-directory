@@ -67,14 +67,14 @@ export function rankDownloadGrowth(
   return out.sort((a, b) => compareGrowth(a.growth, b.growth, a.name, b.name) || cmp(a.slug, b.slug)).slice(0, limit)
 }
 
-/**
- * New = the GitHub repository was created within `windowDays`, or the plugin was first listed after
- * the directory's first day (the seed day: every seeded plugin shares it, so they are not "new").
- */
 /** A first-seen day with more plugins than this is a bulk import (e.g. a seed straddling UTC midnight), not "new". */
 export const BULK_IMPORT_MIN_PLUGINS = 10
 export const BULK_IMPORT_SHARE = 0.05
 
+/**
+ * New = the GitHub repository was created within `windowDays`, or the plugin was first listed after
+ * the directory's first day (the seed day: every seeded plugin shares it, so they are not "new").
+ */
 export function newThisMonth(refs: ListedPluginRef[], today: Day, windowDays = 30, limit = 12): NewPlugin[] {
   const seenDays = refs.flatMap((r) => (r.firstSeenAt ? [utcDay(r.firstSeenAt)] : [])).sort()
   const seedDay = seenDays[0] ?? null
