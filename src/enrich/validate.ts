@@ -18,16 +18,30 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
 
 const hasLink = (s: string) => new RegExp(`${EMAIL.source}|${URL.source}|${DOMAIN.source}`, 'i').test(s)
 
-function strip(s: string): string {
+const SCHEME = /\b(?:java\s*script|vbscript|data)\s*:/gi
+
+function stripOnce(s: string): string {
   return s
     .replace(MD_LINK, '$1')
     .replace(HTML_TAG, '')
     .replace(EMAIL, '')
     .replace(URL, '')
-    .replace(DOMAIN, '')
     .replace(MD_MARKS, '')
+    .replace(DOMAIN, '')
+    .replace(SCHEME, '')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+/** Strips until stable (one pass can leave residue: "<<b>script>", "evil.**com"), then drops stray angle brackets. */
+function strip(s: string): string {
+  let current = s
+  for (let i = 0; i < 5; i++) {
+    const next = stripOnce(current)
+    if (next === current) break
+    current = next
+  }
+  return current.replace(/[<>]/g, '').replace(/\s+/g, ' ').trim()
 }
 
 /**
@@ -37,7 +51,8 @@ function strip(s: string): string {
  */
 export function cleanText(value: unknown, max: number): string {
   if (typeof value !== 'string') return ''
-  const base = value.normalize('NFKC').replace(LONE_SURROGATE, ' ')
+  // Bound the work an adversarial input can cause before any normalisation or regex runs.
+  const base = value.slice(0, max * 4).normalize('NFKC').replace(LONE_SURROGATE, ' ')
   const spaced = base.replace(INVISIBLE, ' ')
   const joined = base.replace(INVISIBLE, '')
   // Zero-width characters must not hide a link from the filters ("evil\u200B.com").
@@ -54,8 +69,13 @@ export function cleanText(value: unknown, max: number): string {
 export function slugifyTag(title: string): string {
   return title
     .normalize('NFKD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
+    // Symbols that distinguish names become words: c++ -> cpp, c# -> csharp, .net -> dotnet.
+    .replace(/(?<=[a-z0-9])\+\+/g, 'pp')
+    .replace(/(?<=[a-z0-9])\+/g, 'plus')
+    .replace(/(?<=[a-z0-9])#/g, 'sharp')
+    .replace(/(^|\s)\.(?=[a-z0-9])/g, '$1dot')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 40)
@@ -109,7 +129,7 @@ const TITLE_CHARS = /^[A-Za-z0-9 .+#/-]+$/
 /** A new tag title the model proposed, or null when it is not acceptable (rejected, never repaired). */
 function cleanNewTitle(value: unknown): string | null {
   if (typeof value !== 'string') return null
-  const title = value.normalize('NFKC').replace(/\s+/g, ' ').trim()
+  const title = value.slice(0, 100).normalize('NFKC').replace(/\s+/g, ' ').trim()
   if (!title || title.length > LIMITS.tagTitle || !TITLE_CHARS.test(title)) return null
   if (title.split(' ').length > LIMITS.tagTitleWords) return null
   // Links, domains and markdown that pass the character set ("evil.com") are not titles.

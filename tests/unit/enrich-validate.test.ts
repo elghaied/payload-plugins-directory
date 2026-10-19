@@ -134,5 +134,33 @@ describe('cleanText', () => {
   it('slugifies tag titles', () => {
     expect(slugifyTag('Presigned Uploads!')).toBe('presigned-uploads')
     expect(slugifyTag('Café Déjà vu')).toBe('cafe-deja-vu')
+    expect(slugifyTag('C++')).toBe('cpp')
+    expect(slugifyTag('C#')).toBe('csharp')
+    expect(slugifyTag('F#')).toBe('fsharp')
+    expect(slugifyTag('.NET')).toBe('dotnet')
+    expect(slugifyTag('Node.js')).toBe('node-js')
+  })
+  it('does not reuse a plain "c" tag for C++ or C#', () => {
+    const c: TagRef[] = [{ id: 9, slug: 'c', title: 'C', aliases: [], createdBy: 'admin' }]
+    const value = ok({ ...good, tags: [{ new: 'C++' }, { new: 'C#' }, { new: 'C' }] }, { ...ctx, tags: c, maxNewTags: 5 })
+    expect(value.tags.created).toEqual([{ slug: 'cpp', title: 'C++' }, { slug: 'csharp', title: 'C#' }])
+    expect(value.tags.existing).toEqual(['c'])
+  })
+  it('strips residue that survives a single pass', () => {
+    expect(cleanText('<<b>script>alert(1)<</b>/script>', 100)).not.toMatch(/<|>/)
+    expect(cleanText('<<b>script>alert(1)<</b>/script>', 100).toLowerCase()).not.toContain('<script')
+    expect(cleanText('visit evil.**com now', 100)).toBe('visit now')
+    expect(cleanText('javascript:alert(1)', 100)).toBe('alert(1)')
+    expect(cleanText('x vbscript:y data:text/html,z', 100)).not.toMatch(/script:|data:/)
+    expect(cleanText('<script src=x', 100)).not.toMatch(/[<>]/)
+  })
+  it('stays fast on 200 KB adversarial input', () => {
+    const inputs = ['['.repeat(200_000), '<'.repeat(200_000), 'a.'.repeat(100_000), '[a](b'.repeat(40_000), '**'.repeat(100_000)]
+    const start = performance.now()
+    for (const input of inputs) {
+      cleanText(input, 600)
+      validateEnrichment({ ...good, summary: input, tags: [{ new: input }] }, ctx)
+    }
+    expect(performance.now() - start).toBeLessThan(200)
   })
 })
