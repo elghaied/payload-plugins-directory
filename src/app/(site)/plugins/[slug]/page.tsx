@@ -21,6 +21,11 @@ import { getPluginDetail } from "@/lib/directory/queries";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
+import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
+import { PluginAiOverview } from "@/components/PluginAiOverview";
+import { getCategoryNodes } from "@/lib/directory/taxonomy";
+import { categoryHref, tagHref } from "@/lib/taxonomy/links";
+import { trailFor } from "@/taxonomy/tree";
 import {
   versionColors,
   formatRelativeTime,
@@ -43,7 +48,7 @@ export async function generateMetadata({
   if (!plugin) notFound();
 
   const title = `${plugin.name} — Payload Plugin Directory`;
-  const description = plugin.description.slice(0, 160);
+  const description = (plugin.ai?.summary || plugin.description).slice(0, 160);
 
   return {
     title,
@@ -71,6 +76,7 @@ export default async function PluginDetailPage({
   if (!plugin) notFound();
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
+  const trail = plugin.category ? trailFor(await getCategoryNodes(), plugin.category.path) : [];
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -80,6 +86,7 @@ export default async function PluginDetailPage({
     url: `https://payloaddirectory.dev/plugins/${plugin.slug}`,
     applicationCategory: "Plugin",
     operatingSystem: "Node.js",
+    ...(plugin.category ? { applicationSubCategory: plugin.category.title } : {}),
     author: {
       "@type": "Person",
       name: plugin.owner,
@@ -107,15 +114,19 @@ export default async function PluginDetailPage({
       />
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Back navigation */}
-        <Link
-          href="/"
-          replace
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to directory
-        </Link>
+        {/* Breadcrumbs (categorised) or back navigation */}
+        {trail.length > 0 ? (
+          <CategoryBreadcrumbs trail={trail} current={plugin.name} />
+        ) : (
+          <Link
+            href="/"
+            replace
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to directory
+          </Link>
+        )}
 
         {/* Plugin header */}
         <header className="mb-8">
@@ -148,6 +159,14 @@ export default async function PluginDetailPage({
                   </Badge>
                 )}
               </div>
+              {plugin.category && (
+                <Link
+                  href={categoryHref(plugin.category.path)}
+                  className="inline-flex mt-2 text-xs px-2 py-0.5 rounded-full border text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+                >
+                  {plugin.category.title}
+                </Link>
+              )}
             </div>
           </div>
 
@@ -177,10 +196,14 @@ export default async function PluginDetailPage({
           </div>
         </header>
 
-        {/* Description */}
-        <p className="text-muted-foreground leading-relaxed mb-8">
-          {plugin.description}
-        </p>
+        {/* AI overview (labelled), then the author's own words */}
+        {plugin.ai && <PluginAiOverview {...plugin.ai} />}
+        {plugin.authorDescription && (
+          <section className="mb-8">
+            <h2 className="text-xs font-medium text-muted-foreground mb-2">From the author</h2>
+            <p className="text-muted-foreground leading-relaxed">{plugin.authorDescription}</p>
+          </section>
+        )}
 
         {/* Install command */}
         {plugin.packageName && (
@@ -335,16 +358,22 @@ export default async function PluginDetailPage({
           )}
         </div>
 
-        {/* Readme preview */}
+        {/* README: preview, full text on demand (author content, plain text) */}
         {plugin.readme && (
           <Card className="mb-8">
             <CardContent className="p-6">
-              <p className="text-xs font-medium text-muted-foreground mb-3">About</p>
-              <div className="prose prose-sm dark:prose-invert max-w-none">
-                <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
-                  {plugin.readme}
-                </pre>
-              </div>
+              <p className="text-xs font-medium text-muted-foreground mb-3">README</p>
+              <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
+                {plugin.readme}
+              </pre>
+              {plugin.readmeFull && plugin.readmeFull.length > plugin.readme.length && (
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Full README</summary>
+                  <pre className="mt-3 whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
+                    {plugin.readmeFull}
+                  </pre>
+                </details>
+              )}
             </CardContent>
           </Card>
         )}
@@ -361,6 +390,24 @@ export default async function PluginDetailPage({
                   className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm hover:ring-1 hover:ring-primary/30 transition-all"
                 >
                   {topic}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tags */}
+        {plugin.tagList.length > 0 && (
+          <div className="mb-8">
+            <p className="text-xs font-medium text-muted-foreground mb-3">Tags</p>
+            <div className="flex flex-wrap gap-2">
+              {plugin.tagList.map((tag) => (
+                <Link
+                  key={tag.slug}
+                  href={tagHref(tag.slug)}
+                  className="px-3 py-1 border rounded-full text-sm hover:ring-1 hover:ring-primary/30 transition-all"
+                >
+                  {tag.title}
                 </Link>
               ))}
             </div>
