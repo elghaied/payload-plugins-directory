@@ -131,6 +131,9 @@ export interface Config {
       'npm-stats': TaskNpmStats;
       snapshot: TaskSnapshot;
       revalidate: TaskRevalidate;
+      enrich: TaskEnrich;
+      'enrich-all': TaskEnrichAll;
+      'enrich-batch': TaskEnrichBatch;
       inline: {
         input: unknown;
         output: unknown;
@@ -583,7 +586,16 @@ export interface PayloadJob {
     | {
         executedAt: string;
         completedAt: string;
-        taskSlug: 'inline' | 'discover' | 'sync-repository' | 'npm-stats' | 'snapshot' | 'revalidate';
+        taskSlug:
+          | 'inline'
+          | 'discover'
+          | 'sync-repository'
+          | 'npm-stats'
+          | 'snapshot'
+          | 'revalidate'
+          | 'enrich'
+          | 'enrich-all'
+          | 'enrich-batch';
         taskID: string;
         input:
           | {
@@ -614,13 +626,37 @@ export interface PayloadJob {
           | boolean
           | null;
         parent?: {
-          taskSlug?: ('inline' | 'discover' | 'sync-repository' | 'npm-stats' | 'snapshot' | 'revalidate') | null;
+          taskSlug?:
+            | (
+                | 'inline'
+                | 'discover'
+                | 'sync-repository'
+                | 'npm-stats'
+                | 'snapshot'
+                | 'revalidate'
+                | 'enrich'
+                | 'enrich-all'
+                | 'enrich-batch'
+              )
+            | null;
           taskID?: string | null;
         };
         id?: string | null;
       }[]
     | null;
-  taskSlug?: ('inline' | 'discover' | 'sync-repository' | 'npm-stats' | 'snapshot' | 'revalidate') | null;
+  taskSlug?:
+    | (
+        | 'inline'
+        | 'discover'
+        | 'sync-repository'
+        | 'npm-stats'
+        | 'snapshot'
+        | 'revalidate'
+        | 'enrich'
+        | 'enrich-all'
+        | 'enrich-batch'
+      )
+    | null;
   queue?: string | null;
   waitUntil?: string | null;
   processingUntil?: string | null;
@@ -1373,6 +1409,7 @@ export interface TaskSyncRepository {
     restored?: number | null;
     trashed?: number | null;
     contentChanged?: number[] | null;
+    enrichQueued?: number | null;
   };
 }
 /**
@@ -1416,6 +1453,67 @@ export interface TaskRevalidate {
   output: {
     status?: string | null;
     count?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskEnrich".
+ */
+export interface TaskEnrich {
+  input: {
+    pluginId: number;
+  };
+  output: {
+    status?: string | null;
+    reason?: string | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    cacheReadTokens?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskEnrich-all".
+ */
+export interface TaskEnrichAll {
+  input: {
+    force?: boolean | null;
+  };
+  output: {
+    status?: string | null;
+    stale?: number | null;
+    queued?: number | null;
+    batchId?: string | null;
+    warning?: string | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskEnrich-batch".
+ */
+export interface TaskEnrichBatch {
+  input: {
+    batchId: string;
+    fingerprint: string;
+    model?: string | null;
+    items:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  output: {
+    status?: string | null;
+    applied?: number | null;
+    failed?: number | null;
+    retried?: number | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    cacheReadTokens?: number | null;
   };
 }
 /**

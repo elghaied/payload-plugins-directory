@@ -3,7 +3,7 @@ import { runtimeEnvWarnings } from '@/lib/runtimeEnv'
 
 const prod = {
   NODE_ENV: 'production', SERVER_URL: 'https://payloaddirectory.dev', REVALIDATE_SECRET: 'a-long-random-secret-value-0123456789',
-  GITHUB_TOKEN: 't', INTERNAL_WEB_URL: 'http://web:3000',
+  GITHUB_TOKEN: 't', INTERNAL_WEB_URL: 'http://web:3000', ANTHROPIC_API_KEY: 'k',
 }
 
 describe('runtimeEnvWarnings', () => {
@@ -37,5 +37,9 @@ describe('runtimeEnvWarnings', () => {
       expect.stringMatching(/INTERNAL_WEB_URL/),
     ])
     expect(runtimeEnvWarnings({ ...prod, GITHUB_TOKEN: '', INTERNAL_WEB_URL: undefined }, 'web')).toEqual([])
+  })
+  it('warns only the worker about a missing ANTHROPIC_API_KEY', () => {
+    expect(runtimeEnvWarnings({ ...prod, ANTHROPIC_API_KEY: '' }, 'worker')).toEqual([expect.stringMatching(/ANTHROPIC_API_KEY/)])
+    expect(runtimeEnvWarnings({ ...prod, ANTHROPIC_API_KEY: '' }, 'web')).toEqual([])
   })
 })

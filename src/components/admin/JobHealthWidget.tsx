@@ -59,7 +59,7 @@ export async function JobHealthWidget({ req }: WidgetServerProps) {
         </tbody>
       </table>
       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--theme-elevation-600)' }}>
-        Pending: {health.pending.default} default, {health.pending.sync} sync · Failed in the last 7 days: {health.failedJobs7d}
+        Pending: {health.pending.default} default, {health.pending.sync} sync, {health.pending.enrich} enrich · Failed in the last 7 days: {health.failedJobs7d}
         {quota && ` · GitHub quota: ${quota.remaining}/${quota.limit}${quota.resetAt ? `, resets ${when(quota.resetAt)}` : ''}`}
       </p>
     </div>

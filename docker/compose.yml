@@ -54,6 +54,7 @@ services:
       PAYLOAD_SECRET: ${PAYLOAD_SECRET}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SERVER_URL: https://payloaddirectory.dev
       # The web service's internal address (revalidate jobs POST /api/revalidate here).
       INTERNAL_WEB_URL: http://web:3000

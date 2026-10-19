@@ -6,6 +6,7 @@ import * as migration_20261019_004030_sync_status from './20261019_004030_sync_s
 import * as migration_20261019_011902_jobs from './20261019_011902_jobs';
 import * as migration_20261019_041900_taxonomy_ai from './20261019_041900_taxonomy_ai';
 import * as migration_20261019_050500_seed_taxonomy from './20261019_050500_seed_taxonomy';
+import * as migration_20261019_052800_enrich_jobs from './20261019_052800_enrich_jobs';
 
 export const migrations = [
   {
@@ -47,5 +48,10 @@ export const migrations = [
     up: migration_20261019_050500_seed_taxonomy.up,
     down: migration_20261019_050500_seed_taxonomy.down,
     name: '20261019_050500_seed_taxonomy',
+  },
+  {
+    up: migration_20261019_052800_enrich_jobs.up,
+    down: migration_20261019_052800_enrich_jobs.down,
+    name: '20261019_052800_enrich_jobs'
   },
 ];

@@ -39,11 +39,13 @@ export async function recordGitHubQuota(payload: Payload, quota: GitHubQuota | n
   if (quota) await recordJobSuccess(payload, GITHUB_QUOTA_KEY, quota, now)
 }
 
-export const MONITORED_TASKS = ['discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate'] as const
+export const MONITORED_TASKS = [
+  'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich-all', 'enrich-batch', 'enrich',
+] as const
 export type MonitoredTask = (typeof MONITORED_TASKS)[number]
 
-/** Scheduled tasks only; queued tasks (sync-repository, revalidate) have no expected rhythm. */
-const EXPECTED_EVERY_HOURS: Partial<Record<MonitoredTask, number>> = { discover: 6, 'npm-stats': 24, snapshot: 24 }
+/** Scheduled tasks only; queued tasks (sync-repository, revalidate, enrich, enrich-batch) have no expected rhythm. */
+const EXPECTED_EVERY_HOURS: Partial<Record<MonitoredTask, number>> = { discover: 6, 'npm-stats': 24, snapshot: 24, 'enrich-all': 1 }
 
 /** A scheduled task is overdue when it has not succeeded within twice its interval. */
 export function isOverdue(task: MonitoredTask, lastSuccessAt: Date | null, now: Date): boolean {
@@ -67,7 +69,7 @@ export type JobHealth = {
   discoverWarning: string | null
   githubQuota: GitHubQuota | null
   failedJobs7d: number
-  pending: { default: number; sync: number }
+  pending: { default: number; sync: number; enrich: number }
 }
 
 const MAX_ERROR_CHARS = 200
@@ -108,10 +110,11 @@ export async function getJobHealth(payload: Payload, now: Date): Promise<JobHeal
   const pendingIn = async (queue: string) =>
     (await payload.count({ collection: 'payload-jobs', overrideAccess: true, where: { and: [notFinished, { queue: { equals: queue } }] } })).totalDocs
   const since = new Date(now.getTime() - 7 * 86_400_000).toISOString()
-  const [failed, pendingDefault, pendingSync] = await Promise.all([
+  const [failed, pendingDefault, pendingSync, pendingEnrich] = await Promise.all([
     payload.count({ collection: 'payload-jobs', overrideAccess: true, where: { and: [{ hasError: { equals: true } }, { updatedAt: { greater_than: since } }] } }),
     pendingIn(QUEUES.default),
     pendingIn(QUEUES.sync),
+    pendingIn(QUEUES.enrich),
   ])
 
   // Shown only while current: the guard row is stamped with the same `at` as the discover run that tripped it.
@@ -129,5 +132,5 @@ export async function getJobHealth(payload: Payload, now: Date): Promise<JobHeal
   const quota = rows.get(GITHUB_QUOTA_KEY)?.details as Partial<GitHubQuota> | null | undefined
   const githubQuota =
     quota && typeof quota.remaining === 'number' && typeof quota.limit === 'number' ? (quota as GitHubQuota) : null
-  return { tasks, discoverWarning, githubQuota, failedJobs7d: failed.totalDocs, pending: { default: pendingDefault, sync: pendingSync } }
+  return { tasks, discoverWarning, githubQuota, failedJobs7d: failed.totalDocs, pending: { default: pendingDefault, sync: pendingSync, enrich: pendingEnrich } }
 }

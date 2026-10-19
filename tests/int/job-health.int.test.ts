@@ -43,7 +43,7 @@ describe('getJobHealth', () => {
 
     const health = await getJobHealth(payload, now)
     const task = (slug: string) => health.tasks.find((t) => t.slug === slug)
-    expect(health.tasks.map((t) => t.slug)).toEqual(['discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate'])
+    expect(health.tasks.map((t) => t.slug)).toEqual(['discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich-all', 'enrich-batch', 'enrich'])
     expect(task('discover')).toMatchObject({ lastSuccessAt: hoursAgo(5).toISOString(), overdue: false, failing: false })
     expect(task('npm-stats')?.overdue).toBe(true)
     expect(task('snapshot')).toMatchObject({ lastSuccessAt: null, overdue: true })
@@ -51,7 +51,7 @@ describe('getJobHealth', () => {
     expect(health.discoverWarning).toBe('Topic-search repositories seen 1 of 4; no repository was counted as missed or trashed.')
     expect(health.githubQuota).toMatchObject({ remaining: 4000, limit: 5000 })
     expect(health.failedJobs7d).toBe(2)
-    expect(health.pending).toEqual({ default: 1, sync: 1 })
+    expect(health.pending).toEqual({ default: 1, sync: 1, enrich: 0 })
   })
 
   it('hides the discover warning once a later discover run succeeded, and a recovered task is not failing', async () => {

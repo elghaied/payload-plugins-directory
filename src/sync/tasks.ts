@@ -1,72 +1,21 @@
-import { JobCancelledError, type JobsConfig, type Payload, type TaskConfig } from 'payload'
+import type { JobsConfig, Payload, TaskConfig } from 'payload'
 import { isAdmin, isAdminUser } from '@/access'
+import { queueEnrichForChanged } from '@/enrich/queue'
+import { enrichTasks } from '@/enrich/tasks'
 import { SNAPSHOT_TAGS } from '@/lib/cacheTags'
 import { isUsableSecret, MIN_SECRET_LENGTH } from '@/lib/revalidate'
 import { createSyncContext, getSyncDeps } from './deps'
 import { runDiscover } from './discover'
-import { InvalidGitHubPathError, type GitHubClient } from './github'
-import { RateLimitError } from './http'
-import { DISCOVER_GUARD_KEY, recordGitHubQuota, recordJobFailure, recordJobSuccess } from './jobStatus'
-import { InvalidNpmPackageNameError } from './npm'
+import type { GitHubClient } from './github'
+import { DISCOVER_GUARD_KEY, recordGitHubQuota, recordJobSuccess } from './jobStatus'
 import { runNpmStats } from './npmStats'
 import { QUEUES } from './queues'
 import { postRevalidate } from './revalidate'
 import { runSnapshot } from './snapshot'
 import { runSyncRepository } from './syncRepository'
+import { queueRevalidate, SyncConfigError, track } from './taskKit'
 
-type RateLimited = { status: 'rate-limited' }
-
-async function queueRevalidate(payload: Payload, tags: readonly string[]): Promise<void> {
-  if (tags.length === 0) return
-  await payload.jobs.queue({ task: 'revalidate', input: { tags: [...new Set(tags)] }, queue: QUEUES.default, overrideAccess: true })
-}
-
-/** The worker is misconfigured: retrying cannot help until someone changes the environment. */
-export class SyncConfigError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'SyncConfigError'
-  }
-}
-
-/** Errors that fail the same way on every attempt: the job is failed without using its retries. */
-const isPermanent = (err: unknown) =>
-  err instanceof InvalidGitHubPathError || err instanceof InvalidNpmPackageNameError || err instanceof SyncConfigError
-
-/**
- * Runs a task body and records the outcome in job_status, every write stamped with `at` (one timestamp per run, so
- * rows written by the same run compare equal). A RateLimitError re-queues the job as a fresh job with `waitUntil` =
- * the reset time (spec §4.2) and completes this run, so a rate limit never uses up the task's retries. A permanent
- * error (invalid input, missing configuration) is recorded and the job is cancelled: Payload marks it failed and never
- * retries it. Any other error is recorded and rethrown so Payload's retries (with backoff) apply.
- */
-async function track<T extends Record<string, unknown>>(
-  payload: Payload,
-  slug: string,
-  at: Date,
-  run: () => Promise<T>,
-  requeue?: (err: RateLimitError) => Promise<unknown>,
-): Promise<T | RateLimited> {
-  try {
-    const output = await run()
-    await recordJobSuccess(payload, slug, output, at)
-    return output
-  } catch (err) {
-    if (err instanceof RateLimitError && requeue) {
-      try {
-        await requeue(err)
-      } catch (requeueErr) {
-        await recordJobFailure(payload, slug, requeueErr, at)
-        throw requeueErr
-      }
-      await recordJobSuccess(payload, slug, { status: 'rate-limited', resetAt: err.resetAt.toISOString() }, at)
-      return { status: 'rate-limited' }
-    }
-    await recordJobFailure(payload, slug, err, at)
-    if (isPermanent(err)) throw new JobCancelledError(`${(err as Error).message} (not retried)`)
-    throw err
-  }
-}
+export { isPermanent, SyncConfigError } from './taskKit'
 
 /** Records the GitHub quota the run saw, whether it succeeded or not (the widget shows the latest one). */
 async function withQuota<T>(payload: Payload, github: GitHubClient, at: Date, run: () => Promise<T>): Promise<T> {
@@ -154,6 +103,7 @@ const syncRepositoryTask: TaskConfig<'sync-repository'> = {
     { name: 'restored', type: 'number' },
     { name: 'trashed', type: 'number' },
     { name: 'contentChanged', type: 'number', hasMany: true },
+    { name: 'enrichQueued', type: 'number' },
   ],
   handler: async ({ input, req }) => {
     const { payload } = req
@@ -171,10 +121,8 @@ const syncRepositoryTask: TaskConfig<'sync-repository'> = {
           if (r.created.length) {
             await payload.jobs.queue({ task: 'npm-stats', input: { slugs: r.created }, queue: QUEUES.default, overrideAccess: true })
           }
-          // ── PHASE 2 HOOK (enrich) ──────────────────────────────────────────────────────────────────────────
-          // r.contentChanged lists the ids of active plugins whose contentHash differs from ai.enrichedHash.
-          // Phase 2 queues one `enrich` job per id here. No enrichment in Phase 1.
-          // ───────────────────────────────────────────────────────────────────────────────────────────────────
+          // Re-enrich previously enriched plugins whose content changed; never-enriched ones go to enrich-all (batched).
+          const enrichQueued = await queueEnrichForChanged(payload, r.contentChanged)
           return {
             status: r.status,
             contentReRead: r.contentReRead,
@@ -183,6 +131,7 @@ const syncRepositoryTask: TaskConfig<'sync-repository'> = {
             restored: r.restored.length,
             trashed: r.trashed.length,
             contentChanged: r.contentChanged,
+            enrichQueued,
           }
         },
         (err) => payload.jobs.queue({ task: 'sync-repository', input, queue: QUEUES.sync, waitUntil: err.resetAt, overrideAccess: true }),
@@ -310,5 +259,5 @@ export const jobsConfig: JobsConfig = {
     access: { ...defaultJobsCollection.access, read: isAdmin },
     admin: { ...defaultJobsCollection.admin, group: 'System', hidden: false },
   }),
-  tasks: syncTasks,
+  tasks: [...syncTasks, ...enrichTasks],
 }

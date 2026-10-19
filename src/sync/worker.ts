@@ -1,10 +1,11 @@
 import type { Payload } from 'payload'
 import { QUEUES } from './queues'
 
-/** Jobs run in parallel per batch: `sync` 4 = spec §4 "concurrency 4". Phase 2 adds { queue: 'enrich', limit: 2 }. */
+/** Jobs run in parallel per batch: `sync` 4 and `enrich` 2 = spec §4 concurrency for sync-repository and enrich. */
 export const WORKER_QUEUES: readonly { queue: string; limit: number }[] = [
   { queue: QUEUES.default, limit: 10 },
   { queue: QUEUES.sync, limit: 4 },
+  { queue: QUEUES.enrich, limit: 2 },
 ]
 /** A tick stops starting new batches after this; `--cron` (croner `protect`) skips ticks while one still runs. */
 export const TICK_BUDGET_MS = 50_000

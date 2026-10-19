@@ -27,6 +27,9 @@ export function runtimeEnvWarnings(env: Env, role: ProcessRole): string[] {
   if (role === 'worker') {
     if (!env.GITHUB_TOKEN) warnings.push('GITHUB_TOKEN is not set: unauthenticated GitHub allows 60 requests per hour, far too few for discover and sync.')
     if (!env.INTERNAL_WEB_URL) warnings.push('INTERNAL_WEB_URL is not set: revalidate jobs post to http://localhost:3000.')
+    if (!env.ANTHROPIC_API_KEY) {
+      warnings.push('ANTHROPIC_API_KEY is not set: AI enrichment is skipped; plugins keep their author description and stay "Uncategorized".')
+    }
   }
   return warnings
 }

@@ -1,2 +1,2 @@
-/** `default`: discover, npm-stats, snapshot, revalidate. `sync`: sync-repository (spec §4 "concurrency 4"). Phase 2 adds `enrich`. */
-export const QUEUES = { default: 'default', sync: 'sync' } as const
+/** `default`: discover, npm-stats, snapshot, revalidate, enrich-all, enrich-batch. `sync`: sync-repository. `enrich`: enrich. */
+export const QUEUES = { default: 'default', sync: 'sync', enrich: 'enrich' } as const
