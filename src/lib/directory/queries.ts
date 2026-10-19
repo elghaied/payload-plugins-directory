@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 import config from '@payload-config'
+import { LIST_TAG, pluginTag } from '@/lib/cacheTags'
 import { toDetail, toSummary } from './mappers'
 import type { PluginDetail, PluginSummary } from './types'
 
@@ -29,7 +30,7 @@ export const getPluginSummaries = unstable_cache(
     return res.docs.map((doc) => toSummary(doc as never))
   },
   ['plugin-summaries'],
-  { tags: ['plugins'], revalidate: 3600 },
+  { tags: [LIST_TAG], revalidate: 3600 },
 )
 
 export async function getPluginDetail(slug: string): Promise<PluginDetail | null> {
@@ -51,7 +52,7 @@ export async function getPluginDetail(slug: string): Promise<PluginDetail | null
       return res.docs[0] ? toDetail(res.docs[0]) : null
     },
     ['plugin-detail', slug],
-    { tags: ['plugins', `plugin:${slug}`], revalidate: 3600 },
+    { tags: [LIST_TAG, pluginTag(slug)], revalidate: 3600 },
   )()
 }
 
@@ -66,5 +67,5 @@ export const getDirectoryMeta = unstable_cache(
     return { lastUpdated, totalCount: count.totalDocs }
   },
   ['directory-meta'],
-  { tags: ['plugins'], revalidate: 3600 },
+  { tags: [LIST_TAG], revalidate: 3600 },
 )
