@@ -34,6 +34,8 @@ export type NpmPackageInfo = { data: NpmData; repositoryUrl: string | null }
 export interface NpmClient {
   /** null when the package does not exist or has no `latest` tag. Rate limits throw RateLimitError, other failures HttpError. */
   getPackage(name: string): Promise<NpmPackageInfo | null>
+  /** Registry metadata only (no download-count requests). null = 404. `hasLatest` is false when there is no `latest` dist-tag. */
+  getRepository(name: string): Promise<{ hasLatest: boolean; repositoryUrl: string | null } | null>
 }
 
 type RepositoryField = string | { url?: string } | undefined
@@ -71,7 +73,31 @@ export function createNpmClient(opts: { fetch: FetchFn; now?: () => Date }): Npm
     }
   }
 
+  async function parseMeta(res: Response, url: string): Promise<RegistryDoc> {
+    const text = await res.text() // body-read (network) errors propagate
+    let meta: RegistryDoc
+    try {
+      meta = JSON.parse(text) as RegistryDoc
+    } catch {
+      throw new HttpError(res.status, url) // malformed registry JSON
+    }
+    if (!meta || typeof meta !== 'object') throw new HttpError(res.status, url)
+    return meta
+  }
+
   return {
+    async getRepository(name) {
+      const url = buildUrl(NPM_REGISTRY, encodeURIComponent(checkPackageName(name)))
+      const res = await get(url)
+      if (!res) return null
+      const meta = await parseMeta(res, url)
+      const latest = meta['dist-tags']?.latest
+      return {
+        hasLatest: Boolean(latest),
+        repositoryUrl: repositoryUrl(latest ? meta.versions?.[latest]?.repository : undefined) ?? repositoryUrl(meta.repository),
+      }
+    },
+
     async getPackage(name) {
       const id = encodeURIComponent(checkPackageName(name))
       const [metaRes, weeklyDownloads, monthlyDownloads] = await Promise.all([
@@ -80,14 +106,7 @@ export function createNpmClient(opts: { fetch: FetchFn; now?: () => Date }): Npm
         downloads(buildUrl(NPM_DOWNLOADS, `last-month/${id}`)),
       ])
       if (!metaRes) return null
-      const text = await metaRes.text() // body-read (network) errors propagate
-      let meta: RegistryDoc
-      try {
-        meta = JSON.parse(text) as RegistryDoc
-      } catch {
-        throw new HttpError(metaRes.status, buildUrl(NPM_REGISTRY, id)) // malformed registry JSON
-      }
-      if (!meta || typeof meta !== 'object') throw new HttpError(metaRes.status, buildUrl(NPM_REGISTRY, id))
+      const meta = await parseMeta(metaRes, buildUrl(NPM_REGISTRY, id))
       const latest = meta['dist-tags']?.latest
       if (!latest) return null
       const version = meta.versions?.[latest]

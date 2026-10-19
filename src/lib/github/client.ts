@@ -1,3 +1,4 @@
+import { clampChars } from '@/sync/limits'
 import { withTimeout, type FetchFn } from '@/sync/http'
 import { canonicalFullName, GITHUB_NAME_RE } from '@/lib/submissions/url'
 
@@ -7,6 +8,7 @@ import { canonicalFullName, GITHUB_NAME_RE } from '@/lib/submissions/url'
  */
 export type GitHubUser = { id: number; login: string; name: string | null; avatarUrl: string | null }
 export type GitHubOwner = { id: number; login: string; type: 'User' | 'Organization' }
+export type GitHubRepositoryOwnership = { id: number; fullName: string; owner: GitHubOwner }
 
 /**
  * Failure modes callers can branch on. None of them is thrown: a claim that cannot be verified is queued.
@@ -16,14 +18,14 @@ export type LookupFailure = { ok: false; reason: 'invalid' | 'not-found' | 'unav
 export type Lookup<T> = ({ ok: true } & T) | LookupFailure
 
 export interface GitHubAuthClient {
-  /** The user a `read:user` OAuth token belongs to. Throws on any failure (the login flow shows an error page). */
+  /** The user a `read:user` OAuth token belongs to. The ONLY method that throws on failure: Task 6's `completeGitHubLogin` catches it and shows the sign-in error page. */
   getAuthenticatedUser(accessToken: string): Promise<GitHubUser>
-  /** True only when GitHub confirms public membership (204). 404 → false. Anything else throws. */
-  isPublicOrgMember(org: string, login: string): Promise<boolean>
-  /** Same check as a typed result; never throws. */
+  /** Public org membership: 204 → member, 404 → not a member; anything else is `unavailable`. Never throws. */
   checkPublicOrgMembership(org: string, login: string): Promise<Lookup<{ member: boolean }>>
   /** Live owner of a repository: by numeric id (survives renames and transfers) or by `owner/repo`. */
   getRepositoryOwner(ref: number | string): Promise<Lookup<{ owner: GitHubOwner }>>
+  /** Repository by immutable numeric id (`/repositories/{id}`, which never redirects, so renames and transfers resolve). */
+  getRepositoryById(id: number): Promise<Lookup<{ repository: GitHubRepositoryOwnership }>>
   /** A user's current profile (including login) from the immutable numeric id. */
   getUserById(id: number): Promise<Lookup<{ user: GitHubUser }>>
 }
@@ -55,9 +57,16 @@ function toUser(body: unknown): GitHubUser | null {
   return {
     id: b.id,
     login: b.login,
-    name: typeof b.name === 'string' ? b.name.slice(0, 200) : null,
+    name: typeof b.name === 'string' ? clampChars(b.name, 200) : null,
     avatarUrl: safeAvatar(b.avatar_url),
   }
+}
+
+function toOwner(value: unknown): GitHubOwner | null {
+  if (typeof value !== 'object' || value === null) return null
+  const o = value as Record<string, unknown>
+  if (!isId(o.id) || typeof o.login !== 'string' || !GITHUB_NAME_RE.test(o.login)) return null
+  return o.type === 'User' || o.type === 'Organization' ? { id: o.id, login: o.login, type: o.type } : null
 }
 
 export function createGitHubAuthClient({
@@ -100,14 +109,6 @@ export function createGitHubAuthClient({
       return user
     },
 
-    async isPublicOrgMember(org, login) {
-      if (!GITHUB_NAME_RE.test(org) || !GITHUB_NAME_RE.test(login)) return false
-      const res = await get(`/orgs/${org}/public_members/${login}`, appAuth)
-      if (res.status === 204) return true
-      if (res.status === 404) return false
-      throw new Error(`GitHub public_members returned ${res.status}`)
-    },
-
     checkPublicOrgMembership: membership,
 
     async getRepositoryOwner(ref) {
@@ -124,10 +125,22 @@ export function createGitHubAuthClient({
       return lookup<{ owner: GitHubOwner }>(path, async (res) => {
         if (res.status === 404) return { ok: false, reason: 'not-found' }
         if (res.status !== 200) return { ok: false, reason: 'unavailable' }
-        const o = ((await res.json()) as { owner?: Record<string, unknown> } | null)?.owner
-        if (!o || !isId(o.id) || typeof o.login !== 'string' || !GITHUB_NAME_RE.test(o.login)) return { ok: false, reason: 'unavailable' }
-        if (o.type !== 'User' && o.type !== 'Organization') return { ok: false, reason: 'unavailable' }
-        return { ok: true, owner: { id: o.id, login: o.login, type: o.type } }
+        const owner = toOwner(((await res.json()) as { owner?: unknown } | null)?.owner)
+        return owner ? { ok: true, owner } : { ok: false, reason: 'unavailable' }
+      })
+    },
+
+    async getRepositoryById(id) {
+      if (!isId(id)) return { ok: false, reason: 'invalid' }
+      return lookup<{ repository: GitHubRepositoryOwnership }>(`/repositories/${id}`, async (res) => {
+        if (res.status === 404) return { ok: false, reason: 'not-found' }
+        if (res.status !== 200) return { ok: false, reason: 'unavailable' }
+        const body = (await res.json()) as { id?: unknown; full_name?: unknown; owner?: unknown } | null
+        const owner = toOwner(body?.owner)
+        const fullName = typeof body?.full_name === 'string' ? body.full_name.split('/') : []
+        const canonical = fullName.length === 2 ? canonicalFullName(fullName[0], fullName[1]) : null
+        if (!owner || !canonical || !isId(body?.id)) return { ok: false, reason: 'unavailable' }
+        return { ok: true, repository: { id: body.id, fullName: canonical, owner } }
       })
     },
 

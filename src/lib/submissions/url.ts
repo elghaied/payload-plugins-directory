@@ -40,6 +40,8 @@ function decodeSegment(segment: string): string | null {
 export function parseSubmissionUrl(input: string): SubmissionTarget | null {
   const raw = input.trim()
   if (!raw || raw.length > 300 || /[\s\u0000-\u001f\u007f\\]/.test(raw)) return null
+  // ASCII only: full-width, soft-hyphen, zero-width or bidi characters are rejected, never normalised into a host.
+  if (/[^\u0021-\u007e]/.test(raw)) return null
   const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`
   let url: URL
   try {
@@ -52,6 +54,8 @@ export function parseSubmissionUrl(input: string): SubmissionTarget | null {
   const segments = url.pathname.split('/').filter(Boolean).map(decodeSegment)
   if (segments.some((s) => s === null)) return null
   const parts = segments as string[]
+  // Dot segments (raw or %2e) are rejected, not resolved: `/acme/repo/../../evil/x` must not become `evil/x`.
+  if (/(?:^|\/)(?:\.{1,2}|%2e|\.%2e|%2e\.|%2e%2e)(?:\/|$)/i.test(raw.split(/[?#]/)[0]) || parts.some((p) => p === '.' || p === '..')) return null
 
   if (GITHUB_HOSTS.has(host)) {
     if (parts.length < 2) return null

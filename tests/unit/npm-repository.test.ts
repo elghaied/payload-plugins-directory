@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { vi } from 'vitest'
-import { createNpmRepositoryResolver, githubFullNameFromRepositoryField } from '@/lib/npm/repository'
+import { describe, expect, it, vi } from 'vitest'
+import { createNpmRepositoryLookup, createNpmRepositoryResolver, githubFullNameFromRepositoryField } from '@/lib/npm/repository'
 
 describe('githubFullNameFromRepositoryField', () => {
   it.each([
@@ -40,12 +39,11 @@ describe('createNpmRepositoryResolver', () => {
     expect(init.redirect).toBe('error')
     expect(init.signal).toBeInstanceOf(AbortSignal)
   })
-  it('only requests registry.npmjs.org / api.npmjs.org', async () => {
+  it('makes exactly one request, to registry.npmjs.org (no download counts)', async () => {
     const fetch = vi.fn(async () => new Response(JSON.stringify(doc('acme/plugin'))))
     await createNpmRepositoryResolver({ fetch })('x')
-    for (const [url] of fetch.mock.calls as unknown as [string][]) {
-      expect(['registry.npmjs.org', 'api.npmjs.org']).toContain(new URL(url).hostname)
-    }
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(new URL((fetch.mock.calls[0] as unknown as [string])[0]).hostname).toBe('registry.npmjs.org')
   })
   it('returns null on 404 or a non-GitHub repository', async () => {
     expect(await createNpmRepositoryResolver({ fetch: vi.fn(async () => new Response('', { status: 404 })) })('x')).toBeNull()
@@ -59,5 +57,18 @@ describe('createNpmRepositoryResolver', () => {
   })
   it('throws on registry errors', async () => {
     await expect(createNpmRepositoryResolver({ fetch: vi.fn(async () => new Response('', { status: 503 })) })('x')).rejects.toThrow(/503/)
+  })
+})
+
+describe('createNpmRepositoryLookup', () => {
+  const lookup = (body: unknown, status = 200) => createNpmRepositoryLookup({ fetch: vi.fn(async () => new Response(JSON.stringify(body), { status })) })
+  it('distinguishes found, not-found, no-latest and not-github', async () => {
+    expect(await lookup(doc('acme/plugin'))('x')).toEqual({ status: 'found', fullName: 'acme/plugin' })
+    expect(await lookup({}, 404)('x')).toEqual({ status: 'not-found' })
+    expect(await lookup({ repository: 'acme/plugin' })('x')).toEqual({ status: 'found', fullName: 'acme/plugin' })
+    expect(await lookup({ versions: {} })('x')).toEqual({ status: 'no-latest' })
+    expect(await lookup(doc('gitlab:acme/x'))('x')).toEqual({ status: 'not-github' })
+    expect(await lookup(doc(undefined))('x')).toEqual({ status: 'not-github' })
+    expect(await lookup(doc('acme/plugin'))('../../etc')).toEqual({ status: 'not-found' })
   })
 })
