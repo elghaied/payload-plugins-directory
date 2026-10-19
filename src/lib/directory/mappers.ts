@@ -75,6 +75,7 @@ export function toDetail(doc: Plugin): PluginDetail {
     ...toSummary(doc),
     authorDescription: authorDescriptionOf(doc.description),
     ...(doc.customTagline?.trim() ? { customTagline: doc.customTagline.trim() } : {}),
+    ...(typeof doc.logo === 'object' && doc.logo?.url ? { logoUrl: doc.logo.url } : {}),
     readme: readmePreview(doc.readme),
     readmeFull: doc.readme ?? undefined,
     payloadVersionRange: doc.payloadVersionRange ?? null,

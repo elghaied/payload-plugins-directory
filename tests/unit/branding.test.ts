@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeTagline, validateTagline } from '@/lib/maintainers/branding'
+import { detectImageType, normalizeTagline, validateTagline } from '@/lib/maintainers/branding'
 
 // Invisible characters are always written as escapes, never as literals.
 describe('normalizeTagline', () => {
@@ -35,5 +35,22 @@ describe('validateTagline', () => {
   it('rejects over-long input with a message instead of cutting it', () => {
     expect(validateTagline('a'.repeat(120))).toEqual({ ok: true, value: 'a'.repeat(120) })
     expect(validateTagline('a'.repeat(121))).toMatchObject({ ok: false, message: expect.stringContaining('120') })
+  })
+})
+
+describe('detectImageType', () => {
+  const png = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex')
+  const jpeg = Buffer.from('ffd8ffe000104a464946', 'hex')
+  const webp = Buffer.concat([Buffer.from('RIFF'), Buffer.from([0, 0, 0, 0]), Buffer.from('WEBPVP8 ')])
+  it('recognises PNG, JPEG and WebP by magic bytes', () => {
+    expect(detectImageType(png)).toEqual({ mime: 'image/png', ext: 'png' })
+    expect(detectImageType(jpeg)).toEqual({ mime: 'image/jpeg', ext: 'jpg' })
+    expect(detectImageType(webp)).toEqual({ mime: 'image/webp', ext: 'webp' })
+  })
+  it('rejects SVG, HTML, GIF and empty input', () => {
+    expect(detectImageType(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>'))).toBeNull()
+    expect(detectImageType(Buffer.from('<!doctype html><script>'))).toBeNull()
+    expect(detectImageType(Buffer.from('GIF89a'))).toBeNull()
+    expect(detectImageType(Buffer.alloc(0))).toBeNull()
   })
 })

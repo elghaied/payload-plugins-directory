@@ -36,6 +36,8 @@ export type PluginDetail = PluginSummary & {
   authorDescription: string
   /** The claimed maintainer's own tagline, shown in the detail header; absent when unset. */
   customTagline?: string
+  /** Maintainer-uploaded logo (media URL); replaces the owner avatar in the detail header. */
+  logoUrl?: string
   readme?: string
   /** Full README for the "Full README" disclosure; `readme` stays the short preview. */
   readmeFull?: string

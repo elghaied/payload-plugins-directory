@@ -157,9 +157,9 @@ export default async function PluginDetailPage({
         <header className="mb-8">
           <div className="flex items-start gap-4">
             <img
-              src={plugin.ownerAvatar}
-              alt={plugin.owner}
-              className="w-14 h-14 rounded-full ring-2 ring-border"
+              src={plugin.logoUrl ?? plugin.ownerAvatar}
+              alt={plugin.logoUrl ? `${plugin.name} logo` : plugin.owner}
+              className={`w-14 h-14 ring-2 ring-border ${plugin.logoUrl ? 'rounded-lg object-contain bg-background' : 'rounded-full'}`}
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 flex-wrap">

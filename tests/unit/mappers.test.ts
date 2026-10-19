@@ -39,3 +39,20 @@ describe('toDetail', () => {
     expect(toDetail(doc as never)).toMatchObject({ readme: 'Long readme', payloadVersionRange: '^3.0.0' })
   })
 })
+
+describe('toDetail maintainer branding', () => {
+  it('exposes customTagline and the logo URL', () => {
+    const d = toDetail({ ...doc, customTagline: 'Fast forms', logo: { id: 3, url: '/api/media/file/x-logo.png', alt: 'x' } } as never)
+    expect(d).toMatchObject({ customTagline: 'Fast forms', logoUrl: '/api/media/file/x-logo.png' })
+  })
+  it('omits them when unset or unpopulated', () => {
+    const d = toDetail({ ...doc, customTagline: null, logo: 3 } as never)
+    expect(d.customTagline).toBeUndefined()
+    expect(d.logoUrl).toBeUndefined()
+  })
+  it('keeps them out of the slim summary', () => {
+    const s = toSummary({ ...doc, customTagline: 'x', logo: { id: 3, url: '/u' } } as never)
+    expect(s).not.toHaveProperty('customTagline')
+    expect(s).not.toHaveProperty('logoUrl')
+  })
+})
