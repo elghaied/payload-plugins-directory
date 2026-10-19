@@ -433,13 +433,13 @@ export default async function PluginDetailPage({
           <Card className="mb-8">
             <CardContent className="p-6">
               <p className="text-xs font-medium text-muted-foreground mb-3">README</p>
-              <pre className="whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
+              <pre className="whitespace-pre-wrap break-words text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
                 {plugin.readme}
               </pre>
               {readmeFull && readmeFull.text.length > plugin.readme.length && (
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Full README</summary>
-                  <pre className="mt-3 whitespace-pre-wrap text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
+                  <pre className="mt-3 whitespace-pre-wrap break-words text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
                     {readmeFull.text}
                   </pre>
                   {readmeFull.truncated && (

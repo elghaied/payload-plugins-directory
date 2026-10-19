@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildChartModel, compactNumber, insufficientMessage, nearestIndex, niceTicks, signed } from '@/lib/trends/chartModel'
+import { buildChartModel, compactNumber, insufficientMessage, nearestIndex, niceTicks, signed, tickLabels } from '@/lib/trends/chartModel'
 import { addDays } from '@/lib/trends/days'
 import { coverage } from '@/lib/trends/growth'
 
@@ -101,5 +101,14 @@ describe('buildChartModel', () => {
     )
     if (m.kind !== 'ready') throw new Error('expected ready')
     expect(m.points).toEqual([{ date: '2026-10-12', value: 1 }, { date: '2026-10-19', value: 10 }])
+  })
+})
+
+describe('tickLabels', () => {
+  it('keeps compact labels when they are distinct', () => {
+    expect(tickLabels([0, 1000, 2000])).toEqual(['0', '1K', '2K'])
+  })
+  it('falls back to full numbers when compact labels would repeat', () => {
+    expect(tickLabels([45290, 45300, 45310])).toEqual(['45,290', '45,300', '45,310'])
   })
 })

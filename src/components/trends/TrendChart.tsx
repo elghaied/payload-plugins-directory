@@ -1,7 +1,7 @@
 'use client'
 
 import { useId, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { buildChartModel, compactNumber, nearestIndex, signed } from '@/lib/trends/chartModel'
+import { buildChartModel, compactNumber, nearestIndex, signed, tickLabels } from '@/lib/trends/chartModel'
 import { formatDay } from '@/lib/trends/days'
 import type { Point } from '@/lib/trends/growth'
 import { TrendEmpty } from './TrendEmpty'
@@ -60,6 +60,8 @@ export function TrendChart({ title, metric, series, tone, footnote }: Props) {
     setActive(Math.min(lastIndex, Math.max(0, next)))
   }
 
+  const axisLabels = tickLabels(ticks.map((t) => t.value))
+
   return (
     <figure aria-labelledby={titleId}>
       {caption}
@@ -71,9 +73,9 @@ export function TrendChart({ title, metric, series, tone, footnote }: Props) {
       </p>
       <div className="mt-3 flex gap-2">
         <div aria-hidden className="relative h-32 w-10 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground">
-          {ticks.map((t) => (
+          {ticks.map((t, ti) => (
             <span key={t.value} className="absolute right-0 -translate-y-1/2" style={{ top: `${t.y}%` }}>
-              {compactNumber(t.value)}
+              {axisLabels[ti]}
             </span>
           ))}
         </div>

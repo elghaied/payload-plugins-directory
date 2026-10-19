@@ -5,6 +5,12 @@ export const MIN_CHART_SPAN_DAYS = TREND_WINDOW_DAYS
 
 const compactFormat = new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 })
 export const compactNumber = (n: number) => compactFormat.format(n)
+const fullFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
+/** Axis labels: compact, unless rounding would make neighbouring ticks read the same (narrow range on a big number). */
+export function tickLabels(values: number[]): string[] {
+  const compact = values.map(compactNumber)
+  return new Set(compact).size === compact.length ? compact : values.map((v) => fullFormat.format(v))
+}
 /** Signed compact number; uses U+2212 MINUS SIGN (read as "minus" by screen readers). */
 export const signed = (n: number) => (n > 0 ? `+${compactNumber(n)}` : n < 0 ? `−${compactNumber(-n)}` : '0')
 

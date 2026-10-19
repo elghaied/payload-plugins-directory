@@ -152,7 +152,7 @@ export default async function StatsPage() {
           )}
         </section>
 
-        <div className="grid gap-4 sm:gap-8 md:grid-cols-2">
+        <div className="grid gap-4 sm:gap-8 md:grid-cols-2 [&>section]:min-w-0">
           {/* Most downloaded */}
           {stats.mostDownloaded.length > 0 && (
             <section className="bg-card border rounded-lg p-4 sm:p-5">

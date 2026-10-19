@@ -81,7 +81,7 @@ function recentRow(r: RecentRepo): RankedRow {
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <section className="bg-card border rounded-lg p-4 sm:p-5">
+    <section className="min-w-0 bg-card border rounded-lg p-4 sm:p-5">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
       {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
       <div className="mt-4">{children}</div>
