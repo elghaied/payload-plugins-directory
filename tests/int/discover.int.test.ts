@@ -264,6 +264,7 @@ describe('runDiscover', () => {
   })
 
   it('uses an approved submission\'s repositoryFullName (admin-entered for npm) and never trashes its plugin over 3 runs', async () => {
+    await knownRepos() // acme/r1..r4 are found by the search below, so the guard does not trip
     const m = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 1, login: 'maint' } })
     const repo = await createRepo(payload, { fullName: 'acme/manual' })
     await createPlugin(payload, repo.id, { slug: 'manual-root' })
@@ -273,12 +274,16 @@ describe('runDiscover', () => {
       data: { type: 'listing', url: 'https://www.npmjs.com/package/payload-manual', repositoryFullName: 'acme/manual', status: 'approved', submittedBy: m.id },
     })
     for (let run = 0; run < 3; run++) {
-      const r = await discover(search())
-      expect(r).toMatchObject({ trashed: [], missed: [] })
+      const r = await discover(search(101, 102, 103, 104))
+      expect(r).toMatchObject({ guardTripped: false, trashed: [], missed: [] })
       expect(r.toSync).toContainEqual({ fullName: 'acme/manual', source: 'submission', discovered: true })
     }
     const stored = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'manual-root' } }, trash: true })
     expect(stored.docs[0].deletedAt ?? null).toBeNull()
+    // Control: without the stored name the same repository is missed (the guard stays off thanks to the 4 known repositories).
+    await payload.db.updateOne({ collection: 'submissions', where: { repositoryFullName: { equals: 'acme/manual' } }, data: { repositoryFullName: null } })
+    const control = await discover({ ...search(101, 102, 103, 104), ...npmRoutes('payload-manual', { repositoryUrl: 'git+https://github.com/other/elsewhere.git' }) })
+    expect(control.missed).toEqual(['acme/manual'])
   })
 
   it('queues stale-renamed rows that still have a listed plugin by their GitHub id, once', async () => {

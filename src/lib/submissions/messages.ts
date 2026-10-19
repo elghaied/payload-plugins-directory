@@ -10,5 +10,11 @@ export const MESSAGES = {
   claimNotListed: 'A claim must reference a listed plugin.',
   alreadyMaintainer: 'You already maintain this plugin.',
   claimPending: 'You already have a pending claim for this plugin.',
+  registryUnavailable: 'The npm registry did not answer. The submission stays pending; try again in a moment, or enter owner/repo by hand.',
+  approvedIsFinal: {
+    claim: 'An approved claim cannot be changed. Remove the maintainer from the plugin instead.',
+    listing: 'An approved listing cannot be changed. Hide or trash the plugin instead.',
+  },
+  claimPluginGone: 'The plugin for this claim is trashed or no longer exists, so the claim cannot be approved.',
   unresolvedRepository: 'Could not find the GitHub repository for this submission. Enter owner/repo by hand, then approve.',
 } as const

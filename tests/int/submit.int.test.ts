@@ -66,7 +66,17 @@ describe('submitListing', () => {
       status: 'invalid', message: expect.stringMatching(/10 requests/),
     })
   })
-  it('enforces the rules server-side even when the pre-check is skipped (hook, over-long note clamped)', async () => {
+  it('the collection hook enforces the rules on its own (no pre-check): duplicate, bad URL', async () => {
+    const create = (url: string) =>
+      payload.create({ collection: 'submissions', overrideAccess: false, user: bob, depth: 0, data: { type: 'listing', url, submittedBy: bob.id, status: 'pending' } })
+    const dup = await create('https://github.com/Acme/Forms').catch((e) => e)
+    expect(JSON.stringify(dup.data)).toMatch(/Already listed/)
+    await expect(create('https://github.com/spam/blocked')).rejects.toThrow()
+    await expect(create('http://169.254.169.254/x')).rejects.toThrow()
+    const stored = await create('GitHub.com/Bob/Hook-Path/')
+    expect(stored.url).toBe('https://github.com/bob/hook-path')
+  })
+  it('clamps an over-long note', async () => {
     const r = await submitListing({ payload, maintainer: bob, url: 'https://github.com/bob/long-note', note: 'x'.repeat(5000) })
     expect(r).toEqual({ status: 'created' })
     const doc = (await payload.find({ collection: 'submissions', overrideAccess: true, depth: 0, where: { url: { equals: 'https://github.com/bob/long-note' } } })).docs[0]

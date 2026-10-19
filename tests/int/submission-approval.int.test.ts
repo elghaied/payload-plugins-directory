@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { ValidationError, type Payload } from 'payload'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { createPayloadRequest, ValidationError, type Payload } from 'payload'
 import { relationId } from '@/lib/relationId'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
@@ -80,11 +80,21 @@ describe('approving submissions', () => {
     expect(doc.repositoryFullName).toBe('orphan/plugin')
     expect(await queuedSyncs()).toContain('orphan/plugin')
   })
-  it('a registry failure keeps the submission pending (never approves on a guess)', async () => {
+  it('a registry failure keeps the submission pending with a distinct outage message', async () => {
     const s = await listing('https://www.npmjs.com/package/flaky-plugin')
-    await expect(
-      approve(s.id, {}, { npmRepositoryResolver: async () => { throw new Error('registry down') } }),
-    ).rejects.toThrow(ValidationError)
+    const warn = vi.spyOn(payload.logger, 'warn').mockImplementation(() => undefined)
+    try {
+      await expect(
+        approve(s.id, {}, { npmRepositoryResolver: async () => { throw new Error('registry down') } }),
+      ).rejects.toThrow(ValidationError)
+      expect(warn).toHaveBeenCalled()
+      const err = await approve(s.id, {}, { npmRepositoryResolver: async () => { throw new Error('registry down') } }).catch((e) => e)
+      expect(JSON.stringify(err.data)).toMatch(/did not answer/)
+      const missing = await approve(s.id, {}, { npmRepositoryResolver: async () => null }).catch((e) => e)
+      expect(JSON.stringify(missing.data)).toMatch(/Could not find the GitHub repository/)
+    } finally {
+      warn.mockRestore()
+    }
     expect((await payload.findByID({ collection: 'submissions', id: s.id, overrideAccess: true })).status).toBe('pending')
   })
   it('the plugin created later by sync is linked back to the approved submission', async () => {
@@ -130,5 +140,69 @@ describe('approving submissions', () => {
     const s = await listing('https://github.com/rejected/one')
     await payload.update({ collection: 'submissions', id: s.id, overrideAccess: true, data: { status: 'rejected', rejectionReason: 'Not a plugin' } })
     expect(await queuedSyncs()).toEqual(before)
+  })
+
+  describe('claims and finality', () => {
+    const makePlugin = async (slug: string) => {
+      const repo = await payload.create({
+        collection: 'repositories', overrideAccess: true,
+        data: { fullName: `claims/${slug}`, owner: 'claims', url: `https://github.com/claims/${slug}` },
+      })
+      return payload.create({
+        collection: 'plugins', overrideAccess: true,
+        data: { slug, name: slug, repository: repo.id, url: repo.url, source: 'topic', visibility: 'listed' },
+      })
+    }
+    const makeClaim = (pluginId: number, by: number) =>
+      payload.create({ collection: 'submissions', overrideAccess: true, depth: 0, data: { type: 'claim', plugin: pluginId, submittedBy: by, status: 'pending' } })
+
+    it('adding a maintainer does not leak into later writes on the same request: a public write still revalidates', async () => {
+      const plugin = await makePlugin('leak-check')
+      const claim = await makeClaim(plugin.id, makerId)
+      const req = await createPayloadRequest({ payload, user: admin as never })
+      const before = await revalidateJobs()
+      await payload.update({ collection: 'submissions', id: claim.id, overrideAccess: false, req, data: { status: 'approved' }, depth: 0 })
+      expect(await revalidateJobs()).toBe(before) // maintainers-only change: no purge
+      expect((req.context as Record<string, unknown>).skipRevalidate).toBeUndefined()
+      await payload.update({ collection: 'plugins', id: plugin.id, overrideAccess: true, req, data: { name: 'Renamed' }, depth: 0 })
+      expect(await revalidateJobs()).toBe(before + 1) // the public-visible write is not skipped
+    })
+    it('two claims on one plugin approved one after the other both end up as maintainers', async () => {
+      const plugin = await makePlugin('two-claims')
+      const other = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 501, login: 'second' } })
+      const c1 = await makeClaim(plugin.id, makerId)
+      const c2 = await makeClaim(plugin.id, other.id)
+      await approve(c1.id)
+      await approve(c2.id)
+      const stored = await payload.findByID({ collection: 'plugins', id: plugin.id, overrideAccess: true, depth: 0 })
+      expect((stored.maintainers ?? []).map(relationId).sort()).toEqual([makerId, other.id].sort())
+    })
+    it('an approved claim is final', async () => {
+      const plugin = await makePlugin('final-claim')
+      const claim = await makeClaim(plugin.id, makerId)
+      await approve(claim.id)
+      for (const status of ['rejected', 'pending']) {
+        const err = await payload.update({ collection: 'submissions', id: claim.id, overrideAccess: true, data: { status: status as 'rejected' } }).catch((e) => e)
+        expect(err).toBeInstanceOf(ValidationError)
+        expect(JSON.stringify(err.data)).toMatch(/Remove the maintainer from the plugin instead/)
+      }
+      expect((await payload.findByID({ collection: 'submissions', id: claim.id, overrideAccess: true })).status).toBe('approved')
+    })
+    it('an approved listing is final', async () => {
+      const s = await listing('https://github.com/final/listing')
+      await approve(s.id)
+      const err = await payload.update({ collection: 'submissions', id: s.id, overrideAccess: true, data: { status: 'rejected', rejectionReason: 'x' } }).catch((e) => e)
+      expect(err).toBeInstanceOf(ValidationError)
+      expect(JSON.stringify(err.data)).toMatch(/Hide or trash the plugin instead/)
+    })
+    it('refuses to approve a claim whose plugin is trashed', async () => {
+      const plugin = await makePlugin('trashed-claim')
+      const claim = await makeClaim(plugin.id, makerId)
+      await payload.update({ collection: 'plugins', id: plugin.id, overrideAccess: true, data: { deletedAt: new Date().toISOString() } })
+      const err = await approve(claim.id).catch((e) => e)
+      expect(err).toBeInstanceOf(ValidationError)
+      expect(JSON.stringify(err.data)).toMatch(/trashed or no longer exists/)
+      expect((await payload.findByID({ collection: 'submissions', id: claim.id, overrideAccess: true })).status).toBe('pending')
+    })
   })
 })

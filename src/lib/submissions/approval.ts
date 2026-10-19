@@ -19,11 +19,30 @@ export function becomesApproved(operation: string, status: unknown, previousStat
  */
 export const resolveApprovedListing: CollectionBeforeChangeHook = async ({ data, operation, originalDoc, req }) => {
   const type = data.type ?? originalDoc?.type
+  const invalid = (path: string, message: string) => new ValidationError({ collection: 'submissions', errors: [{ path, message }], req })
+
+  // An approved submission is final: its side effects (a maintainer grant, a queued sync) are not undone by a status
+  // change, so the record must not claim otherwise.
+  if (operation === 'update' && originalDoc?.status === 'approved' && data.status !== undefined && data.status !== 'approved') {
+    throw invalid('status', MESSAGES.approvedIsFinal[type === 'claim' ? 'claim' : 'listing'])
+  }
+
+  if (type === 'claim' && becomesApproved(operation, data.status ?? originalDoc?.status, originalDoc?.status)) {
+    const pluginId = relationId(data.plugin ?? originalDoc?.plugin)
+    // System lookup (overrideAccess): the approving admin may approve claims on hidden plugins; trashed ones are excluded by default.
+    const found =
+      pluginId === undefined
+        ? null
+        : await req.payload.find({ collection: 'plugins', where: { id: { equals: pluginId } }, select: {}, limit: 1, depth: 0, overrideAccess: true, req })
+    if (!found?.docs[0]) throw invalid('plugin', MESSAGES.claimPluginGone)
+    return data
+  }
   if (type !== 'listing' || !becomesApproved(operation, data.status ?? originalDoc?.status, originalDoc?.status)) return data
   if (data.repositoryFullName || originalDoc?.repositoryFullName) return data
 
   const target = parseSubmissionUrl(String(data.url ?? originalDoc?.url ?? ''))
   let fullName: string | null = null
+  let registryFailed = false
   if (target?.kind === 'github') fullName = target.fullName
   if (target?.kind === 'npm') {
     // Test seam: Local API callers may pass a resolver in `context`; REST callers cannot set context.
@@ -32,11 +51,12 @@ export const resolveApprovedListing: CollectionBeforeChangeHook = async ({ data,
       fullName = await resolve(target.packageName)
     } catch (err) {
       // Registry outage or rate limit: stay pending; the admin can retry or enter owner/repo by hand.
+      registryFailed = true
       req.payload.logger.warn({ err }, 'approval: npm registry lookup failed')
     }
   }
   if (!fullName) {
-    throw new ValidationError({ collection: 'submissions', errors: [{ path: 'repositoryFullName', message: MESSAGES.unresolvedRepository }], req })
+    throw invalid('repositoryFullName', registryFailed ? MESSAGES.registryUnavailable : MESSAGES.unresolvedRepository)
   }
   data.repositoryFullName = fullName
   return data
@@ -49,8 +69,11 @@ async function addMaintainer(req: PayloadRequest, pluginId: number | undefined, 
   const current = (plugin.maintainers ?? []).map(relationId).filter((id): id is number => id !== undefined)
   if (current.includes(maintainerId)) return
   // System write on approval: maintainers can never edit `maintainers` themselves.
-  // `maintainers` is not rendered on any public page or cached query, so this write skips the revalidate job
-  // (ruling F10). The context is a copy of the request's, so nothing the caller set is lost.
+  // No `skipRevalidate` here: in Payload v4 a Local API `context` is merged into the shared `req.context`, so the flag
+  // would leak to every later write on this request. `revalidatePluginChange` instead skips a save whose only change is
+  // `maintainers` (not rendered on any public page), decided per document.
+  // Known race (accepted): the maintainers array is read then written in full, so two claims for the SAME plugin approved
+  // at the exact same moment could lose one grant. Approvals are admin-only and rare; sequential approvals are safe.
   await req.payload.update({
     collection: 'plugins',
     id: pluginId,
@@ -58,7 +81,6 @@ async function addMaintainer(req: PayloadRequest, pluginId: number | undefined, 
     depth: 0,
     overrideAccess: true,
     req,
-    context: { ...req.context, skipRevalidate: true },
   })
 }
 
@@ -76,6 +98,8 @@ export const applyApproval: CollectionAfterChangeHook<Submission> = async ({ doc
   if (!doc.plugin) {
     const plugin = await findPluginForRepository(req.payload, fullName, req)
     if (plugin) {
+      // System write: `plugin` is a link the approving admin should not have to pick by hand; the field is not
+      // editable by maintainers, and this runs only on the approval transition.
       await req.payload.update({ collection: 'submissions', id: doc.id, data: { plugin: plugin.id }, depth: 0, overrideAccess: true, req })
       doc.plugin = plugin.id
     }
