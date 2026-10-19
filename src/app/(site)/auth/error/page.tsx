@@ -13,7 +13,7 @@ const MESSAGES: Record<string, string> = {
   missing_code: 'GitHub did not return an authorisation code.',
   exchange_failed: 'GitHub rejected the sign-in. Please try again.',
   profile_failed: 'We could not read your GitHub profile. Please try again.',
-  logout_incomplete: 'Signed out on this device; please try again to sign out everywhere.',
+  logout_incomplete: 'Signed out on this device, but other sessions could not be ended. Sign in and sign out again to end them everywhere.',
   not_configured: 'GitHub sign-in is not available right now.',
 }
 
