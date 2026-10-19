@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildRequest, buildSystemPrompt, MAX_INSTRUCTIONS_CHARS, buildUserContent, MAX_README_CHARS, neutralizeDelimiters, promptFingerprint,
+  buildRequest, buildSystemPrompt, MAX_INSTRUCTIONS_CHARS, buildUserContent, MAX_FIELD_CHARS, MAX_README_CHARS, neutralizeDelimiters, promptFingerprint,
 } from '@/enrich/prompt'
 import { buildOutputSchema, TAG_ENUM_MAX } from '@/enrich/schema'
 import type { PluginInput, TagRef } from '@/enrich/types'
@@ -95,6 +95,22 @@ describe('buildUserContent', () => {
     expect(c.slice(c.indexOf('</plugin_data>') + 14)).not.toContain('IGNORE ALL')
     expect(c).not.toContain('</admin_instructions>')
     expect(c.match(/<\/readme>/g)).toHaveLength(1)
+  })
+  const body = (c: string, tag: string) => c.slice(c.indexOf(`<${tag}>\n`) + tag.length + 3, c.indexOf(`\n</${tag}>`))
+  it('enforces the caps after normalisation and escaping', () => {
+    const fdfa = body(buildUserContent({ ...plugin, readme: '\uFDFA'.repeat(24_000) }), 'readme')
+    expect(fdfa.replace('\n[README truncated]', '').length).toBeLessThanOrEqual(MAX_README_CHARS)
+    expect(fdfa).toContain('[README truncated]')
+    const lt = body(buildUserContent({ ...plugin, readme: '<'.repeat(24_000) }), 'readme')
+    const ltText = lt.replace('\n[README truncated]', '')
+    expect(ltText.length).toBeLessThanOrEqual(MAX_README_CHARS)
+    expect(ltText).toMatch(/^(&lt;)+$/)
+    const d = body(buildUserContent({ ...plugin, description: '\uFDFA'.repeat(2000) }), 'author_description')
+    expect(d.replace('\n[truncated]', '').length).toBeLessThanOrEqual(MAX_FIELD_CHARS)
+  })
+  it('removes invisible format characters but keeps ZWJ emoji and soft hyphens', () => {
+    const c = buildUserContent({ ...plugin, readme: 'a\u202Eb\u200Bc\uFEFFd\u{E0041}e \u{1F468}\u200D\u{1F469} co\u00ADop' })
+    expect(body(c, 'readme')).toBe('abcde \u{1F468}\u200D\u{1F469} co\u00ADop')
   })
   it('does not split a surrogate pair when truncating', () => {
     const c = buildUserContent({ ...plugin, readme: 'x'.repeat(MAX_README_CHARS - 1) + '\u{1F600}tail' })
