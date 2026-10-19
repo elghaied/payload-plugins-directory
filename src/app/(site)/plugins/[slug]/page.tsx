@@ -20,6 +20,11 @@ import {
 import { getPluginDetail } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
 import { getServerURL } from "@/lib/serverUrl";
+import { getPluginTrends } from "@/lib/trends/queries";
+import { HISTORY_DAYS } from "@/lib/trends/growth";
+import { daysBetween, formatDay, utcToday } from "@/lib/trends/days";
+import type { PluginTrends } from "@/lib/trends/types";
+import { TrendChart } from "@/components/trends/TrendChart";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
@@ -68,14 +73,30 @@ export async function generateMetadata({
   };
 }
 
+// A trends failure must not take the detail page down; the rest of the page does not depend on it.
+async function loadTrends(slug: string): Promise<PluginTrends | null> {
+  try {
+    return await getPluginTrends(slug);
+  } catch (error) {
+    console.error(`[trends] failed to load trends for ${slug}`, error);
+    return null;
+  }
+}
+
 export default async function PluginDetailPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const plugin = await getPluginDetail(slug);
+  const [plugin, trends] = await Promise.all([getPluginDetail(slug), loadTrends(slug)]);
   if (!plugin) notFound();
+  // PluginTrends carries no lastSnapshotDay; derive it from the newest point of either series.
+  const lastSnapshotDay = trends
+    ? [trends.stars.at(-1)?.date, trends.downloads.at(-1)?.date].filter((d): d is string => !!d).sort().at(-1) ?? null
+    : null;
+  const today = utcToday();
+  const staleTrends = lastSnapshotDay !== null && daysBetween(lastSnapshotDay, today) > 2;
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
   const trail = plugin.category ? trailFor(await getCategoryNodes(), plugin.category.path) : [];
@@ -321,6 +342,48 @@ export default async function PluginDetailPage({
             </>
           )}
         </div>
+
+        {/* Trends */}
+        {trends && (
+          <section aria-labelledby="trends-heading" className="mb-8">
+            <h2 id="trends-heading" className="text-xs font-medium text-muted-foreground mb-3">
+              Trends (last {HISTORY_DAYS} days)
+            </h2>
+            <div className={`grid gap-4 ${plugin.packageName ? "sm:grid-cols-2" : ""}`}>
+              <Card>
+                <CardContent className="p-4">
+                  <TrendChart
+                    title={trends.sharedRepository ? "Repository stars" : "GitHub stars"}
+                    metric="Stars"
+                    tone="stars"
+                    series={trends.stars}
+                    footnote={
+                      trends.sharedRepository
+                        ? `Shared by ${trends.sharedRepository.pluginCount} plugins in ${trends.sharedRepository.fullName}.`
+                        : undefined
+                    }
+                  />
+                </CardContent>
+              </Card>
+              {plugin.packageName && (
+                <Card>
+                  <CardContent className="p-4">
+                    <TrendChart
+                      title="npm weekly downloads"
+                      metric="Weekly downloads"
+                      tone="downloads"
+                      series={trends.downloads}
+                      footnote="Each point is npm's rolling 7-day download count."
+                    />
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+            {staleTrends && lastSnapshotDay && (
+              <p className="mt-2 text-xs text-muted-foreground">Data as of {formatDay(lastSnapshotDay, true)}</p>
+            )}
+          </section>
+        )}
 
         {/* Health Score */}
         {plugin.healthScore != null && (

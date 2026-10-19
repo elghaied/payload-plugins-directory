@@ -4,11 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PluginDetail } from '@/lib/directory/types'
 import { toCategoryNodes } from '@/taxonomy/tree'
 
-const state = vi.hoisted(() => ({ detail: null as unknown }))
+const state = vi.hoisted(() => ({ detail: null as unknown, trends: null as unknown }))
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => createElement('a', { href }, children),
 }))
 vi.mock('@/lib/directory/queries', () => ({ getPluginDetail: async () => state.detail }))
+vi.mock('@/lib/trends/queries', () => ({ getPluginTrends: async () => state.trends }))
 vi.mock('@/lib/directory/taxonomy', () => ({
   getCategoryNodes: async () =>
     toCategoryNodes([
@@ -33,6 +34,7 @@ const render = async (detail: Partial<PluginDetail>) => {
 
 beforeEach(() => {
   state.detail = null
+  state.trends = null
 })
 
 describe('plugin detail page', () => {
@@ -60,5 +62,39 @@ describe('plugin detail page', () => {
 
   it('shows the maintainer tagline in the header', async () => {
     expect(await render({ customTagline: 'Handwritten tagline' })).toContain('Handwritten tagline')
+  })
+
+  describe('trends section', () => {
+    const empty = { stars: [], downloads: [], sharedRepository: null }
+
+    it('is absent when trends are unavailable', async () => {
+      expect(await render({ packageName: 'payload-s3' })).not.toContain('Trends (last')
+    })
+
+    it('shows the insufficient-data state for both charts when a package exists', async () => {
+      state.trends = empty
+      const html = await render({ packageName: 'payload-s3' })
+      expect(html).toContain('Trends (last 90 days)')
+      expect(html).toContain('GitHub stars')
+      expect(html).toContain('npm weekly downloads')
+      expect(html).toContain('Daily snapshots have not started yet.')
+      expect(html).not.toContain('Data as of')
+    })
+
+    it('shows only the stars chart without a package name and labels shared repositories', async () => {
+      state.trends = { ...empty, sharedRepository: { fullName: 'acme/mono', pluginCount: 3 } }
+      const html = await render({ packageName: undefined })
+      expect(html).toContain('Repository stars')
+      expect(html).toContain('Shared by 3 plugins in acme/mono.')
+      expect(html).not.toContain('npm weekly downloads')
+    })
+
+    it('notes stale data only when the last snapshot is more than 2 days old', async () => {
+      const day = (back: number) => new Date(Date.now() - back * 86_400_000).toISOString().slice(0, 10)
+      state.trends = { ...empty, stars: [{ date: day(5), value: 10 }] }
+      expect(await render({})).toMatch(/Data as of [A-Z][a-z]{2} \d{1,2}, \d{4}/)
+      state.trends = { ...empty, stars: [{ date: day(1), value: 10 }] }
+      expect(await render({})).not.toContain('Data as of')
+    })
   })
 })
