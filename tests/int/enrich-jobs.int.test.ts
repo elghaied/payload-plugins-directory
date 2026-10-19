@@ -1,14 +1,14 @@
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import Anthropic from '@anthropic-ai/sdk'
 import { eq } from '@payloadcms/db-postgres/drizzle'
 import { jobStatus } from '@/db/jobStatus'
-import { BATCH_POLL_MS, readInflight, runEnrichAll } from '@/enrich/batch'
+import { BATCH_POLL_MS, customIdFor, readInflight, runEnrichAll } from '@/enrich/batch'
 import { failureKey, loadEnrichContext } from '@/enrich/context'
 import { queueEnrichForChanged } from '@/enrich/queue'
 import { NO_KEY_POLL_MS } from '@/enrich/tasks'
 import { setSyncDeps } from '@/sync/deps'
-import { fakeEnrichClient, okMessage, type FakeEnrichClient } from '../helpers/fakeEnrichClient'
+import { endBatch, fakeEnrichClient, okMessage, type FakeEnrichClient } from '../helpers/fakeEnrichClient'
 import { fakeFetch, type FakeRoute } from '../helpers/fakeFetch'
 import { ghRepo, json, pkg, RAW, raw, repoById, text } from '../fixtures/sync/github'
 import { createPlugin, createRepo } from './helpers/directory'
@@ -29,7 +29,10 @@ beforeEach(async () => {
   await resetDatabase(payload)
   await createTestTaxonomy(payload)
 })
-afterEach(() => setSyncDeps(null))
+afterEach(() => {
+  setSyncDeps(null)
+  vi.restoreAllMocks()
+})
 afterAll(async () => resetDatabase(payload))
 
 describe('enrich jobs through payload.jobs', () => {
@@ -261,5 +264,68 @@ describe('enrich jobs through payload.jobs', () => {
     expect(pending[0]).toMatchObject({ input: batch, totalTried: 0, waitUntil: new Date(LATER.getTime() + 90_000).toISOString() })
     expect(fake.batches.get(batch!.batchId)!.cancelled).toBe(false)
     expect(await readInflight(payload)).toMatchObject({ batchId: batch!.batchId })
+  })
+
+  describe('final fix A1: no retry or re-bill after a paid response', () => {
+    /** Makes the enrichment write (the only plugin update carrying a promptHash) of one plugin throw. */
+    const failApplyOf = (pluginId: number) => {
+      const update = payload.update.bind(payload)
+      vi.spyOn(payload, 'update').mockImplementation(((args: { collection: string; id?: unknown; data?: { ai?: { promptHash?: unknown } } }) => {
+        if (args.collection === 'plugins' && args.id === pluginId && args.data?.ai?.promptHash) {
+          return Promise.reject(new Error('poison item'))
+        }
+        return update(args as never)
+      }) as never)
+    }
+    const reload = (id: number) => payload.findByID({ collection: 'plugins', id, overrideAccess: true, depth: 0 })
+
+    it('one batch item whose apply throws is recorded as failed; the others apply, the job completes, no resubmit', async () => {
+      const repo = await createRepo(payload)
+      const ps = [
+        await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1', healthScore: 90 }),
+        await createPlugin(payload, repo.id, { slug: 'p2', contentHash: 'h2', healthScore: 50 }),
+        await createPlugin(payload, repo.id, { slug: 'p3', contentHash: 'h3', healthScore: 10 }),
+      ]
+      const fake = fakeEnrichClient()
+      const { batch } = await runEnrichAll(payload, fake, LATER, { batchMin: 1 })
+      endBatch(fake, batch!.batchId, ps.map((p) => ({ custom_id: customIdFor(p.id), result: { type: 'succeeded', message: okMessage(goodOutput()) } })))
+      setDeps(fake)
+      failApplyOf(ps[1].id)
+      await payload.jobs.queue({ task: 'enrich-batch', input: batch!, queue: 'default', overrideAccess: true })
+      await payload.jobs.run({ queue: 'default', overrideAccess: true })
+      vi.restoreAllMocks()
+
+      expect(await jobsOf('enrich-batch')).toEqual([]) // completed (v4 deletes completed jobs): no retry pending
+      expect(await status('enrich-batch')).toMatchObject({ details: { status: 'done', applied: 2, failed: 1, retried: 0 } })
+      expect((await reload(ps[0].id)).ai?.enrichedHash).toBe('h1')
+      expect((await reload(ps[2].id)).ai?.enrichedHash).toBe('h3')
+      const { fingerprint } = await loadEnrichContext(payload)
+      expect((await reload(ps[1].id)).ai).toMatchObject({
+        enrichedHash: null, failure: expect.stringMatching(/^apply-error/), failedKey: failureKey('h2', fingerprint),
+      })
+      expect(await jobsOf('enrich')).toEqual([])
+      const again = await runEnrichAll(payload, fake, LATER)
+      expect(again.status).toBe('nothing-stale')
+      expect(fake.batches.size).toBe(1)
+    })
+
+    it('a direct enrich whose apply throws makes one API call, records the failure and is not retried', async () => {
+      const repo = await createRepo(payload)
+      const p = await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })
+      const fake = fakeEnrichClient(() => okMessage(goodOutput()))
+      setDeps(fake)
+      failApplyOf(p.id)
+      await payload.jobs.queue({ task: 'enrich', input: { pluginId: p.id }, queue: 'enrich', overrideAccess: true })
+      for (let i = 0; i < 4; i++) {
+        await payload.update({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'enrich' } }, data: { waitUntil: null } })
+        await payload.jobs.run({ queue: 'enrich', overrideAccess: true })
+      }
+      vi.restoreAllMocks()
+      expect(fake.calls).toHaveLength(1)
+      expect(await jobsOf('enrich')).toEqual([]) // completed on the first run (v4 deletes completed jobs)
+      const { fingerprint } = await loadEnrichContext(payload)
+      expect((await reload(p.id)).ai).toMatchObject({ failure: expect.stringMatching(/^apply-error/), failedKey: failureKey('h1', fingerprint) })
+      expect(await status('enrich')).toMatchObject({ details: { status: 'failed' } })
+    })
   })
 })

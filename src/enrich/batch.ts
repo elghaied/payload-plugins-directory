@@ -4,7 +4,7 @@ import type { Payload, Where } from 'payload'
 import { jobStatus } from '@/db/jobStatus'
 import { isBatchNotFound, isDefiniteCreateFailure } from './client'
 import { allLocked, failureKey, findActivePlugin, loadEnrichContext, toPluginInput } from './context'
-import { settleMessage } from './enrichPlugin'
+import { settleSafely } from './enrichPlugin'
 import { buildRequest } from './prompt'
 import { addUsage, usageOf, ZERO_USAGE } from './response'
 import type { BatchItem, EnrichClient, EnrichUsage } from './types'
@@ -332,7 +332,8 @@ export async function runEnrichBatch(
       retry.add(item.id) // direct requests carry the server-side refusal fallback
       continue
     }
-    const settled = await settleMessage(payload, ctx, { pluginId: item.id, contentHash: item.contentHash, message, now })
+    // Per item: an error applying one paid answer is recorded for that plugin and collection goes on.
+    const settled = await settleSafely(payload, ctx, { pluginId: item.id, contentHash: item.contentHash, message, now })
     if (settled.status === 'applied') out.applied++
     else if (settled.status === 'failed') out.failed++
     for (const t of settled.revalidateTags) tags.add(t)

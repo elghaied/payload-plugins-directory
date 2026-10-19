@@ -1,9 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import type { Payload } from 'payload'
+import { runEnrich } from '@/enrich/enrichPlugin'
 import type { Plugin } from '@/payload-types'
+import { fakeEnrichClient, okMessage } from '../helpers/fakeEnrichClient'
 import { createPlugin, createRepo } from './helpers/directory'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createTestTaxonomy } from './helpers/taxonomy'
+import { createTestTaxonomy, goodOutput } from './helpers/taxonomy'
 
 let payload: Payload
 let plugin: Plugin
@@ -90,5 +92,63 @@ describe('lockAdminEditedAiFields', () => {
     await asAdmin({ ai: { summary: 'Mine' } })
     await asAdmin({ ai: { summary: 'Mine again' }, locks: { summary: false } })
     expect((await locksOf())?.summary).toBe(false)
+  })
+
+  it('normalises an empty form field to null: no spurious lock', async () => {
+    await payload.update({ collection: 'plugins', id: plugin.id, overrideAccess: true, data: { ai: { tagline: null, summary: null } } })
+    await asAdmin({ ai: { tagline: '', summary: '' } })
+    expect(await locksOf()).toMatchObject({ tagline: false, summary: false })
+  })
+})
+
+describe('final fix A2: a stale admin form save', () => {
+  /** What the edit form submits: every field, without the system columns. */
+  const formFields = (doc: Plugin) => {
+    const fields: Partial<Plugin> = { ...doc }
+    delete fields.id
+    delete fields.createdAt
+    delete fields.updatedAt
+    return fields
+  }
+  const NOW = new Date('2026-10-19T12:00:00Z')
+  const reload = () => payload.findByID({ collection: 'plugins', id: plugin.id, overrideAccess: true, depth: 0 })
+
+  it('keeps the AI output of an enrichment that landed after the form loaded, sets no locks, still saves other fields', async () => {
+    await payload.update({ collection: 'plugins', id: plugin.id, overrideAccess: true, data: { contentHash: 'h1' } })
+    // The admin opens the edit form: the full document as the admin reads it.
+    const form = await payload.findByID({ collection: 'plugins', id: plugin.id, overrideAccess: false, user: admin as never, depth: 0 })
+    const r = await runEnrich(payload, plugin.id, fakeEnrichClient(() => okMessage(goodOutput())), () => NOW)
+    expect(r.status).toBe('applied')
+    const enriched = await reload()
+
+    const fields = formFields(form)
+    await asAdmin({ ...fields, visibility: 'hidden' })
+
+    const after = await reload()
+    expect(after.visibility).toBe('hidden')
+    expect(after.category).toBe(tax.cloud.id)
+    expect(after._h_tags).toEqual(enriched._h_tags)
+    expect(after.ai).toMatchObject({
+      tagline: 'Store Payload uploads in Amazon S3',
+      summary: enriched.ai?.summary,
+      features: enriched.ai?.features,
+      useCases: enriched.ai?.useCases,
+      enrichedAt: NOW.toISOString(),
+      enrichedHash: 'h1',
+      promptHash: enriched.ai?.promptHash,
+      confidence: 0.9,
+      model: 'claude-sonnet-5-5',
+    })
+    expect(after.locks).toMatchObject({ category: false, tags: false, tagline: false, summary: false, features: false, useCases: false })
+  })
+
+  it('a form loaded after the enrichment still locks what the admin edits', async () => {
+    await payload.update({ collection: 'plugins', id: plugin.id, overrideAccess: true, data: { contentHash: 'h1' } })
+    await runEnrich(payload, plugin.id, fakeEnrichClient(() => okMessage(goodOutput())), () => NOW)
+    const form = await payload.findByID({ collection: 'plugins', id: plugin.id, overrideAccess: false, user: admin as never, depth: 0 })
+    const fields = formFields(form)
+    await asAdmin({ ...fields, ai: { ...fields.ai, summary: 'Fixed by hand' } })
+    expect(await locksOf()).toMatchObject({ summary: true, tagline: false, category: false, tags: false })
+    expect((await reload()).ai?.summary).toBe('Fixed by hand')
   })
 })
