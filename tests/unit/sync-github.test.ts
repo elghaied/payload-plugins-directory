@@ -133,6 +133,25 @@ describe('hardening', () => {
     const f = fakeFetch({ [searchPage(1)]: json({ total_count: 0 }) })
     const result = await createGitHubClient({ fetch: f, now }).searchTopicRepos()
     expect(result.repos).toEqual([])
+    expect(result.complete).toBe(false)
+  })
+
+  it('treats a null or non-object search body as incomplete without throwing', async () => {
+    for (const body of [null, 'oops', 5]) {
+      const f = fakeFetch({ [searchPage(1)]: json(body) })
+      const result = await createGitHubClient({ fetch: f, now }).searchTopicRepos()
+      expect(result).toMatchObject({ repos: [], complete: false })
+    }
+  })
+
+  it('rejects bad refs and lone surrogates', async () => {
+    const gh = createGitHubClient({ fetch: fakeFetch({}), now })
+    for (const ref of ['..', '.', 'ma\u0001in', '']) {
+      await expect(gh.listDirectory('acme/x', 'packages', ref)).rejects.toBeInstanceOf(InvalidGitHubPathError)
+      await expect(gh.getRawFile('acme/x', ref, 'package.json')).rejects.toBeInstanceOf(InvalidGitHubPathError)
+    }
+    await expect(gh.getRawFile('acme/x', 'main', 'a\ud800b')).rejects.toBeInstanceOf(InvalidGitHubPathError)
+    await expect(gh.listDirectory('acme/x', 'packages', 'x\ud800')).rejects.toBeInstanceOf(InvalidGitHubPathError)
   })
 
   it('maps a secondary rate limit 403 to RateLimitError at now+60s', async () => {

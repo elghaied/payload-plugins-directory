@@ -58,6 +58,15 @@ function checkFullName(fullName: string): string {
   return fullName
 }
 
+/** encodeURIComponent throws URIError on lone surrogates; surface it as an invalid path. */
+function safeEncode(segments: string[], what: string, original: string): string {
+  try {
+    return segments.map(encodeURIComponent).join('/')
+  } catch {
+    throw new InvalidGitHubPathError(what, original)
+  }
+}
+
 /** Validates a repo-relative path and encodes it per segment. */
 function encodePath(path: string, what: string): string {
   if (!path || path.startsWith('/') || path.includes('\\') || path.includes('%') || CONTROL.test(path)) {
@@ -65,12 +74,12 @@ function encodePath(path: string, what: string): string {
   }
   const segments = path.split('/')
   if (segments.some((seg) => seg === '' || seg === '.' || seg === '..')) throw new InvalidGitHubPathError(what, path)
-  return segments.map(encodeURIComponent).join('/')
+  return safeEncode(segments, what, path)
 }
 
 function encodeRef(ref: string): string {
   if (!ref || ref === '.' || ref === '..' || ref.includes('\\') || CONTROL.test(ref)) throw new InvalidGitHubPathError('ref', ref)
-  return encodeURIComponent(ref)
+  return safeEncode([ref], 'ref', ref)
 }
 
 /** Final guard: the URL must stay on the expected host and under the expected path prefix. */
@@ -132,8 +141,11 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
         const url = `${GITHUB_API}/search/repositories?${SEARCH_QUERY}&per_page=${PER_PAGE}&page=${page}`
         const res = await request(url, apiHeaders)
         if (!res) throw new HttpError(404, url)
-        const body = (await res.json()) as { total_count?: number; incomplete_results?: boolean; items?: GitHubRepo[] }
-        if (!Array.isArray(body.items)) break
+        const body = (await res.json()) as { total_count?: number; incomplete_results?: boolean; items?: GitHubRepo[] } | null
+        if (!body || typeof body !== 'object' || !Array.isArray(body.items)) {
+          complete = false
+          break
+        }
         if (page === 1) totalCount = body.total_count ?? 0
         if (body.incomplete_results) complete = false
         // Results are sorted by "updated", so a repo can move between pages mid-pagination: dedupe by id.
