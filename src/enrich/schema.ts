@@ -21,6 +21,7 @@ export const TAG_ENUM_MAX = 300
  * (maxLength, minItems, minimum…), so limits live in descriptions and in the system prompt.
  */
 export function buildOutputSchema(leafSlugs: readonly string[], tagSlugs: readonly string[]): Record<string, unknown> {
+  if (leafSlugs.length === 0) throw new Error('buildOutputSchema: no leaf categories; the "other" category must exist')
   const newTag = {
     type: 'object',
     additionalProperties: false,

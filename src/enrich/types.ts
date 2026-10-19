@@ -1,7 +1,7 @@
 /** Types shared by the enrichment prompt, validator, client and tasks (spec §5). */
 export type EnrichSettings = { enabled: boolean; model: string; instructions: string; maxNewTagsPerPlugin: number }
 
-export type TagRef = { id: number; slug: string; title: string; aliases: string[] }
+export type TagRef = { id: number; slug: string; title: string; aliases: string[]; createdBy: 'admin' | 'alias' | 'ai' }
 
 /** Author-controlled data sent as untrusted content (spec §5.2). */
 export type PluginInput = {

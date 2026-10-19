@@ -24,7 +24,7 @@ export const DirectorySettings: GlobalConfig = {
       fields: [
         { name: 'enabled', type: 'checkbox', defaultValue: true },
         { name: 'model', type: 'text', defaultValue: 'claude-sonnet-5-5' },
-        { name: 'instructions', type: 'textarea' },
+        { name: 'instructions', type: 'textarea', maxLength: 2000 },
         { name: 'maxNewTagsPerPlugin', type: 'number', defaultValue: 2, min: 0, max: 5 },
       ],
     },
