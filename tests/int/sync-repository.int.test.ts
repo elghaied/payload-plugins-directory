@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
-import type { Payload } from 'payload'
+import type { CollectionBeforeChangeHook, Payload } from 'payload'
 import { RateLimitError } from '@/sync/http'
 import { runSyncRepository } from '@/sync/syncRepository'
 import { trashPlugins } from '@/sync/trash'
@@ -24,6 +24,17 @@ const sync = (routes: Record<string, FakeRoute>, i: Parameters<typeof runSyncRep
   runSyncRepository(payload, i, syncContext(syncFetch(routes), NOW))
 const plugin = async (slug: string) =>
   (await payload.find({ collection: 'plugins', overrideAccess: true, trash: true, where: { slug: { equals: slug } } })).docs[0]
+
+/** Makes the next plugin write throw once (a mid-sync database failure). */
+function failNextPluginWrite(): void {
+  const hooks = payload.collections.plugins.config.hooks.beforeChange
+  const hook: CollectionBeforeChangeHook = () => {
+    hooks.splice(hooks.indexOf(hook), 1)
+    throw new Error('injected plugin write failure')
+  }
+  hooks.push(hook)
+}
+const repoRow = async (id: number) => payload.findByID({ collection: 'repositories', id, overrideAccess: true, depth: 0 })
 
 beforeEach(async () => {
   payload = await getTestPayload()
@@ -56,7 +67,7 @@ describe('runSyncRepository', () => {
     expect((await payload.findByID({ collection: 'repositories', id: r.repositoryId!, overrideAccess: true })).stars).toBe(99)
   })
 
-  it('writes nothing and revalidates nothing when nothing changed', async () => {
+  it('leaves plugins unchanged and revalidates nothing when GitHub reports no change', async () => {
     await sync(seoRoutes())
     const r = await sync({ [repoById(7)]: json(SEO) })
     expect(r).toMatchObject({ contentReRead: false, updated: [], revalidateTags: [] })
@@ -191,6 +202,69 @@ describe('runSyncRepository', () => {
     expect(r).toMatchObject({ status: 'synced', created: ['official-plugin-seo'] })
     expect(await plugin('official-plugin-seo')).toMatchObject({
       source: 'official', isOfficial: true, payloadVersionRange: 'workspace:*', payloadMajors: ['3'],
+    })
+  })
+
+  describe('pushedAt advances only after every plugin write', () => {
+    it('re-reads a new repository whose first sync failed mid-write', async () => {
+      failNextPluginWrite()
+      await expect(sync(seoRoutes())).rejects.toThrow('injected plugin write failure')
+      const row = (await payload.find({ collection: 'repositories', overrideAccess: true, where: { githubId: { equals: 7 } } })).docs[0]
+      expect(row).toMatchObject({ pushedAt: null, lastSyncedAt: null })
+
+      const r = await sync(seoRoutes())
+      expect(r).toMatchObject({ repositoryId: row.id, contentReRead: true, created: ['7-root'] })
+      expect(await repoRow(row.id)).toMatchObject({ pushedAt: '2026-10-18T09:00:00.000Z', lastSyncedAt: NOW.toISOString() })
+    })
+
+    it('re-reads a pushed repository whose sync failed mid-write', async () => {
+      const first = await sync(seoRoutes())
+      const pushed = seoRoutes({ ...SEO, pushed_at: '2026-10-19T10:00:00Z', stargazers_count: 50 }, '# Changed')
+      failNextPluginWrite()
+      await expect(sync(pushed)).rejects.toThrow('injected plugin write failure')
+      expect(await repoRow(first.repositoryId!)).toMatchObject({ pushedAt: '2026-10-18T09:00:00.000Z', stars: 50 })
+
+      const r = await sync(pushed)
+      expect(r).toMatchObject({ contentReRead: true, updated: ['7-root'] })
+      expect((await plugin('7-root')).readme).toBe('# Changed')
+      expect(await repoRow(first.repositoryId!)).toMatchObject({ pushedAt: '2026-10-19T10:00:00.000Z' })
+    })
+  })
+
+  describe('repository identity is the GitHub id', () => {
+    it('never adopts another repository\'s row that holds the same full name', async () => {
+      const old = await createRepo(payload, { fullName: 'a/x', owner: 'a', githubId: 1, url: 'https://github.com/a/x' })
+      await createPlugin(payload, old.id, { slug: '1-root' })
+      const r = await sync({ [repoById(2)]: json(ghRepo(2, 'a/x')) }, { fullName: 'a/x', githubId: 2, source: 'topic' })
+      expect(r.repositoryId).not.toBe(old.id)
+      expect(r.created).toEqual(['2-root'])
+      expect(await repoRow(r.repositoryId!)).toMatchObject({ githubId: 2, fullName: 'a/x' })
+      expect(await repoRow(old.id)).toMatchObject({ githubId: 1, fullName: 'a/x~stale-1', stars: 10 })
+      expect((await plugin('1-root')).deletedAt ?? null).toBeNull()
+    })
+
+    it('does not trash another repository\'s plugins when the requested id is gone', async () => {
+      const old = await createRepo(payload, { fullName: 'a/x', owner: 'a', githubId: 1, url: 'https://github.com/a/x' })
+      await createPlugin(payload, old.id, { slug: '1-root' })
+      const r = await sync({ [repoById(2)]: { status: 404 } }, { fullName: 'a/x', githubId: 2, source: 'topic' })
+      expect(r).toMatchObject({ status: 'gone', repositoryId: null, trashed: [] })
+      expect((await plugin('1-root')).deletedAt ?? null).toBeNull()
+    })
+
+    it('adopts a seeded row (no githubId) by full name and sets its githubId', async () => {
+      const seeded = await createRepo(payload, { fullName: 'acme/payload-seo', owner: 'acme', url: 'https://github.com/acme/payload-seo' })
+      const r = await sync(seoRoutes())
+      expect(r.repositoryId).toBe(seeded.id)
+      expect(await repoRow(seeded.id)).toMatchObject({ githubId: 7, fullName: 'acme/payload-seo' })
+      expect((await payload.count({ collection: 'repositories', overrideAccess: true })).totalDocs).toBe(1)
+    })
+
+    it('follows a rename by githubId and updates the full name', async () => {
+      const row = await createRepo(payload, { fullName: 'a/x', owner: 'a', githubId: 1, url: 'https://github.com/a/x' })
+      const r = await sync({ [repoById(1)]: json(ghRepo(1, 'a/y')) }, { fullName: 'a/y', githubId: 1, source: 'topic' })
+      expect(r.repositoryId).toBe(row.id)
+      expect(await repoRow(row.id)).toMatchObject({ githubId: 1, fullName: 'a/y', url: 'https://github.com/a/y' })
+      expect((await payload.count({ collection: 'repositories', overrideAccess: true })).totalDocs).toBe(1)
     })
   })
 })

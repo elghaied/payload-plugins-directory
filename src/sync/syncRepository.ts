@@ -72,12 +72,29 @@ function repositoryChanged(prev: Repository | null, next: RepositoryData): boole
   return (prev.topics ?? []).join('\n') !== next.topics.join('\n')
 }
 
-async function findRepository(payload: Payload, ref: { githubId?: number | null; fullName: string }): Promise<Repository | null> {
-  const or: Where[] = [{ fullName: { equals: ref.fullName } }]
-  if (ref.githubId) or.push({ githubId: { equals: ref.githubId } })
-  const res = await payload.find({ collection: 'repositories', overrideAccess: true, depth: 0, limit: 2, where: { or } })
-  // Prefer the githubId match: after a rename, the old full name may belong to nothing.
-  return res.docs.find((d) => ref.githubId != null && d.githubId === ref.githubId) ?? res.docs[0] ?? null
+async function repositoryWhere(payload: Payload, where: Where): Promise<Repository | null> {
+  const res = await payload.find({ collection: 'repositories', overrideAccess: true, depth: 0, limit: 1, pagination: false, where })
+  return res.docs[0] ?? null
+}
+
+type ResolvedRepository = {
+  /** The row that is this repository: same githubId, or a seeded row (githubId null) with the same full name. */
+  match: Repository | null
+  /** Another repository's row (different, non-null githubId) holding this full name, e.g. after a rename. */
+  stale: Repository | null
+}
+
+/**
+ * Identity is the GitHub id. A full-name match is adopted only when the stored row has no githubId (seeded);
+ * a row under the same name with another githubId belongs to a different repository and is never adopted.
+ */
+async function resolveRepository(payload: Payload, ref: { githubId?: number | null; fullName: string }): Promise<ResolvedRepository> {
+  const byId = ref.githubId ? await repositoryWhere(payload, { githubId: { equals: ref.githubId } }) : null
+  const byName = byId?.fullName === ref.fullName ? byId : await repositoryWhere(payload, { fullName: { equals: ref.fullName } })
+  if (!byName || byName.id === byId?.id) return { match: byId, stale: null }
+  if (byName.githubId == null) return { match: byId ?? byName, stale: null }
+  if (!ref.githubId) return { match: byName, stale: null } // caller knows only the name: refresh that row by its own id
+  return { match: byId, stale: byName.githubId === ref.githubId ? null : byName }
 }
 
 async function findPlugins(payload: Payload, where: Where): Promise<Plugin[]> {
@@ -129,7 +146,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     created: [], updated: [], restored: [], trashed: [], contentChanged: [], revalidateTags: [],
   }
 
-  const hint = await findRepository(payload, { githubId: input.githubId, fullName: input.fullName })
+  const { match: hint } = await resolveRepository(payload, { githubId: input.githubId, fullName: input.fullName })
   const meta = await ctx.github.getRepo({ githubId: input.githubId ?? hint?.githubId, fullName: input.fullName })
   if (!meta) {
     result.status = 'gone'
@@ -141,7 +158,10 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     return result
   }
 
-  const existing = (await findRepository(payload, { githubId: meta.id, fullName: meta.full_name })) ?? hint
+  const resolved = await resolveRepository(payload, { githubId: meta.id, fullName: meta.full_name })
+  // A seeded hint (no githubId) found under the requested name is adopted even if GitHub reports a newer name.
+  const existing = resolved.match ?? (hint && (hint.githubId == null || hint.githubId === meta.id) ? hint : null)
+  const stale = resolved.stale && resolved.stale.id !== existing?.id ? resolved.stale : null
   const official = meta.full_name.toLowerCase() === OFFICIAL_REPO
   const known = existing ? await findPlugins(payload, { repository: { equals: existing.id } }) : []
   // Incremental rule (spec §4): content is re-read only for a new / never-synced repository, a new push, or a
@@ -164,9 +184,22 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
 
   const repoData = toRepositoryData(meta, extraction ? extraction.isMonorepo : Boolean(existing?.isMonorepo), now)
   const repoChanged = repositoryChanged(existing, repoData)
+
+  // Free the unique full name held by another repository's row; its plugins are left to discovery.
+  if (stale) {
+    await payload.update({
+      collection: 'repositories', id: stale.id, overrideAccess: true, depth: 0,
+      data: { fullName: `${stale.fullName}~stale-${stale.githubId}` },
+    })
+  }
+  // When content is re-read, pushedAt/lastSyncedAt advance only after every plugin write succeeded: if a write
+  // below throws, the retried job still sees the push and re-reads the content instead of skipping it.
+  const firstWrite = extraction
+    ? { ...repoData, pushedAt: existing?.pushedAt ?? null, lastSyncedAt: existing?.lastSyncedAt ?? null }
+    : repoData
   const repo = existing
-    ? await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, data: repoData })
-    : await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, data: repoData })
+    ? await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, data: firstWrite })
+    : await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, data: firstWrite })
   result.repositoryId = repo.id
   result.contentReRead = extraction !== null
   const aliasTags = await loadAliasTags(payload)
@@ -226,6 +259,10 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       ? { and: [{ repository: { equals: repo.id } }, { slug: { not_in: kept } }] }
       : { repository: { equals: repo.id } }
     result.trashed = await trashPlugins(payload, removed, 'package-removed', now)
+    await payload.update({
+      collection: 'repositories', id: repo.id, overrideAccess: true, depth: 0,
+      data: { pushedAt: repoData.pushedAt, lastSyncedAt: repoData.lastSyncedAt },
+    })
   } else {
     const topicTagIds = aliasTagIds(repoData.topics, aliasTags)
     for (const p of known) {
