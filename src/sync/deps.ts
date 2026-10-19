@@ -1,10 +1,18 @@
+import { enrichClientFromEnv } from '@/enrich/client'
+import type { EnrichClient } from '@/enrich/types'
 import type { SyncContext } from './context'
 import { createGitHubClient } from './github'
 import { withTimeout, type FetchFn } from './http'
 import { createNpmClient } from './npm'
 
 export type SyncEnv = { githubToken?: string; revalidateSecret?: string; internalWebUrl: string }
-export type SyncDeps = { fetch: FetchFn; now: () => Date; env: SyncEnv }
+export type SyncDeps = {
+  fetch: FetchFn
+  now: () => Date
+  env: SyncEnv
+  /** Tests: setSyncDeps({ enrichClient: fakeEnrichClient(…) }) or `null`. Unset = real client from ANTHROPIC_API_KEY. */
+  enrichClient?: EnrichClient | null
+}
 
 export function readSyncEnv(env: Record<string, string | undefined> = process.env): SyncEnv {
   return {
@@ -38,4 +46,13 @@ export function createSyncContext(deps: SyncDeps): SyncContext {
     npm: createNpmClient({ fetch: deps.fetch, now: deps.now }),
     now: deps.now,
   }
+}
+
+let envEnrichClient: EnrichClient | null | undefined
+
+/** The Anthropic client for enrichment tasks: the test override when set (even `null`), else one real client per process. */
+export function getEnrichClient(deps: SyncDeps): EnrichClient | null {
+  if (deps.enrichClient !== undefined) return deps.enrichClient
+  if (envEnrichClient === undefined) envEnrichClient = enrichClientFromEnv()
+  return envEnrichClient
 }
