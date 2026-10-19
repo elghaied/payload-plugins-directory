@@ -1,4 +1,4 @@
-export type DbTarget = 'staging' | 'production'
+export type DbTarget = 'production'
 /** `env` holds extra variables for a local step's process (kept out of `cmd` so secrets are never printed). */
 export type DbStep = { label: string; where: 'local' | 'remote'; cmd: string; env?: Record<string, string> }
 export type DbEnv = {
@@ -53,7 +53,12 @@ function localPg(tool: 'pg_dump' | 'pg_restore', localUrl: string): { cmd: strin
 }
 
 const dumpFile = (stamp: string, kind: string) => `/tmp/directory-${kind}-${stamp}.dump`
-/** Next's on-disk data cache inside the web image (Dockerfile WORKDIR /app, standalone output). */
+/**
+ * Runs inside the web container (busybox wget). Every cached query carries the `plugins` tag (src/lib/cacheTags.ts),
+ * so this marks every cached page stale. REVALIDATE_SECRET is expanded by the container's shell and never leaves it.
+ */
+export const REVALIDATE_ALL_SCRIPT = `wget -qO- --header "Authorization: Bearer $REVALIDATE_SECRET" --header 'Content-Type: application/json' --post-data '{"tags":["plugins"]}' http://127.0.0.1:3000/api/revalidate`
+/** Fallback when the HTTP call fails: Next's on-disk data cache inside the web image (WORKDIR /app, standalone). */
 export const NEXT_FETCH_CACHE_DIR = '/app/.next/cache/fetch-cache'
 const RESTORE_FLAGS = '--clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error'
 
@@ -85,13 +90,15 @@ export function verifyTargetStep(target: DbTarget, env: DbEnv): DbStep {
   }
 }
 
+/** A name containing one of these words is never accepted by name alone (e.g. `production-clone`); use the label. */
+const UNSAFE_NAME_WORDS = ['staging', 'preview', 'clone', 'copy', 'test']
+
 /**
  * Checks `verifyTargetStep` output. A container passes when its `directory.env` label equals the target,
- * or, when it has no such label, when its name contains the target and not the other environment's name.
- * Returns the reasons it refuses (empty = OK).
+ * or, when it has no such label, when its name contains the target as a whole word (split on non-alphanumerics)
+ * and none of the words in UNSAFE_NAME_WORDS. Returns the reasons it refuses (empty = OK).
  */
 export function checkTargetContainers(target: DbTarget, inspectOutput: string): string[] {
-  const other: DbTarget = target === 'staging' ? 'production' : 'staging'
   const lines = inspectOutput.split('\n').map((l) => l.trim()).filter(Boolean)
   if (lines.length === 0) return ['docker inspect printed nothing']
   const problems: string[] = []
@@ -104,8 +111,9 @@ export function checkTargetContainers(target: DbTarget, inspectOutput: string): 
       if (label !== target) problems.push(`${name}: label ${ENV_LABEL}=${label}, expected ${target}`)
       continue
     }
-    const lower = name.toLowerCase()
-    if (!lower.includes(target) || lower.includes(other)) {
+    // Whole words only: "directory-preproduction-db" must not pass for production.
+    const words = name.toLowerCase().split(/[^a-z0-9]+/)
+    if (!words.includes(target) || words.some((w) => UNSAFE_NAME_WORDS.includes(w))) {
       problems.push(`${name}: name does not identify ${target} and it has no ${ENV_LABEL}=${target} label`)
     }
   }
@@ -188,11 +196,11 @@ export function planPush({ target, env, withMedia, stamp }: PlanOpts): DbStep[] 
       cmd: `rsync -az ./media/ ${env.sshHost}:/tmp/directory-media/ && ssh ${env.sshHost} ${shq(`docker cp /tmp/directory-media/. ${web}:/app/media/`)}`,
     })
   }
-  // Phase 0 "full revalidation": unstable_cache entries persist on disk in the standalone server's
-  // .next/cache/fetch-cache (serverDistDir/../cache/fetch-cache, WORKDIR /app) and survive a restart,
-  // so delete them first; the restart then drops the in-memory copy.
-  steps.push({ label: 'clear cache', where: 'remote', cmd: `docker exec ${web} rm -rf ${NEXT_FETCH_CACHE_DIR}` })
-  steps.push({ label: 'restart web', where: 'remote', cmd: `docker restart ${web}` })
+  // Full revalidation (spec §12.1) through /api/revalidate. If the HTTP call fails, run.ts falls back to
+  // `revalidate fallback`: unstable_cache entries persist on disk in .next/cache/fetch-cache and survive a
+  // restart, so delete them and restart web to drop the in-memory copy.
+  steps.push({ label: 'revalidate', where: 'remote', cmd: `docker exec ${web} sh -c ${shq(REVALIDATE_ALL_SCRIPT)}` })
+  steps.push({ label: 'revalidate fallback', where: 'remote', cmd: `docker exec ${web} rm -rf ${NEXT_FETCH_CACHE_DIR} && docker restart ${web}` })
   steps.push({ label: 'cleanup', where: 'remote', cmd: `rm -f ${shq(remoteFile)}` })
   return steps
 }

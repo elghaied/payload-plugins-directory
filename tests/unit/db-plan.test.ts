@@ -5,6 +5,7 @@ import {
   describeTarget,
   isLocalDatabaseUrl,
   parseLocalDatabaseUrl,
+  REVALIDATE_ALL_SCRIPT,
   planPull,
   planPush,
   recoveryInfo,
@@ -19,7 +20,6 @@ const env: DbEnv = {
   dbUser: 'directory',
   localUrl: 'postgresql://directory:directory@localhost:5433/directory',
   containers: {
-    staging: { db: 'stg-db', worker: 'stg-worker', web: 'stg-web' },
     production: { db: 'prod-db', worker: 'prod-worker', web: 'prod-web' },
   },
 }
@@ -48,14 +48,14 @@ describe('planPush', () => {
   it('targets only the chosen environment containers', () => {
     const remote = steps.filter((s) => s.where === 'remote').map((s) => s.cmd).join('\n')
     expect(remote).toContain('prod-db')
-    expect(remote).not.toContain('stg-db')
+    expect(remote).not.toContain('stg-')
   })
   it('restores with --clean --if-exists', () => {
     expect(steps.find((s) => s.label === 'restore')!.cmd).toMatch(/pg_restore .*--clean --if-exists .*--single-transaction --exit-on-error/)
   })
   it('skips worker steps when no worker container is configured', () => {
-    const noWorker = { ...env, containers: { ...env.containers, staging: { db: 'stg-db', web: 'stg-web' } } }
-    const l = planPush({ target: 'staging', env: noWorker, withMedia: false, stamp: 's' }).map((s) => s.label)
+    const noWorker = { ...env, containers: { production: { db: 'prod-db', web: 'prod-web' } } }
+    const l = planPush({ target: 'production', env: noWorker, withMedia: false, stamp: 's' }).map((s) => s.label)
     expect(l).not.toContain('stop worker')
   })
   it('adds media sync only when requested', () => {
@@ -78,17 +78,28 @@ describe('planPush hardening', () => {
   const steps = planPush(opts)
   const labels = steps.map((s) => s.label)
 
-  it('always migrates and restarts web, and throws without a web container', () => {
+  it('always migrates and revalidates, and throws without a web container', () => {
     expect(labels).toContain('migrate')
-    expect(labels).toContain('restart web')
+    expect(labels).toContain('revalidate')
     const noWeb = { ...env, containers: { ...env.containers, production: { db: 'prod-db' } } }
     expect(() => planPush({ ...opts, env: noWeb })).toThrow(/web container/)
   })
-  it('clears the Next data cache immediately before restarting web', () => {
-    const i = labels.indexOf('clear cache')
+  it('revalidates every cached page through the web container after migrating', () => {
+    const i = labels.indexOf('revalidate')
     expect(i).toBeGreaterThan(labels.indexOf('migrate'))
-    expect(labels[i + 1]).toBe('restart web')
-    expect(steps[i]).toEqual({ label: 'clear cache', where: 'remote', cmd: 'docker exec prod-web rm -rf /app/.next/cache/fetch-cache' })
+    expect(steps[i]).toEqual({ label: 'revalidate', where: 'remote', cmd: `docker exec prod-web sh -c ${shq(REVALIDATE_ALL_SCRIPT)}` })
+    expect(REVALIDATE_ALL_SCRIPT).toContain('Bearer $REVALIDATE_SECRET')
+    expect(REVALIDATE_ALL_SCRIPT).toContain('{"tags":["plugins"]}')
+    expect(labels).not.toContain('restart web')
+  })
+  it('keeps a cache-clear + restart fallback right after revalidate', () => {
+    const i = labels.indexOf('revalidate')
+    expect(labels[i + 1]).toBe('revalidate fallback')
+    expect(steps[i + 1]).toEqual({
+      label: 'revalidate fallback',
+      where: 'remote',
+      cmd: 'docker exec prod-web rm -rf /app/.next/cache/fetch-cache && docker restart prod-web',
+    })
   })
   it('cleans up the remote dump last', () => {
     expect(labels.at(-1)).toBe('cleanup')
@@ -128,7 +139,7 @@ describe('planPull local restore', () => {
     expect(step.env).toEqual({ PGPASSWORD: 'directory' })
   })
   it('never attaches env to remote steps', () => {
-    const all = [...planPull({ target: 'staging', env, withMedia: false, stamp: 's' }), ...planPush({ target: 'staging', env, withMedia: true, stamp: 's' })]
+    const all = [...planPull({ target: 'production', env, withMedia: false, stamp: 's' }), ...planPush({ target: 'production', env, withMedia: true, stamp: 's' })]
     for (const step of all.filter((s) => s.where === 'remote')) expect(step.env).toBeUndefined()
   })
 })
@@ -175,32 +186,39 @@ describe('shq', () => {
 
 describe('verify target (push pre-flight)', () => {
   it('is planned first and inspects the target db and web containers by name and label', () => {
-    const steps = planPush({ target: 'staging', env, withMedia: false, stamp: 's' })
-    expect(steps[0]).toEqual(verifyTargetStep('staging', env))
+    const steps = planPush({ target: 'production', env, withMedia: false, stamp: 's' })
+    expect(steps[0]).toEqual(verifyTargetStep('production', env))
     expect(steps[0]).toEqual({
       label: 'verify target',
       where: 'remote',
-      cmd: `docker inspect -f '{{.Name}}|{{index .Config.Labels "directory.env"}}' 'stg-db' 'stg-web'`,
+      cmd: `docker inspect -f '{{.Name}}|{{index .Config.Labels "directory.env"}}' 'prod-db' 'prod-web'`,
     })
   })
 })
 
 describe('checkTargetContainers', () => {
   it.each([
-    ['/directory-staging-db|<no value>', 'staging'],
-    ['/stg-web|staging', 'staging'],
     ['/postgres-abc123|production\n/web-abc123|production', 'production'],
     ['/directory-production-db|\n', 'production'],
+    ['/directory-production-db|<no value>', 'production'],
+    ['/directory_production_db|<no value>', 'production'],
+    ['/production|<no value>', 'production'],
+    ['/production-clone|production', 'production'], // explicit label wins over name
   ] as const)('accepts %j for %s', (out, target) => {
     expect(checkTargetContainers(target, out)).toEqual([])
   })
   it.each([
-    ['/directory-production-db|<no value>', 'staging'], // wrong name
-    ['/postgres-abc123|<no value>', 'staging'], // name does not say, no label
-    ['/directory-staging-db|production', 'staging'], // label wins over name
+    ['/postgres-abc123|<no value>', 'production'], // name does not say, no label
+    ['/web|staging', 'production'], // wrong label
+    ['/directory-preproduction-db|<no value>', 'production'], // substring, not a whole word
+    ['/nonproduction-db|<no value>', 'production'],
+    ['/production-clone|<no value>', 'production'],
+    ['/production-copy-db|<no value>', 'production'],
+    ['/production-test-web|<no value>', 'production'],
+    ['/production-preview-1|<no value>', 'production'],
     ['/staging-copy-of-production|<no value>', 'production'], // ambiguous name
-    ['/directory-staging-db|staging\n/directory-production-web|<no value>', 'staging'], // one of two is wrong
-    ['', 'staging'], // no output
+    ['/directory-production-db|production\n/directory-staging-web|<no value>', 'production'], // one of two is wrong
+    ['', 'production'], // no output
   ] as const)('refuses %j for %s', (out, target) => {
     expect(checkTargetContainers(target, out).length).toBeGreaterThan(0)
   })

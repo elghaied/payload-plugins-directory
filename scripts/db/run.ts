@@ -19,9 +19,9 @@ const { values, positionals } = parseArgs({
   options: { target: { type: 'string' }, 'with-media': { type: 'boolean', default: false } },
 })
 const mode = positionals[0] as 'pull' | 'push'
-if (mode !== 'pull' && mode !== 'push') throw new Error('Usage: run.ts pull|push [--target staging|production]')
-const target = (values.target ?? (mode === 'push' ? 'staging' : 'production')) as DbTarget
-if (target !== 'staging' && target !== 'production') throw new Error(`Unknown target "${target}"`)
+if (mode !== 'pull' && mode !== 'push') throw new Error('Usage: run.ts pull|push [--target production]')
+const target = (values.target ?? 'production') as DbTarget
+if (target !== 'production') throw new Error(`Unknown target "${target}"`)
 
 const e = process.env
 const env: DbEnv = {
@@ -30,11 +30,6 @@ const env: DbEnv = {
   dbUser: e.DB_REMOTE_DB_USER ?? 'directory',
   localUrl: e.DATABASE_URL ?? '',
   containers: {
-    staging: {
-      db: e.DB_REMOTE_STAGING_CONTAINER ?? '',
-      worker: e.DB_REMOTE_STAGING_WORKER_CONTAINER || undefined,
-      web: e.DB_REMOTE_STAGING_WEB_CONTAINER || undefined,
-    },
     production: {
       db: e.DB_REMOTE_PRODUCTION_CONTAINER ?? '',
       worker: e.DB_REMOTE_PRODUCTION_WORKER_CONTAINER || undefined,
@@ -44,7 +39,7 @@ const env: DbEnv = {
 }
 if (!env.containers[target].db) throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_CONTAINER in .env`)
 if (mode === 'push' && !env.containers[target].web) {
-  throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_WEB_CONTAINER in .env (push needs it to migrate and restart web)`)
+  throw new Error(`Set DB_REMOTE_${target.toUpperCase()}_WEB_CONTAINER in .env (push needs it to migrate and revalidate)`)
 }
 if (!isLocalDatabaseUrl(env.localUrl)) {
   throw new Error('DATABASE_URL must point at the local database')
@@ -82,7 +77,17 @@ let backupTaken = false
 try {
   for (const step of plan) {
     console.log(`→ ${step.label}`)
+    if (step.label === 'revalidate fallback') continue // only runs when 'revalidate' fails (below)
     if (step.label === 'stop worker') workerStopped = true
+    if (step.label === 'revalidate') {
+      try {
+        runStep(step)
+      } catch (err) {
+        console.error(`Revalidation over HTTP failed (${err instanceof Error ? err.message : String(err)}); falling back to clearing the cache and restarting web`)
+        runStep(plan.find((s) => s.label === 'revalidate fallback')!)
+      }
+      continue
+    }
     runStep(step)
     if (step.label === 'backup target') backupTaken = true
     if (step.label === 'start worker') workerStopped = false

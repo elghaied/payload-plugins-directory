@@ -287,6 +287,10 @@ pnpm payload seed --file /tmp/plugins.json --blocklist /tmp/blocklist.json
 
 The seed queues a discover run, so the worker then refreshes every imported repository. In a container, copy the files in with `docker cp` and run `npx payload seed --file <path>` from `/app/cli`.
 
+### Database Copies (`db:pull` / `db:push`)
+
+`pnpm db:pull` replaces the local database with a copy of production. `pnpm db:push` does the reverse after a typed `production` confirmation and a fresh backup of the target: it stops the worker during the restore, migrates, and revalidates every page through `/api/revalidate` (falling back to clearing the Next data cache and restarting web if that call fails). Run both from the main checkout, not from a worktree: the local dump runs in the `docker-compose.dev.yml` compose project of the current directory.
+
 ### Path Aliases
 
 `@/*` maps to `./src/*` — so `import { cn } from "@/lib/utils"` resolves to `src/lib/utils.ts`.
