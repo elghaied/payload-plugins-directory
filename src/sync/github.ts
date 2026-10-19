@@ -24,6 +24,33 @@ export interface GitHubContent {
   type: 'dir' | 'file' | 'symlink' | 'submodule'
 }
 
+export type RawFileLimit = { maxBytes: number; overflow: 'truncate' | 'missing' }
+export const DEFAULT_RAW_LIMIT: RawFileLimit = { maxBytes: 512 * 1024, overflow: 'truncate' }
+
+/**
+ * Reads at most `maxBytes` of a response body as UTF-8 and cancels the rest of the download. A multi-byte character
+ * cut at the limit is dropped. `truncated` is true when the body was longer than `maxBytes`.
+ */
+export async function readTextLimited(res: Response, maxBytes: number): Promise<{ text: string; truncated: boolean }> {
+  if (!res.body) return { text: '', truncated: false }
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let received = 0
+  let text = ''
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return { text: text + decoder.decode(), truncated: false }
+    const room = maxBytes - received
+    if (value.byteLength > room) {
+      text += decoder.decode(value.subarray(0, room), { stream: true }) // no final flush: drops a cut character
+      await reader.cancel().catch(() => undefined)
+      return { text, truncated: true }
+    }
+    received += value.byteLength
+    text += decoder.decode(value, { stream: true })
+  }
+}
+
 export type GitHubQuota = { remaining: number; limit: number; resetAt: string }
 export type SearchResult = { repos: GitHubRepo[]; complete: boolean; totalCount: number }
 
@@ -34,8 +61,12 @@ export interface GitHubClient {
   getRepo(ref: { githubId?: number | null; fullName: string }): Promise<GitHubRepo | null>
   /** Directory listing via the contents API. null = 404, or the path is not a directory. */
   listDirectory(fullName: string, dir: string, ref: string): Promise<GitHubContent[] | null>
-  /** File body from raw.githubusercontent.com (no API quota). null = 404; any other failure throws. */
-  getRawFile(fullName: string, ref: string, path: string): Promise<string | null>
+  /**
+   * File body from raw.githubusercontent.com (no API quota). null = 404; any other failure throws. The body is
+   * untrusted: at most `limit.maxBytes` are read (default DEFAULT_RAW_LIMIT), then the download is cancelled and the
+   * text is truncated (`overflow: 'truncate'`) or the file is treated as missing (`overflow: 'missing'`, null).
+   */
+  getRawFile(fullName: string, ref: string, path: string, limit?: RawFileLimit): Promise<string | null>
   /** Last core-API quota seen in response headers (shown by the job-health widget). */
   readonly quota: GitHubQuota | null
 }
@@ -179,12 +210,19 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
       return Array.isArray(body) ? (body as GitHubContent[]) : null
     },
 
-    async getRawFile(fullName, ref, path) {
+    async getRawFile(fullName, ref, path, limit = DEFAULT_RAW_LIMIT) {
       checkFullName(fullName)
       const encRef = encodeRef(ref)
       const url = assertUrl(`${GITHUB_RAW}/${fullName}/${encRef}/${encodePath(path, 'path')}`, GITHUB_RAW, `/${fullName}/${encRef}/`)
       const res = await request(url)
-      return res ? res.text() : null
+      if (!res) return null
+      const declared = Number(res.headers.get('content-length'))
+      if (limit.overflow === 'missing' && Number.isFinite(declared) && declared > limit.maxBytes) {
+        await res.body?.cancel().catch(() => undefined)
+        return null
+      }
+      const { text, truncated } = await readTextLimited(res, limit.maxBytes)
+      return truncated && limit.overflow === 'missing' ? null : text
     },
   }
 }

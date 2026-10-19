@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extractOfficialPlugins, extractPlugins, MAX_SUBDIRS_PER_DIR, MAX_WORKSPACE_DIRS } from '@/sync/extract'
+import { extractOfficialPlugins, extractPlugins, MAX_PACKAGE_DIRS_PER_REPO, MAX_WORKSPACE_DIRS } from '@/sync/extract'
 import { createGitHubClient } from '@/sync/github'
 import { HttpError } from '@/sync/http'
 import { fakeFetch, type FakeRoute } from '../helpers/fakeFetch'
@@ -111,8 +111,29 @@ describe('extractPlugins', () => {
       [contents('acme/deep', 'packages')]: json(subs),
     }, { notFoundPrefixes: [RAW] })
     await extractPlugins(ghRepo(72, 'acme/deep'), createGitHubClient({ fetch: f2 }))
-    const pkgFetches = [...new Set(f2.calls.map((c) => c.url))].filter((u) => u.endsWith('/package.json') && u.includes('/packages/'))
-    expect(pkgFetches.length).toBe(MAX_SUBDIRS_PER_DIR)
+    // Both the workspace scan and the packages/ fallback scan run; together they read at most the per-repository cap.
+    const pkgFetches = f2.calls.map((c) => c.url).filter((u) => u.endsWith('/package.json') && u.includes('/packages/'))
+    expect(pkgFetches.length).toBe(MAX_PACKAGE_DIRS_PER_REPO)
+  })
+
+  it('caps package directories per repository across workspace directories', async () => {
+    const entries = (dir: string) => Array.from({ length: 40 }, (_, i) => dirEntry(`p${i}`, `${dir}/p${i}`))
+    const f = fakeFetch({
+      [raw('acme/many', 'package.json')]: pkg({ name: 'many', workspaces: ['a/*', 'b/*', 'c/*'] }),
+      [contents('acme/many', 'a')]: json(entries('a')),
+      [contents('acme/many', 'b')]: json(entries('b')),
+      [contents('acme/many', 'c')]: json(entries('c')),
+    }, { notFoundPrefixes: [RAW] })
+    await extractPlugins(ghRepo(73, 'acme/many'), createGitHubClient({ fetch: f }))
+    const urls = f.calls.map((c) => c.url)
+    expect(urls.filter((u) => u.endsWith('/package.json') && u.includes('/acme/many/main/') && !u.endsWith('/main/package.json'))).toHaveLength(MAX_PACKAGE_DIRS_PER_REPO)
+    expect(urls).not.toContain(contents('acme/many', 'c')) // budget spent: c/ is never listed
+  })
+
+  it('treats an oversized package.json as missing', async () => {
+    const big = JSON.stringify({ name: 'big', peerDependencies: { payload: '^3.0.0' }, pad: 'x'.repeat(300 * 1024) })
+    const result = await extractPlugins(ghRepo(76, 'acme/big'), gh({ [raw('acme/big', 'package.json')]: { text: big } }))
+    expect(result.plugins).toEqual([expect.objectContaining({ slug: '76-root', packageName: undefined, payloadVersionRange: null })])
   })
 
   it('ignores non-string and non-array workspace declarations', async () => {

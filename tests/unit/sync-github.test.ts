@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createGitHubClient, InvalidGitHubPathError } from '@/sync/github'
+import { createGitHubClient, InvalidGitHubPathError, readTextLimited } from '@/sync/github'
+import type { FetchFn } from '@/sync/http'
 import { HttpError, RateLimitError } from '@/sync/http'
 import { fakeFetch } from '../helpers/fakeFetch'
 import { API, RAW, contents, dirEntry, ghRepo, json, raw, repoById, repoByName, searchPage, searchResult } from '../fixtures/sync/github'
@@ -87,6 +88,54 @@ describe('getRawFile', () => {
     expect(f.calls[0].init).toBeUndefined()
     expect(await gh.getRawFile('acme/seo', 'main', 'README.md')).toBeNull()
     await expect(gh.getRawFile('acme/seo', 'main', 'LICENSE')).rejects.toBeInstanceOf(HttpError)
+  })
+})
+
+/** A streamed body of `total` bytes of 'a' in 64 KB chunks that records how much was pulled and whether it was cancelled. */
+function streamed(total: number, headers: Record<string, string> = {}) {
+  const state = { pulled: 0, cancelled: false }
+  const CHUNK = 64 * 1024
+  const body = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      if (state.pulled >= total) return controller.close()
+      const n = Math.min(CHUNK, total - state.pulled)
+      state.pulled += n
+      controller.enqueue(new Uint8Array(n).fill(0x61))
+    },
+    cancel() {
+      state.cancelled = true
+    },
+  }, { highWaterMark: 0 })
+  const fetch: FetchFn = async () => new Response(body, { status: 200, headers })
+  return { state, fetch }
+}
+
+describe('getRawFile size limits', () => {
+  it('truncates a long file at maxBytes and cancels the rest of the download', async () => {
+    const { state, fetch } = streamed(10 * 1024 * 1024)
+    const text = await createGitHubClient({ fetch, now }).getRawFile('acme/x', 'main', 'README.md', { maxBytes: 512 * 1024, overflow: 'truncate' })
+    expect(text).toHaveLength(512 * 1024)
+    expect(state.cancelled).toBe(true)
+    expect(state.pulled).toBeLessThan(1024 * 1024)
+  })
+  it('defaults to a 512 KB truncating limit', async () => {
+    const { fetch } = streamed(600 * 1024)
+    expect(await createGitHubClient({ fetch, now }).getRawFile('acme/x', 'main', 'README.md')).toHaveLength(512 * 1024)
+  })
+  it('treats an oversized file as missing, by content-length or after streaming past the limit', async () => {
+    const limit = { maxBytes: 256 * 1024, overflow: 'missing' as const }
+    const declared = streamed(300 * 1024, { 'content-length': String(300 * 1024) })
+    expect(await createGitHubClient({ fetch: declared.fetch, now }).getRawFile('acme/x', 'main', 'package.json', limit)).toBeNull()
+    expect(declared.state.cancelled).toBe(true)
+    const undeclared = streamed(300 * 1024)
+    expect(await createGitHubClient({ fetch: undeclared.fetch, now }).getRawFile('acme/x', 'main', 'package.json', limit)).toBeNull()
+    expect(undeclared.state.cancelled).toBe(true)
+    const fits = streamed(256 * 1024)
+    expect(await createGitHubClient({ fetch: fits.fetch, now }).getRawFile('acme/x', 'main', 'package.json', limit)).toHaveLength(256 * 1024)
+  })
+  it('drops a multi-byte character cut at the limit', async () => {
+    expect(await readTextLimited(new Response('ab€'), 3)).toEqual({ text: 'ab', truncated: true })
+    expect(await readTextLimited(new Response('ab€'), 5)).toEqual({ text: 'ab€', truncated: false })
   })
 })
 

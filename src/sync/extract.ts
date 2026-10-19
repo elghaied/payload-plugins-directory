@@ -1,6 +1,6 @@
 import { isValidSlug } from '@/lib/cacheTags'
 import type { PackageJson } from '@/types'
-import { InvalidGitHubPathError, type GitHubClient, type GitHubRepo } from './github'
+import { InvalidGitHubPathError, type GitHubClient, type GitHubRepo, type RawFileLimit } from './github'
 import { getPayloadVersion, getWorkspaceDirs, isLikelyPlugin, isMonorepo } from './packages'
 
 export const OFFICIAL_REPO = 'payloadcms/payload'
@@ -28,9 +28,17 @@ const BATCH = 5
 /** Caps on GitHub requests driven by an untrusted package.json. */
 export const MAX_WORKSPACE_DIRS = 20
 export const MAX_SUBDIRS_PER_DIR = 100
+/** Total package directories read per repository, across every workspace scan of one extraction. */
+export const MAX_PACKAGE_DIRS_PER_REPO = 50
+/** A longer README is truncated; a larger package.json is treated as missing (it would not parse when cut). */
+export const README_LIMIT: RawFileLimit = { maxBytes: 512 * 1024, overflow: 'truncate' }
+export const PACKAGE_JSON_LIMIT: RawFileLimit = { maxBytes: 256 * 1024, overflow: 'missing' }
+
+/** Package directories this extraction may still read. */
+type Budget = { left: number }
 
 async function readPackageJson(gh: GitHubClient, fullName: string, ref: string, dir: string): Promise<ReadPackage | null> {
-  const text = await gh.getRawFile(fullName, ref, dir ? `${dir}/package.json` : 'package.json')
+  const text = await gh.getRawFile(fullName, ref, dir ? `${dir}/package.json` : 'package.json', PACKAGE_JSON_LIMIT)
   if (text === null) return null
   try {
     const parsed: unknown = JSON.parse(text)
@@ -43,7 +51,7 @@ async function readPackageJson(gh: GitHubClient, fullName: string, ref: string, 
 /** Full README of a repository or package directory (legacy file-name order); undefined when there is none. */
 export async function readReadme(gh: GitHubClient, fullName: string, ref: string, dir = ''): Promise<string | undefined> {
   for (const name of README_NAMES) {
-    const text = await gh.getRawFile(fullName, ref, dir ? `${dir}/${name}` : name)
+    const text = await gh.getRawFile(fullName, ref, dir ? `${dir}/${name}` : name, README_LIMIT)
     if (text !== null) return text
   }
   return undefined
@@ -67,11 +75,12 @@ async function rootPlugin(repo: GitHubRepo, gh: GitHubClient, pkg: ReadPackage |
   }
 }
 
-async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Promise<ExtractedPlugin[]> {
+async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[], budget: Budget): Promise<ExtractedPlugin[]> {
   const ref = repo.default_branch
   const found: ExtractedPlugin[] = []
   const seen = new Set<string>()
   for (const dir of dirs.slice(0, MAX_WORKSPACE_DIRS)) {
+    if (budget.left <= 0) break
     // Workspace entries come from the repository's package.json and are untrusted: skip invalid ones.
     let listing
     try {
@@ -81,7 +90,10 @@ async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Pro
       throw error
     }
     // A directory name becomes part of the slug: skip names that would not make a valid slug / cache tag.
-    const subdirs = listing.filter((e) => e.type === 'dir' && isValidSlug(`${repo.id}-${e.name}`)).slice(0, MAX_SUBDIRS_PER_DIR)
+    const subdirs = listing
+      .filter((e) => e.type === 'dir' && isValidSlug(`${repo.id}-${e.name}`))
+      .slice(0, Math.min(MAX_SUBDIRS_PER_DIR, budget.left))
+    budget.left -= subdirs.length
     for (let i = 0; i < subdirs.length; i += BATCH) {
       const batch = await Promise.all(
         subdirs.slice(i, i + BATCH).map(async (entry): Promise<ExtractedPlugin | null> => {
@@ -122,23 +134,24 @@ async function scanDirs(repo: GitHubRepo, gh: GitHubClient, dirs: string[]): Pro
 /** Community repository -> plugins. Same decision order as the legacy `processRepository`. */
 export async function extractPlugins(repo: GitHubRepo, gh: GitHubClient): Promise<Extraction> {
   const root = await readPackageJson(gh, repo.full_name, repo.default_branch, '')
+  const budget: Budget = { left: MAX_PACKAGE_DIRS_PER_REPO }
   if (!root) return { plugins: [await rootPlugin(repo, gh, null, null)], isMonorepo: false }
 
   // 1. npm/yarn workspaces
   if (isMonorepo(root.json)) {
-    const subs = await scanDirs(repo, gh, getWorkspaceDirs(root.json))
+    const subs = await scanDirs(repo, gh, getWorkspaceDirs(root.json), budget)
     if (subs.length) return { plugins: subs, isMonorepo: true }
   }
   // 2. private root without workspaces (pnpm-workspace.yaml)
   if (root.json.private) {
-    const subs = await scanDirs(repo, gh, ['packages'])
+    const subs = await scanDirs(repo, gh, ['packages'], budget)
     if (subs.length) return { plugins: subs, isMonorepo: true }
   }
   // 3. single package with a payload dependency
   const range = getPayloadVersion(root.json)
   if (range) return { plugins: [await rootPlugin(repo, gh, root, range)], isMonorepo: false }
   // 4. packages/ fallback
-  const fallback = await scanDirs(repo, gh, ['packages'])
+  const fallback = await scanDirs(repo, gh, ['packages'], budget)
   if (fallback.length) return { plugins: fallback, isMonorepo: true }
   // 5. unknown single package
   return { plugins: [await rootPlugin(repo, gh, root, null)], isMonorepo: false }
