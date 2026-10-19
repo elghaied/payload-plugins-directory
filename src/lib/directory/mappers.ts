@@ -1,3 +1,4 @@
+import { readmePreview } from './readme'
 import type { Plugin, Repository } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
 import type { PluginDetail, PluginSummary } from './types'
@@ -42,7 +43,7 @@ export function toSummary(doc: Plugin): PluginSummary {
 export function toDetail(doc: Plugin): PluginDetail {
   return {
     ...toSummary(doc),
-    readme: doc.readme ?? undefined,
+    readme: readmePreview(doc.readme),
     payloadVersionRange: doc.payloadVersionRange ?? null,
     npm: doc.npm ?? undefined,
   }
