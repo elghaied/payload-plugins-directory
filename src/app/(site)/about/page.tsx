@@ -1,11 +1,17 @@
 import { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 
+// Per request, like every site page: absolute URLs come from the runtime SERVER_URL (metadataBase in the layout),
+// never from the build environment.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "About — Payload CMS Plugin Directory",
+  alternates: { canonical: "/about" },
   description:
     "Learn how the Payload CMS Plugin Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
   openGraph: {
+    url: "/about",
     title: "About — Payload CMS Plugin Directory",
     description:
       "Learn how the Payload CMS Plugin Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",

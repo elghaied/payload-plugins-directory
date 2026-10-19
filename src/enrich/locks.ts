@@ -25,6 +25,17 @@ const FIELDS: Record<LockKey, { value: (d: Doc) => unknown; present: (d: Doc) =>
   useCases: { value: (d) => d.ai?.useCases ?? [], present: (d) => Boolean(d.ai && 'useCases' in d.ai) },
 }
 
+/** Written only by enrichment (the last failure): an admin form only ever echoes them, possibly stale. */
+const FAILURE_KEYS = ['failure', 'failedAt', 'failedKey'] as const
+
+/** Removes the failure fields from an admin save, so an echoed old value cannot erase failedKey (one more paid call). */
+function withoutFailureFields(data: Doc): Doc {
+  if (!data.ai || !FAILURE_KEYS.some((k) => k in data.ai!)) return data
+  const ai = { ...data.ai } as Record<string, unknown>
+  for (const key of FAILURE_KEYS) delete ai[key]
+  return { ...data, ai: ai as Doc['ai'] }
+}
+
 /** What enrichment writes (spec §5.3): a form that predates the last enrichment must not write these back. */
 const AI_KEYS = ['tagline', 'summary', 'features', 'useCases', 'enrichedHash', 'promptHash', 'enrichedAt', 'confidence', 'model'] as const
 
@@ -59,9 +70,10 @@ function withoutAiManaged(data: Doc): Doc {
  * value actually changed lock. Saves without an admin user (sync, enrichment, seed) never lock, and neither do
  * writes carrying a system context. Toggling a lock explicitly in the same save wins.
  */
-export const lockAdminEditedAiFields: CollectionBeforeChangeHook<Plugin> = ({ data, originalDoc, operation, req, context }) => {
-  if (operation !== 'update' || !originalDoc || !isAdminUser(req.user)) return data
-  if (context.enrichment || context.syncTrash) return data
+export const lockAdminEditedAiFields: CollectionBeforeChangeHook<Plugin> = ({ data: incoming, originalDoc, operation, req, context }) => {
+  if (operation !== 'update' || !originalDoc || !isAdminUser(req.user)) return incoming
+  if (context.enrichment || context.syncTrash) return incoming
+  const data = withoutFailureFields(incoming)
   // A stale form (opened before an enrichment landed) would revert the AI output and lock the old values for good.
   // Its other edits (visibility, customTagline, …) still save; its AI-managed values are dropped, nothing locks.
   if (predatesEnrichment(data, originalDoc)) {

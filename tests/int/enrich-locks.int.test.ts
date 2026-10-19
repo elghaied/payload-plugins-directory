@@ -151,4 +151,18 @@ describe('final fix A2: a stale admin form save', () => {
     expect(await locksOf()).toMatchObject({ summary: true, tagline: false, category: false, tags: false })
     expect((await reload()).ai?.summary).toBe('Fixed by hand')
   })
+
+  it('R2: an admin save never writes the machine-owned failure fields', async () => {
+    await payload.update({
+      collection: 'plugins', id: plugin.id, overrideAccess: true,
+      data: { ai: { failure: 'refusal:cyber', failedAt: '2026-10-19T12:00:00.000Z', failedKey: 'h:f' } },
+    })
+    const form = await payload.findByID({ collection: 'plugins', id: plugin.id, overrideAccess: false, user: admin as never, depth: 0 })
+    // A form loaded before the failure was recorded echoes the old (empty) values, with nothing else stale.
+    await asAdmin({ ai: { ...form.ai, failure: null, failedAt: null, failedKey: null }, visibility: 'hidden' })
+    const after = await reload()
+    expect(after.visibility).toBe('hidden')
+    expect(after.ai).toMatchObject({ failure: 'refusal:cyber', failedAt: '2026-10-19T12:00:00.000Z', failedKey: 'h:f' })
+    expect(after.locks).toMatchObject({ tagline: false, summary: false, features: false })
+  })
 })

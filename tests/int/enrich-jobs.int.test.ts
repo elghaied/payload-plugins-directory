@@ -309,6 +309,26 @@ describe('enrich jobs through payload.jobs', () => {
       expect(fake.batches.size).toBe(1)
     })
 
+    it('R1: a direct enrich whose revalidate enqueue throws makes one API call and completes', async () => {
+      const repo = await createRepo(payload)
+      const p = await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })
+      const fake = fakeEnrichClient(() => okMessage(goodOutput()))
+      setDeps(fake)
+      await payload.jobs.queue({ task: 'enrich', input: { pluginId: p.id }, queue: 'enrich', overrideAccess: true })
+      const queue = payload.jobs.queue.bind(payload.jobs)
+      vi.spyOn(payload.jobs, 'queue').mockImplementation(((args: { task?: string }) =>
+        args.task === 'revalidate' ? Promise.reject(new Error('queue down')) : queue(args as never)) as never)
+      for (let i = 0; i < 4; i++) {
+        await payload.update({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'enrich' } }, data: { waitUntil: null } })
+        await payload.jobs.run({ queue: 'enrich', overrideAccess: true })
+      }
+      vi.restoreAllMocks()
+      expect(fake.calls).toHaveLength(1)
+      expect(await jobsOf('enrich')).toEqual([])
+      expect((await reload(p.id)).ai?.enrichedHash).toBe('h1')
+      expect(await status('enrich')).toMatchObject({ details: { status: 'applied' } })
+    })
+
     it('a direct enrich whose apply throws makes one API call, records the failure and is not retried', async () => {
       const repo = await createRepo(payload)
       const p = await createPlugin(payload, repo.id, { slug: 'p1', contentHash: 'h1' })

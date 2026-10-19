@@ -55,7 +55,13 @@ const enrichTask: TaskConfig<'enrich'> = {
       at,
       async () => {
         const r = await honourRetryAfter(at, () => runEnrich(payload, input.pluginId, getEnrichClient(deps), deps.now))
-        await queueRevalidate(payload, r.revalidateTags)
+        // The answer is paid for: a failed revalidate enqueue must not fail the job (a retry would call the API again).
+        // The pages refresh on the next revalidation of these tags or when the hourly cache entry expires.
+        try {
+          await queueRevalidate(payload, r.revalidateTags)
+        } catch (err) {
+          payload.logger.error({ err, msg: `enrich: could not queue revalidation for plugin ${input.pluginId}; pages refresh within the hour` })
+        }
         return {
           status: r.status,
           ...(r.reason ? { reason: r.reason } : {}),
