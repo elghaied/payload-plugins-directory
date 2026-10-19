@@ -5,21 +5,16 @@ import { usePathname } from "next/navigation"
 import { Github, Rss } from "lucide-react"
 import { PayloadIcon } from "./PayloadIcon"
 import { ModeToggle } from "./mode-toggler"
-
-const textLinks = [
-  { href: "/", label: "Home" },
-  { href: "/stats", label: "Stats" },
-  { href: "/about", label: "About" },
-] as const
+import { NAV_LINKS, isActiveLink } from "./navLinks"
 
 export function Navbar() {
   const pathname = usePathname()
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto max-w-7xl flex h-14 items-center justify-between px-4 gap-4">
+      <div className="container mx-auto max-w-7xl flex h-14 items-center justify-between px-4 gap-2 sm:gap-4">
         {/* Left: Logo + text nav links */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 sm:gap-6">
           <Link
             href="/"
             className="flex items-center gap-2 font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity"
@@ -28,17 +23,15 @@ export function Navbar() {
             <span className="hidden sm:inline">Plugins</span>
           </Link>
 
-          <div className="flex items-center gap-1">
-            {textLinks.map(({ href, label }) => {
-              const isActive = href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(href)
+          <div className="flex items-center gap-0.5 sm:gap-1">
+            {NAV_LINKS.map(({ href, label }) => {
+              const isActive = isActiveLink(href, pathname)
 
               return (
                 <Link
                   key={href}
                   href={href}
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  className={`px-1.5 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -57,7 +50,7 @@ export function Navbar() {
             href="https://github.com/payloadcms/payload"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="Payload CMS GitHub"
             title="Payload CMS"
           >
@@ -67,7 +60,7 @@ export function Navbar() {
             href="https://github.com/elghaied/payload-plugins-directory"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden min-[400px]:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="Directory GitHub"
             title="GitHub"
           >
@@ -82,7 +75,7 @@ export function Navbar() {
             <Rss className="h-4 w-4" />
           </a>
 
-          <div className="w-px h-5 bg-border mx-1" />
+          <div className="hidden sm:block w-px h-5 bg-border mx-1" />
 
           <ModeToggle />
         </div>

@@ -25,4 +25,10 @@ describe('sitemap', () => {
     expect(urls).not.toContain('https://payloaddirectory.dev/categories/empty')
     expect(urls).toContain('https://payloaddirectory.dev/plugins/a')
   })
+  it('lists /trending before /stats, both from the runtime host', async () => {
+    const urls = (await sitemap()).map((e) => e.url)
+    expect(urls).toContain('https://payloaddirectory.dev/trending')
+    expect(urls).toContain('https://payloaddirectory.dev/stats')
+    expect(urls.indexOf('https://payloaddirectory.dev/trending')).toBe(urls.indexOf('https://payloaddirectory.dev/stats') - 1)
+  })
 })
