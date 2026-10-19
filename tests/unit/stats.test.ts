@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeStats } from '@/lib/directory/stats'
+import { computeStats, versionAdoption } from '@/lib/directory/stats'
 import type { PluginSummary } from '@/lib/directory/types'
 
 const base: PluginSummary = {
@@ -21,14 +21,46 @@ describe('computeStats', () => {
     expect(stats.total).toBe(3)
     expect(stats.official).toBe(2)
   })
-  it('counts v4 and unknown majors', () => {
-    const stats = computeStats([{ ...base, payloadMajors: ['3', '4'] }, { ...base, slug: 'b', payloadMajors: ['unknown'] }])
-    expect(stats.versions).toEqual({ v1: 0, v2: 0, v3: 1, v4: 1, unknown: 1 })
-  })
   it('handles an empty list', () => {
     const stats = computeStats([])
     expect(stats.total).toBe(0)
     expect(stats.avgHealth).toBe(0)
     expect(stats.avgStars).toBe(0)
+  })
+})
+
+describe('computeStats medianStars', () => {
+  it('takes the median over unique repositories, not monorepo-inflated plugins', () => {
+    const mono = 'https://github.com/payloadcms/payload'
+    const plugins = [
+      { ...base, slug: 'm1', repositoryUrl: mono, stars: 100 },
+      { ...base, slug: 'm2', repositoryUrl: mono, stars: 100 },
+      { ...base, slug: 'm3', repositoryUrl: mono, stars: 100 },
+      { ...base, slug: 's1', repositoryUrl: 'https://github.com/o/a', stars: 5 },
+      { ...base, slug: 's2', repositoryUrl: 'https://github.com/o/b', stars: 7 },
+    ]
+    expect(computeStats(plugins).medianStars).toBe(7) // per-plugin median would be 100
+  })
+})
+
+describe('versionAdoption', () => {
+  it('reports plugin share and weekly-download share per major', () => {
+    const rows = versionAdoption([
+      { ...base, slug: 'a', payloadMajors: ['3', '4'], weeklyDownloads: 300 },
+      { ...base, slug: 'b', payloadMajors: ['3'], weeklyDownloads: 100 },
+      { ...base, slug: 'c', payloadMajors: ['unknown'] },
+      { ...base, slug: 'd', payloadMajors: ['2'], weeklyDownloads: 0 },
+    ])
+    expect(rows.map((r) => r.major)).toEqual(['4', '3', '2', '1', 'unknown'])
+    const v3 = rows.find((r) => r.major === '3')!
+    expect(v3).toEqual({ major: '3', label: 'v3', plugins: 2, pluginShare: 0.5, weeklyDownloads: 400, downloadShare: 1 })
+    expect(rows.find((r) => r.major === '4')).toMatchObject({ plugins: 1, pluginShare: 0.25, downloadShare: 0.75 })
+    expect(rows.find((r) => r.major === 'unknown')).toMatchObject({ label: 'Unknown', plugins: 1, weeklyDownloads: 0 })
+  })
+  it('handles an empty directory without NaN', () => {
+    for (const r of versionAdoption([])) {
+      expect(r.pluginShare).toBe(0)
+      expect(r.downloadShare).toBe(0)
+    }
   })
 })

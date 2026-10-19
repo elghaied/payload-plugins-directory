@@ -1,16 +1,8 @@
+import type { PayloadMajor } from '@/lib/versions'
 import type { PluginSummary } from './types'
 
 export function computeStats(plugins: PluginSummary[]) {
   const total = plugins.length;
-
-  // Version distribution
-  const versions = { v1: 0, v2: 0, v3: 0, v4: 0, unknown: 0 };
-  for (const p of plugins) {
-    for (const m of p.payloadMajors) {
-      if (m === 'unknown') versions.unknown++;
-      else versions[`v${m}` as 'v1' | 'v2' | 'v3' | 'v4']++;
-    }
-  }
 
   // License distribution
   const licenseMap: Record<string, number> = {};
@@ -61,7 +53,8 @@ export function computeStats(plugins: PluginSummary[]) {
   });
   const totalStars = Array.from(uniqueRepos.values()).reduce((s, p) => s + p.stars, 0);
   const totalForks = Array.from(uniqueRepos.values()).reduce((s, p) => s + p.forks, 0);
-  const starValues = plugins.map((p) => p.stars).sort((a, b) => a - b);
+  // Median over unique repositories: a monorepo's stars must not be counted once per plugin.
+  const starValues = Array.from(uniqueRepos.values()).map((p) => p.stars).sort((a, b) => a - b);
   const medianStars = starValues[Math.floor(starValues.length / 2)] || 0;
   const avgStars = uniqueRepos.size > 0 ? Math.round(totalStars / uniqueRepos.size) : 0;
   const official = plugins.filter((p) => p.isOfficial).length;
@@ -124,7 +117,6 @@ export function computeStats(plugins: PluginSummary[]) {
 
   return {
     total,
-    versions,
     licenseDistribution,
     topAuthors,
     months,
@@ -145,3 +137,35 @@ export function computeStats(plugins: PluginSummary[]) {
 }
 
 export type DirectoryStats = ReturnType<typeof computeStats>
+
+export type VersionAdoptionRow = {
+  major: PayloadMajor
+  label: string
+  plugins: number
+  pluginShare: number
+  weeklyDownloads: number
+  downloadShare: number
+}
+
+const ADOPTION_ORDER: PayloadMajor[] = ['4', '3', '2', '1', 'unknown']
+
+/**
+ * Current Payload version adoption. A plugin supporting several majors counts toward each, so shares
+ * can sum to more than 100%. (History is not available: snapshots do not store majors.)
+ */
+export function versionAdoption(plugins: PluginSummary[]): VersionAdoptionRow[] {
+  const total = plugins.length
+  const totalDownloads = plugins.reduce((s, p) => s + (p.weeklyDownloads ?? 0), 0)
+  return ADOPTION_ORDER.map((major) => {
+    const supporting = plugins.filter((p) => p.payloadMajors.includes(major))
+    const weeklyDownloads = supporting.reduce((s, p) => s + (p.weeklyDownloads ?? 0), 0)
+    return {
+      major,
+      label: major === 'unknown' ? 'Unknown' : `v${major}`,
+      plugins: supporting.length,
+      pluginShare: total > 0 ? supporting.length / total : 0,
+      weeklyDownloads,
+      downloadShare: totalDownloads > 0 ? weeklyDownloads / totalDownloads : 0,
+    }
+  })
+}

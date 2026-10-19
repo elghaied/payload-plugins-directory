@@ -1,11 +1,23 @@
-import { computeStats } from "@/lib/directory/stats";
+import { computeStats, versionAdoption } from "@/lib/directory/stats";
 import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
 import { Metadata } from "next";
+import { TrendChart } from "@/components/trends/TrendChart";
+import { daysBetween, formatDay, utcToday } from "@/lib/trends/days";
+import { HISTORY_DAYS } from "@/lib/trends/growth";
+import { getEcosystemGrowth } from "@/lib/trends/queries";
+import type { EcosystemGrowth } from "@/lib/trends/types";
 
 export const metadata: Metadata = {
   title: "Ecosystem Stats — Payload CMS Plugin Directory",
   description:
-    "Statistics and insights about the Payload CMS plugin ecosystem: version adoption, top contributors, license distribution, and growth trends.",
+    "Statistics about the Payload CMS plugin ecosystem: growth over time, Payload version adoption, top contributors, licenses and downloads.",
+  alternates: { canonical: "/stats" },
+  openGraph: {
+    url: "/stats",
+    title: "Ecosystem Stats — Payload CMS Plugin Directory",
+    description:
+      "Statistics about the Payload CMS plugin ecosystem: growth over time, Payload version adoption, top contributors, licenses and downloads.",
+  },
 };
 
 function Bar({
@@ -44,19 +56,33 @@ function formatDownloads(num: number): string {
   return num.toString();
 }
 
+// Same per-major hues as the existing version badges; identity is carried by the text label, not colour alone.
+const ADOPTION_COLORS: Record<string, string> = {
+  "4": "bg-violet-500",
+  "3": "bg-emerald-500",
+  "2": "bg-blue-500",
+  "1": "bg-amber-500",
+  unknown: "bg-gray-400",
+};
+
 export const dynamic = "force-dynamic";
 
-export default async function StatsPage() {
-  const [plugins, meta] = await Promise.all([getPluginSummaries(), getDirectoryMeta()]);
-  const stats = computeStats(plugins);
+// A snapshot-query failure must not take down the rest of the stats page.
+async function loadGrowth(): Promise<EcosystemGrowth> {
+  try {
+    return await getEcosystemGrowth();
+  } catch (error) {
+    console.error("[stats] getEcosystemGrowth failed", error);
+    return { stars: [], downloads: [], lastSnapshotDay: null };
+  }
+}
 
-  const maxVersion = Math.max(
-    stats.versions.v1,
-    stats.versions.v2,
-    stats.versions.v3,
-    stats.versions.v4,
-    stats.versions.unknown
-  );
+export default async function StatsPage() {
+  const [plugins, meta, growth] = await Promise.all([getPluginSummaries(), getDirectoryMeta(), loadGrowth()]);
+  const stats = computeStats(plugins);
+  const adoption = versionAdoption(plugins);
+  const staleGrowth = growth.lastSnapshotDay !== null && daysBetween(growth.lastSnapshotDay, utcToday()) > 2;
+
   const maxLicense = stats.licenseDistribution[0]?.[1] || 1;
   const maxMonth = Math.max(...stats.months.map((m) => m.count), 1);
 
@@ -95,6 +121,32 @@ export default async function StatsPage() {
             </div>
           ))}
         </div>
+
+        {/* Ecosystem growth (snapshots) */}
+        <section aria-labelledby="growth-heading" className="bg-card border rounded-lg p-4 sm:p-5 mb-8 sm:mb-10">
+          <h2 id="growth-heading" className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            Ecosystem Growth (last {HISTORY_DAYS} days)
+          </h2>
+          <div className="grid gap-6 md:grid-cols-2 mt-4">
+            <TrendChart
+              title="Total GitHub stars"
+              metric="Total stars"
+              tone="stars"
+              series={growth.stars}
+              footnote="Across repositories of listed plugins; a monorepo is counted once."
+            />
+            <TrendChart
+              title="Total npm weekly downloads"
+              metric="Total weekly downloads"
+              tone="downloads"
+              series={growth.downloads}
+              footnote="Sum of npm weekly downloads across listed plugins."
+            />
+          </div>
+          {staleGrowth && growth.lastSnapshotDay && (
+            <p className="mt-2 text-xs text-muted-foreground">Data as of {formatDay(growth.lastSnapshotDay, true)}</p>
+          )}
+        </section>
 
         <div className="grid gap-4 sm:gap-8 md:grid-cols-2">
           {/* Most downloaded */}
@@ -156,45 +208,32 @@ export default async function StatsPage() {
 
           {/* Version adoption */}
           <section className="bg-card border rounded-lg p-5">
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
-              Version Adoption
+            <h2 className="text-sm font-semibold mb-1 uppercase tracking-wider text-muted-foreground">
+              Payload Version Adoption
             </h2>
+            <p className="text-xs text-muted-foreground mb-4">
+              Share of plugins supporting each major (a plugin can support several), and their share of weekly downloads.
+            </p>
             <div className="space-y-3">
-              <Bar
-                label="v4"
-                value={stats.versions.v4}
-                max={maxVersion}
-                count={stats.versions.v4}
-                color="bg-violet-500"
-              />
-              <Bar
-                label="v3"
-                value={stats.versions.v3}
-                max={maxVersion}
-                count={stats.versions.v3}
-                color="bg-emerald-500"
-              />
-              <Bar
-                label="v2"
-                value={stats.versions.v2}
-                max={maxVersion}
-                count={stats.versions.v2}
-                color="bg-blue-500"
-              />
-              <Bar
-                label="v1"
-                value={stats.versions.v1}
-                max={maxVersion}
-                count={stats.versions.v1}
-                color="bg-amber-500"
-              />
-              <Bar
-                label="Unknown"
-                value={stats.versions.unknown}
-                max={maxVersion}
-                count={stats.versions.unknown}
-                color="bg-gray-400"
-              />
+              {adoption.map((row) => (
+                <div key={row.major}>
+                  <div className="flex items-baseline justify-between text-xs sm:text-sm">
+                    <span className="font-medium">{row.label}</span>
+                    <span className="tabular-nums">
+                      {row.plugins} plugin{row.plugins !== 1 ? "s" : ""} · {Math.round(row.pluginShare * 100)}%
+                    </span>
+                  </div>
+                  <div className="mt-1 h-2 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${ADOPTION_COLORS[row.major]}`}
+                      style={{ width: `${row.plugins > 0 ? Math.max(row.pluginShare * 100, 2) : 0}%` }}
+                    />
+                  </div>
+                  <p className="mt-0.5 text-[10px] sm:text-xs text-muted-foreground tabular-nums">
+                    {Math.round(row.downloadShare * 100)}% of weekly downloads
+                  </p>
+                </div>
+              ))}
             </div>
           </section>
 
