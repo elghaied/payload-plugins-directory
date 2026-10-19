@@ -70,7 +70,7 @@ export default function AboutPage() {
                 {
                   title: "Refresh",
                   description:
-                    "The directory refreshes twice daily via GitHub Actions, so new plugins and updates appear without any manual intervention.",
+                    "A background sync rediscovers repositories every 6 hours and refreshes npm stats daily, so new plugins and updates appear without any manual intervention.",
                 },
                 {
                   title: "No submission needed",

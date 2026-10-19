@@ -212,7 +212,7 @@ For best results, make sure your repo has:
 │   │   ├── PayloadIcon.tsx      # Payload CMS logo
 │   │   └── theme-provider.tsx   # next-themes provider wrapper
 │   ├── lib/
-│   │   ├── getPlugins.ts        # Reads plugins.json, exports getPlugins(), stats helpers
+│   │   ├── directory/           # Cached Payload queries (queries.ts), mappers, stats helpers
 │   │   └── utils.ts             # cn() class merge utility
 │   └── types.ts                 # Shared TypeScript interfaces
 ├── components.json              # shadcn/ui configuration
