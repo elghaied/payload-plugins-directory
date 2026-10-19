@@ -21,6 +21,7 @@ import {
 import { getPluginDetail } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
 import { getServerURL } from "@/lib/serverUrl";
+import { BadgeEmbed } from "@/components/BadgeEmbed";
 import { getPluginTrends } from "@/lib/trends/queries";
 import { HISTORY_DAYS } from "@/lib/trends/growth";
 import { daysBetween, formatDay, utcToday } from "@/lib/trends/days";
@@ -413,6 +414,9 @@ export default async function PluginDetailPage({
             </CardContent>
           </Card>
         )}
+
+        {/* README badge: needs a configured public origin, never a guessed host */}
+        {getServerURL() && <BadgeEmbed slug={plugin.slug} origin={getServerURL()} />}
 
         {/* Dates */}
         <div className="flex items-center gap-6 text-sm text-muted-foreground mb-8 flex-wrap">
