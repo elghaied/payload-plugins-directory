@@ -44,6 +44,18 @@ describe('sync jobs through payload.jobs', () => {
     expect(await status('revalidate')).toMatchObject({ lastSuccessAt: NOW, details: { status: 'ok', count: 2 } })
   })
 
+  it('a snapshot job queues a revalidate of the trending and stats tags after writing', async () => {
+    useFetch({})
+    const repo = await createRepo(payload, { fullName: 'acme/seo', githubId: 7 })
+    await createPlugin(payload, repo.id, { slug: 's1' })
+    await payload.jobs.queue({ task: 'snapshot', input: {}, queue: 'default', overrideAccess: true })
+    await payload.jobs.run({ queue: 'default', overrideAccess: true, silent: true, limit: 1 })
+    expect(await status('snapshot')).toMatchObject({ lastSuccessAt: NOW })
+    const revalidates = await jobsOf('revalidate')
+    expect(revalidates).toHaveLength(1)
+    expect(revalidates[0].input).toEqual({ tags: ['trending', 'stats'] })
+  })
+
   it('records a failed revalidation and leaves the job for a retry', async () => {
     useFetch({ [REVALIDATE_URL]: { status: 500 } })
     await payload.jobs.queue({ task: 'revalidate', input: { tags: ['plugins'] }, queue: 'default', overrideAccess: true })

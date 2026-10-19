@@ -1,5 +1,6 @@
 import { JobCancelledError, type JobsConfig, type Payload, type TaskConfig } from 'payload'
 import { isAdmin, isAdminUser } from '@/access'
+import { SNAPSHOT_TAGS } from '@/lib/cacheTags'
 import { isUsableSecret, MIN_SECRET_LENGTH } from '@/lib/revalidate'
 import { createSyncContext, getSyncDeps } from './deps'
 import { runDiscover } from './discover'
@@ -255,7 +256,12 @@ const snapshotTask: TaskConfig<'snapshot'> = {
     const { payload } = req
     const deps = getSyncDeps()
     const at = deps.now()
-    const output = await track(payload, 'snapshot', at, async () => ({ status: 'ok', ...(await runSnapshot(payload, at)) }))
+    const output = await track(payload, 'snapshot', at, async () => {
+      const r = await runSnapshot(payload, at)
+      // Trending and stats pages (Phase 3) read the snapshot tables.
+      await queueRevalidate(payload, SNAPSHOT_TAGS)
+      return { status: 'ok', ...r }
+    })
     return { output }
   },
 }

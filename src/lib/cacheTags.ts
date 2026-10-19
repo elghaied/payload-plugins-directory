@@ -6,6 +6,8 @@
 export const LIST_TAG = 'plugins'
 export const pluginTag = (slug: string): string => `plugin:${slug}`
 export const categoryTag = (slug: string): string => `category:${slug}`
+/** Tags of the pages that read the daily snapshots (Phase 3 trending and stats); revalidated after each snapshot. */
+export const SNAPSHOT_TAGS = ['trending', 'stats'] as const
 
 export const CACHE_TAG_PATTERN = /^(?:plugins|home|stats|trending|(?:plugin|category):[A-Za-z0-9][A-Za-z0-9._-]{0,200})$/
 
