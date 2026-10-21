@@ -24,6 +24,14 @@ describe('queueFirstTemplateDiscovery', () => {
     expect(await discoverJobs()).toBe(1)
   })
 
+  it('still queues when the only pending discovery is a scheduled one hours away', async () => {
+    const later = new Date(Date.now() + 5 * 60 * 60 * 1000)
+    await payload.jobs.queue({ task: 'discover-templates', input: {}, queue: 'default', waitUntil: later, meta: { scheduled: true }, overrideAccess: true })
+    expect(await queueFirstTemplateDiscovery(payload)).toBe(true)
+    expect(await queueFirstTemplateDiscovery(payload)).toBe(false)
+    expect(await discoverJobs()).toBe(2)
+  })
+
   it('does nothing once any template exists, even a trashed one', async () => {
     const repo = await createRepo(payload)
     const t = await createTemplate(payload, repo.id)
