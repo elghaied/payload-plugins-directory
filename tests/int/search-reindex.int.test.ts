@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Payload } from 'payload'
 import { sql } from '@payloadcms/db-postgres/drizzle'
 import { runReindexSearch } from '@/cli/reindexSearch'
@@ -24,9 +24,12 @@ beforeAll(async () => {
   payload = await getTestPayload()
 })
 beforeEach(async () => {
+  // Failures are injected on purpose in some tests; their error logs are expected.
+  vi.spyOn(payload.logger, 'error').mockImplementation((() => undefined) as never)
   await resetDatabase(payload)
   repoId = (await createRepo(payload)).id
 })
+afterEach(() => vi.restoreAllMocks())
 afterAll(async () => resetDatabase(payload))
 
 describe('taxonomy changes', () => {
@@ -169,24 +172,85 @@ describe('reindexSearch', () => {
 
   it('the CLI body throws when documents failed, so the exit code is non-zero', async () => {
     await createPlugin(payload, repoId, { slug: 'cli-ok' })
-    expect((await runReindexSearch(payload, { ifEmpty: false })).failed).toBe(0)
+    expect((await runReindexSearch(payload, { ifIncomplete: false })).failed).toBe(0)
     await expect(
-      runReindexSearch(payload, { ifEmpty: false }, async () => {
+      runReindexSearch(payload, { ifIncomplete: false }, async () => {
         throw new Error('boom')
       }),
     ).rejects.toThrow(/failed/)
   })
 
-  it('with ifEmpty, skips when the index already has records', async () => {
+  it('with ifIncomplete, skips when every source has its row', async () => {
+    await mkCat('Done', 'done')
     await createPlugin(payload, repoId, { slug: 'indexed' })
-    expect(await reindexSearch(payload, { ifEmpty: true })).toEqual({ skipped: true, upserted: 0, removed: 0, failed: 0 })
+    expect(await reindexSearch(payload, { ifIncomplete: true })).toEqual({ skipped: true, upserted: 0, removed: 0, failed: 0 })
   })
 
-  it('with ifEmpty, builds the index when it is empty', async () => {
+  it('with ifIncomplete, repairs an index that holds plugins but no categories or tags', async () => {
+    const cat = await mkCat('Missing', 'missing')
+    const tag = await mkTag('Absent', 'absent')
+    const p = await createPlugin(payload, repoId, { slug: 'only-plugin' })
+    await payload.delete({ collection: 'search', overrideAccess: true, where: { kind: { in: ['category', 'tag'] } } })
+    expect((await payload.count({ collection: 'search', overrideAccess: true })).totalDocs).toBeGreaterThan(0)
+    const result = await reindexSearch(payload, { ifIncomplete: true })
+    expect(result).toMatchObject({ skipped: false, failed: 0 })
+    expect(await searchDocsFor(payload, 'categories', cat.id)).toHaveLength(1)
+    expect(await searchDocsFor(payload, 'tags', tag.id)).toHaveLength(1)
+    expect(await searchDocsFor(payload, 'plugins', p.id)).toHaveLength(1)
+  })
+
+  it('with ifIncomplete, builds an empty index', async () => {
     const p = await createPlugin(payload, repoId, { slug: 'to-backfill' })
     await payload.delete({ collection: 'search', overrideAccess: true, where: { id: { exists: true } } })
-    const result = await reindexSearch(payload, { ifEmpty: true })
-    expect(result).toMatchObject({ skipped: false, failed: 0 })
+    expect(await reindexSearch(payload, { ifIncomplete: true })).toMatchObject({ skipped: false, failed: 0 })
+    expect(await searchDocsFor(payload, 'plugins', p.id)).toHaveLength(1)
+  })
+
+  it('keeps the row of a plugin that appeared while the run was going (outside the initial source list)', async () => {
+    await createPlugin(payload, repoId, { slug: 'before' })
+    let late: number | undefined
+    await reindexSearch(payload, {
+      sync: async (p, c, id, req) => {
+        const { syncSearchDoc } = await import('@/lib/search/sync')
+        if (!late) late = (await createPlugin(payload, repoId, { slug: 'created-mid-run' })).id
+        return syncSearchDoc(p, c, id, req)
+      },
+    })
+    expect(await searchDocsFor(payload, 'plugins', late!)).toHaveLength(1)
+  })
+})
+
+describe('search-resync concurrency', () => {
+  it('a burst of renames of one category leaves one pending fan-out job (older unstarted ones superseded)', async () => {
+    const cat = await mkCat('Burst', 'burst')
+    for (const title of ['B1', 'B2', 'B3']) {
+      await payload.update({ collection: 'categories', id: cat.id, overrideAccess: true, data: { title } })
+    }
+    expect(await resyncJobs()).toHaveLength(1)
+  })
+
+  it('delete slices of one taxonomy entry get distinct keys and are not superseded by a fresh edit', async () => {
+    const { resyncKey } = await import('@/lib/search/resync')
+    const edit = resyncKey({ collection: 'categories', id: 5 })
+    expect(resyncKey({ collection: 'categories', id: 5, pluginIds: [1, 2] })).not.toBe(edit)
+    expect(resyncKey({ collection: 'categories', id: 5, pluginIds: [3, 4] })).not.toBe(resyncKey({ collection: 'categories', id: 5, pluginIds: [1, 2] }))
+    expect(resyncKey({ collection: 'categories', id: 5, afterId: 9 })).not.toBe(edit)
+  })
+
+  it('queues no empty continuation when the fan-out ends exactly at the cap', async () => {
+    const cat = await mkCat('Exact', 'exact')
+    for (let i = 0; i < 4; i++) await createPlugin(payload, repoId, { slug: `exact-${i}`, category: cat.id })
+    const queued: unknown[] = []
+    const r = await runTaxonomyResync(payload, { collection: 'categories', id: cat.id }, async (n) => void queued.push(n), { batch: 2, cap: 4 })
+    expect(r.continued).toBe(false)
+    expect(queued).toEqual([])
+  })
+
+  it('two syncs racing to create the same document leave one row', async () => {
+    const p = await createPlugin(payload, repoId, { slug: 'racy' })
+    await payload.delete({ collection: 'search', overrideAccess: true, where: { id: { exists: true } } })
+    const { syncSearchDoc } = await import('@/lib/search/sync')
+    await Promise.all([syncSearchDoc(payload, 'plugins', p.id), syncSearchDoc(payload, 'plugins', p.id), syncSearchDoc(payload, 'plugins', p.id)])
     expect(await searchDocsFor(payload, 'plugins', p.id)).toHaveLength(1)
   })
 })

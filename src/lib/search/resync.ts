@@ -85,14 +85,35 @@ export async function runTaxonomyResync(
     }
     if (res.docs.length < batch) return { ...tally, continued: false }
   }
+  // Exactly `cap` plugins may have been the last ones: peek before queueing an empty continuation.
+  const more = await payload.find({
+    collection: 'plugins',
+    overrideAccess: true,
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    select: { slug: true },
+    where: pluginsWhere(input.collection, ids, last),
+  })
+  if (!more.docs.length) return { ...tally, continued: false }
   await queueMore({ collection: input.collection, id: input.id, afterId: last })
   return { ...tally, continued: true }
+}
+
+export const resyncKey = (input: ResyncInput): string => {
+  const base = `search-resync:${input.collection}:${input.id}`
+  if (input.pluginIds?.length) return `${base}:ids:${input.pluginIds[0]}:${input.pluginIds.length}`
+  return input.afterId ? `${base}:after:${input.afterId}` : base
 }
 
 export const searchResyncTask: TaskConfig<'search-resync'> = {
   slug: 'search-resync',
   label: 'Refresh search rows after a taxonomy change',
   retries: { attempts: 3, backoff: { type: 'exponential', delay: 30_000 } },
+  // A burst of edits to one taxonomy entry collapses into one pending fan-out (older unstarted jobs are dropped, and
+  // only one runs at a time). Continuation and delete slices carry their own key, so they never supersede a fresh edit's
+  // job (or each other).
+  concurrency: { key: ({ input }) => resyncKey(input as ResyncInput), supersedes: true },
   inputSchema: [
     { name: 'collection', type: 'select', required: true, options: ['categories', 'tags'] },
     { name: 'id', type: 'number', required: true },

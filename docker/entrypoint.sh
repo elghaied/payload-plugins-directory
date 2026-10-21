@@ -3,8 +3,10 @@ set -e
 case "$1" in
   web)
     (cd /app/cli && npx payload migrate)
-    # A fresh migrate leaves the search index empty (the taxonomy seed skips it): build it once. Never blocks startup.
-    (cd /app/cli && npx payload reindex-search --if-empty) || echo "WARNING: search reindex failed; run 'npx payload reindex-search' in /app/cli" >&2
+    # A fresh migrate leaves the search index empty (the taxonomy seed skips it) and a failed or crashed build leaves it
+    # short: repair it in the background so a long rebuild never delays readiness. A failure is logged loudly; search
+    # results are re-read through access control, so a short index only hides results until it is repaired.
+    (cd /app/cli && npx payload reindex-search --if-incomplete || echo "WARNING: search reindex failed; run 'npx payload reindex-search' in /app/cli" >&2) &
     exec node /app/server.js
     ;;
   worker)

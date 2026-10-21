@@ -116,7 +116,14 @@ export async function syncSearchDoc(
     await payload.delete({ collection: SEARCH_SLUG, overrideAccess: true, where: { id: { in: dupes.map((d) => d.id) } }, req })
   }
   if (first) await payload.update({ collection: SEARCH_SLUG, id: first.id, overrideAccess: true, depth: 0, data, req })
-  else await payload.create({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, data, req })
+  else {
+    await payload.create({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, data, req })
+    // `search` has no unique constraint on its doc relation, so two syncs of one document (e.g. a resync job and an
+    // edit) can both find nothing and both create. Both then see the duplicate here and delete the same extra rows.
+    const after = await payload.find({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, pagination: false, limit: 0, sort: 'id', where: docRef(collection, id), req })
+    const extra = after.docs.slice(1).map((d) => d.id)
+    if (extra.length) await payload.delete({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, where: { id: { in: extra } }, req })
+  }
   return 'upserted'
 }
 
@@ -130,4 +137,11 @@ export async function resolvePluginDoc<T extends Record<string, unknown>>(payloa
   if (PLUGIN_INDEX_KEYS.every((k) => k in doc)) return doc
   const full = await payload.findByID({ collection: 'plugins', id: doc.id as number, overrideAccess: true, depth: 0, trash: true, disableErrors: true, req })
   return (full as unknown as Record<string, unknown> | null) ?? doc
+}
+
+/** Whether the source exists now and belongs in the index (a listed, untrashed plugin; any category or tag). */
+export async function isIndexable(payload: Payload, collection: SearchableCollection, id: number): Promise<boolean> {
+  const source = await loadSource(payload, collection, id)
+  if (!source) return false
+  return collection !== 'plugins' || isPubliclyListed(source as { visibility?: string; deletedAt?: string | null })
 }

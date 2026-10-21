@@ -8,7 +8,7 @@ import { flattenStarter } from './tree'
 export type SeedTaxonomyResult = { categoriesCreated: string[]; tagsCreated: string[]; presetsCreated: string[] }
 
 /** Seeding writes must not queue a revalidate job per category (src/taxonomy/hooks.ts honours this flag). */
-// skipSearchSync: the seed migration runs before the `search` table exists; `reindex-search --if-empty` backfills the index.
+// skipSearchSync: the seed migration runs before the `search` table exists; `reindex-search --if-incomplete` backfills the index.
 const seedContext = () => ({ skipRevalidate: true, skipSearchSync: true })
 
 /**

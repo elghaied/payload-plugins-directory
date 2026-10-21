@@ -32,7 +32,7 @@ export const forgetSyncedDoc =
 
 /**
  * Writes that must leave the index alone set `context.skipSearchSync` (the taxonomy seed migration runs before the
- * `search` table exists, and a failing insert would abort its transaction). `reindex-search --if-empty` backfills.
+ * `search` table exists, and a failing insert would abort its transaction). `reindex-search --if-incomplete` backfills.
  */
 export const searchSyncSkipped = (context: unknown): boolean => Boolean((context as { skipSearchSync?: boolean } | undefined)?.skipSearchSync)
 

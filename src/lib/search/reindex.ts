@@ -1,10 +1,17 @@
-import type { Payload } from 'payload'
+import type { Payload, Where } from 'payload'
+import { listedPluginsWhere } from '@/collections/Plugins'
 import { SEARCH_SLUG, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
-import { syncSearchDoc } from './sync'
+import { isIndexable, syncSearchDoc } from './sync'
 
 export type ReindexResult = { skipped: boolean; upserted: number; removed: number; failed: number }
 export type ReindexOptions = {
-  ifEmpty?: boolean
+  /**
+   * Skip unless the index is short of its sources: fewer plugin rows than listed plugins, or fewer category / tag rows
+   * than categories / tags. A shortfall (a failed or crashed first build, a seed that skipped the index) triggers a full
+   * rebuild; extra rows are not a shortfall (the rebuild removes them, a later manual run too). Three cheap counts per
+   * boot and no tolerance: any missing row repairs.
+   */
+  ifIncomplete?: boolean
   /** Replaceable for tests; defaults to `syncSearchDoc`. */
   sync?: typeof syncSearchDoc
 }
@@ -34,7 +41,8 @@ async function sourceIds(payload: Payload, collection: SearchableCollection): Pr
 /**
  * Deletes `search` rows whose source no longer exists, was hidden/trashed, or whose `doc` relation is gone (the
  * cascade on `search_rels` leaves such rows behind). `keep` holds the `collection:id` of every document that is indexed
- * or could not be processed (its row is left alone).
+ * or could not be processed (its row is left alone). A row outside `keep` is only deleted after its source is checked
+ * again, so a document created or listed while a live run was going keeps the row its hooks wrote.
  */
 async function deleteOrphans(payload: Payload, keep: Set<string>): Promise<number> {
   const orphans: (number | string)[] = []
@@ -50,7 +58,11 @@ async function deleteOrphans(payload: Payload, keep: Set<string>): Promise<numbe
     })
     for (const row of res.docs) {
       const doc = row.doc as { relationTo?: string; value?: number | string } | null | undefined
-      if (!doc?.relationTo || doc.value === undefined || !keep.has(key(doc.relationTo, doc.value))) orphans.push(row.id)
+      if (!doc?.relationTo || doc.value === undefined) orphans.push(row.id)
+      else if (!keep.has(key(doc.relationTo, doc.value))) {
+        const id = Number(doc.value)
+        if (!(await isIndexable(payload, doc.relationTo as SearchableCollection, id))) orphans.push(row.id)
+      }
     }
     if (!res.hasNextPage) break
   }
@@ -60,15 +72,23 @@ async function deleteOrphans(payload: Payload, keep: Set<string>): Promise<numbe
   return orphans.length
 }
 
+async function indexIsShort(payload: Payload): Promise<boolean> {
+  const count = async (collection: SearchableCollection, where?: Where) =>
+    (await payload.count({ collection, overrideAccess: true, ...(where ? { where } : {}) })).totalDocs
+  const indexed = async (collection: SearchableCollection) =>
+    (await payload.count({ collection: SEARCH_SLUG, overrideAccess: true, where: { 'doc.relationTo': { equals: collection } } })).totalDocs
+  for (const [collection, where] of [['plugins', listedPluginsWhere], ['categories'], ['tags']] as [SearchableCollection, Where?][]) {
+    if ((await indexed(collection)) < (await count(collection, where))) return true
+  }
+  return false
+}
+
 /**
  * Rebuilds every index record from the source collections (system reads; only listed plugins are indexed). Each document
  * is isolated: one failure is logged and counted, never aborts the run. Orphan rows are deleted afterwards.
  */
 export async function reindexSearch(payload: Payload, opts: ReindexOptions = {}): Promise<ReindexResult> {
-  if (opts.ifEmpty) {
-    const { totalDocs } = await payload.count({ collection: SEARCH_SLUG, overrideAccess: true })
-    if (totalDocs > 0) return { skipped: true, upserted: 0, removed: 0, failed: 0 }
-  }
+  if (opts.ifIncomplete && !(await indexIsShort(payload))) return { skipped: true, upserted: 0, removed: 0, failed: 0 }
   const sync = opts.sync ?? syncSearchDoc
   let upserted = 0
   let removed = 0

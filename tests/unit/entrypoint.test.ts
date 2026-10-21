@@ -18,7 +18,7 @@ function runWeb(failing: string[]) {
     writeFileSync(path.join(bin, name), `#!/bin/sh\n${body}\n`)
     chmodSync(path.join(bin, name), 0o755)
   }
-  stub('npx', `echo "npx $*" >> "${log}"\ncase " ${failing.join(' ')} " in *" $2 "*) exit 1;; esac`)
+  stub('npx', `echo "npx $*" >> "${log}"\ncase " $2 " in *" reindex-search "*) sleep 1; echo "npx reindex done" >> "${log}";; esac\ncase " ${failing.join(' ')} " in *" $2 "*) exit 1;; esac`)
   stub('node', `echo "node $*" >> "${log}"`)
   const script = path.join(dir, 'entrypoint.sh')
   writeFileSync(script, SCRIPT.replaceAll('/app/cli', cli))
@@ -27,17 +27,20 @@ function runWeb(failing: string[]) {
 }
 
 describe('docker/entrypoint.sh web', () => {
-  it('migrates, then builds the search index if empty, then starts the server', () => {
+  it('migrates, then starts the server without waiting for the background search reindex', () => {
     const res = runWeb([])
     expect(res.status).toBe(0)
-    expect(res.calls).toEqual(['npx payload migrate', 'npx payload reindex-search --if-empty', 'node /app/server.js'])
+    expect(res.calls[0]).toBe('npx payload migrate')
+    expect(res.calls).toContain('npx payload reindex-search --if-incomplete')
+    // The stub reindex takes a second: the server must have started before it finished.
+    expect(res.calls.indexOf('node /app/server.js')).toBeLessThan(res.calls.indexOf('npx reindex done'))
   })
 
   it('logs loudly but still starts the server when the reindex fails', () => {
     const res = runWeb(['reindex-search'])
     expect(res.status).toBe(0)
     expect(res.stderr).toContain('search reindex failed')
-    expect(res.calls.at(-1)).toBe('node /app/server.js')
+    expect(res.calls).toContain('node /app/server.js')
   })
 
   it('does not start the server when migrations fail', () => {
