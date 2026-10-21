@@ -33,7 +33,7 @@ export function buildTemplateSystemPrompt(t: PromptTaxonomy, s: { instructions: 
     `- tagline: one phrase of at most ${LIMITS.tagline} characters, no trailing period, no superlatives.`,
     `- summary: 2 to 4 plain sentences, at most ${LIMITS.summary} characters: what the template sets up, its stack, notable requirements.`,
     `- features: ${LIMITS.featuresMin} to ${LIMITS.featuresMax} concrete things it includes, each at most ${LIMITS.featureLength} characters.`,
-    `- useCases: means good for: kinds of projects or teams this template suits, starting with a noun or verb; ${LIMITS.useCasesMin} to ${LIMITS.useCasesMax} entries, each at most ${LIMITS.useCaseLength} characters.`,
+    `- useCases: what it is good for: kinds of projects or teams this template suits, starting with a noun or verb; ${LIMITS.useCasesMin} to ${LIMITS.useCasesMax} entries, each at most ${LIMITS.useCaseLength} characters.`,
     '- Plain text only: no markdown, HTML, emoji, URLs, email addresses or code. State only what the template data supports.',
     '- Never comment on the documentation, the README, its quality or missing information. State only what is known; when little is known, keep the answer short.',
     `- category: exactly one slug from the category list${hasFallback ? `; use "${TEMPLATE_FALLBACK_CATEGORY_SLUG}" when none fits well` : ''}.`,

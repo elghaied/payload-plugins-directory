@@ -32,6 +32,7 @@ describe('buildTemplateSystemPrompt', () => {
   it('writes for developers choosing a starting point, with "good for" use cases', () => {
     expect(prompt).toContain('developers choosing a starting point for a new Payload project')
     expect(prompt).toContain('good for: kinds of projects or teams this template suits')
+    expect(prompt).toContain('- useCases: what it is good for: kinds of projects or teams this template suits, starting with a noun or verb;')
     expect(prompt).toContain('starting with a noun or verb')
   })
   it('keeps the untrusted-data paragraph, worded for templates', () => {
