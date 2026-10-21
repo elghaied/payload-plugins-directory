@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
 import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
 import { SimilarPlugins } from "@/components/SimilarPlugins";
+import { ReadmeMarkdown } from "@/components/ReadmeMarkdown";
 import { PluginAiOverview } from "@/components/PluginAiOverview";
 import { getCategoryNodes } from "@/lib/directory/taxonomy";
 import { categoryHref, tagHref } from "@/lib/taxonomy/links";
@@ -437,20 +438,18 @@ export default async function PluginDetailPage({
           )}
         </div>
 
-        {/* README: preview, full text on demand (author content, plain text) */}
+        {/* README: preview, full text on demand (untrusted author markdown, sanitized on the server) */}
         {plugin.readme && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <p className="text-xs font-medium text-muted-foreground mb-3">README</p>
-              <pre className="whitespace-pre-wrap break-words text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
-                {plugin.readme}
-              </pre>
+              <ReadmeMarkdown source={plugin.readme} repo={plugin.readmeSource} />
               {readmeFull && readmeFull.text.length > plugin.readme.length && (
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Full README</summary>
-                  <pre className="mt-3 whitespace-pre-wrap break-words text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
-                    {readmeFull.text}
-                  </pre>
+                  <div className="mt-3">
+                    <ReadmeMarkdown source={readmeFull.text} repo={plugin.readmeSource} />
+                  </div>
                 </details>
               )}
               {(plugin.readmeTruncated || readmeFull?.truncated) && (

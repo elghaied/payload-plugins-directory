@@ -82,6 +82,11 @@ export function toDetail(doc: Plugin): PluginDetail {
     authorDescription: authorDescriptionOf(doc.description),
     ...(doc.customTagline?.trim() ? { customTagline: doc.customTagline.trim() } : {}),
     ...(typeof doc.logo === 'object' && doc.logo?.url ? { logoUrl: doc.logo.url } : {}),
+    readmeSource: {
+      fullName: repoOf(doc).fullName,
+      ...(repoOf(doc).defaultBranch ? { defaultBranch: repoOf(doc).defaultBranch as string } : {}),
+      ...(doc.path ? { path: doc.path } : {}),
+    },
     readme: readmePreview(doc.readme),
     readmeFull: doc.readme ?? undefined,
     readmeTruncated: doc.readmeTruncated === true,

@@ -25,6 +25,7 @@ const base: PluginDetail = {
   slug: 's3', name: 'payload s3', description: 'AI tagline', owner: 'acme', ownerAvatar: '', url: 'https://github.com/acme/s3',
   repositoryUrl: 'https://github.com/acme/s3', stars: 1, forks: 0, openIssues: 0, lastUpdate: '2026-10-01T00:00:00.000Z',
   createdAt: '2026-01-01T00:00:00.000Z', topics: [], isOfficial: false, payloadMajors: ['3'], license: null, isArchived: false,
+  readmeSource: { fullName: 'acme/s3', defaultBranch: 'main' },
   authorDescription: 'Author words', tagList: [], payloadVersionRange: null,
 }
 const render = async (detail: Partial<PluginDetail>) => {

@@ -38,6 +38,8 @@ export type PluginDetail = PluginSummary & {
   customTagline?: string
   /** Maintainer-uploaded logo (media URL); replaces the owner avatar in the detail header. */
   logoUrl?: string
+  /** Where relative README URLs resolve: repository "owner/repo", its default branch, and the plugin's monorepo subdirectory. */
+  readmeSource: { fullName: string; defaultBranch?: string; path?: string }
   readme?: string
   /** Full README for the "Full README" disclosure; `readme` stays the short preview. */
   readmeFull?: string
