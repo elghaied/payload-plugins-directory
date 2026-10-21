@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
@@ -46,6 +46,20 @@ export function TemplateDirectory({
     [searchParams, router, pathname],
   );
 
+  // Debounce search: every URL change re-renders the force-dynamic home page on the server.
+  const setParamRef = useRef(setParam);
+  useEffect(() => {
+    setParamRef.current = setParam;
+  }, [setParam]);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+  }, []);
+  const onSearch = (value: string) => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => setParamRef.current("q", value.trim() ? value : undefined), 300);
+  };
+
   const visibleCategories = useMemo(() => categories.filter((c) => c.count > 0), [categories]);
   const stacks = useMemo(() => [...new Set(templates.map((t) => t.stack))].sort(), [templates]);
   const majors = useMemo(() => {
@@ -85,7 +99,7 @@ export function TemplateDirectory({
             placeholder="Search templates..."
             className="pl-9"
             defaultValue={params.q ?? ""}
-            onChange={(e) => setParam("q", e.target.value.trim() ? e.target.value : undefined)}
+            onChange={(e) => onSearch(e.target.value)}
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">

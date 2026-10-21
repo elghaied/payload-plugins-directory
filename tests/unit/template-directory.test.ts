@@ -110,3 +110,12 @@ describe('TemplateCard', () => {
     expect(card(tpl())).toContain('★')
   })
 })
+
+describe('TemplateCard buttons', () => {
+  it('makes Live demo primary and Details outline when both exist', () => {
+    const html = card(tpl({ demoUrl: 'https://demo.example.com' }))
+    expect(html).toMatch(/bg-primary[^"]*"[^>]*>Live demo/)
+    expect(html).toMatch(/border px-3[^"]*"[^>]*href="\/templates\/website">Details|href="\/templates\/website">Details/)
+    expect(html).not.toMatch(/bg-primary[^"]*" href="\/templates\/website"/)
+  })
+})

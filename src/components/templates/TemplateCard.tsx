@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime, versionColors } from "@/lib/formatters";
@@ -6,11 +9,30 @@ import type { TemplateSummary } from "@/lib/templates/types";
 
 export function TemplateCard({ template }: { template: TemplateSummary }) {
   const { image } = template;
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  const failed = failedSrc === image.src;
+  const imgRef = useRef<HTMLImageElement>(null);
+  // The load may have already failed before hydration, so onError never fires: check once on mount.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth === 0) setFailedSrc(image.src);
+  }, [image.src]);
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
       <div className="aspect-[16/10] w-full overflow-hidden bg-muted">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {failed ? (
+          <div
+            role="img"
+            aria-label={`${template.name} screenshot unavailable`}
+            className="flex h-full w-full items-center justify-center bg-muted text-4xl font-semibold text-muted-foreground"
+          >
+            {template.name.trim().charAt(0).toUpperCase() || "?"}
+          </div>
+        ) : (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
+          ref={imgRef}
+          onError={() => setFailedSrc(image.src)}
           src={image.src}
           {...(image.srcSet ? { srcSet: image.srcSet, sizes: "(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw" } : {})}
           alt={`${template.name} screenshot`}
@@ -19,6 +41,7 @@ export function TemplateCard({ template }: { template: TemplateSummary }) {
           {...(image.local ? {} : { referrerPolicy: "no-referrer" as const })}
           className="h-full w-full object-cover"
         />
+        )}
       </div>
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div className="flex items-center gap-2">
@@ -54,14 +77,18 @@ export function TemplateCard({ template }: { template: TemplateSummary }) {
               href={template.demoUrl}
               target="_blank"
               rel="nofollow ugc noopener noreferrer"
-              className="inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent"
+              className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             >
               Live demo ↗
             </a>
           )}
           <Link
             href={`/templates/${template.slug}`}
-            className="inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            className={
+              template.demoUrl
+                ? "inline-flex h-9 items-center rounded-md border px-3 text-sm font-medium hover:bg-accent"
+                : "inline-flex h-9 items-center rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            }
           >
             Details
           </Link>
