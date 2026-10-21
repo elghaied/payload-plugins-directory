@@ -240,9 +240,15 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col pt-0">
-        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
-          {plugin.description}
-        </p>
+        {/* The growing slot is a plain wrapper: line-clamp sets overflow:hidden, and a
+            flex-1 (flex-basis 0) clamped <p> can be sized independently of its two
+            clamped lines and collide with the npm box below. Fixed leading + shrink-0
+            keep the clamp exactly two lines tall. */}
+        <div className="flex-1">
+          <p className="text-sm leading-5 text-muted-foreground line-clamp-2 shrink-0">
+            {plugin.description}
+          </p>
+        </div>
 
         {plugin.packageName && (
           <CopyInstallButton packageName={plugin.packageName} />
