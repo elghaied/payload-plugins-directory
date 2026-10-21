@@ -96,8 +96,9 @@ export async function saveTemplateDetailsAction(_prev: TemplateEditState, formDa
 }
 
 export async function addTemplateScreenshotAction(_prev: TemplateEditState, formData: FormData): Promise<TemplateEditState> {
+  // Signed out first (as runTemplateEdit does), then the size pre-check before reading the bytes; one file per call.
+  if (!(await getCurrentMaintainer())) return { status: 'signed_out' }
   const file = formData.get('screenshot')
-  // Size pre-check before reading the bytes; one file per call (the body limit is 3 MB).
   if (file instanceof File && file.size > SCREENSHOT_MAX_BYTES) return { status: 'invalid', message: SCREENSHOT_MESSAGES.tooBig }
   return runTemplateEdit(formData, 'template screenshot', async ({ payload, maintainer, slug }) => {
     if (!(file instanceof File) || file.size === 0) return { status: 'invalid', message: 'Choose an image to upload.' }

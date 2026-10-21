@@ -23,7 +23,7 @@ export const MESSAGES = {
   claimTemplateGone: 'The template for this claim is trashed or no longer exists, so the claim cannot be approved.',
   registryUnavailable: 'The npm registry did not answer. The submission stays pending; try again in a moment, or enter owner/repo by hand.',
   approvedIsFinal: {
-    claim: 'An approved claim cannot be changed. Remove the maintainer from the plugin instead.',
+    claim: 'An approved claim cannot be changed. Remove the maintainer from the listing instead.',
     listing: 'An approved listing cannot be changed. Hide or trash the plugin instead.',
   },
   claimPluginGone: 'The plugin for this claim is trashed or no longer exists, so the claim cannot be approved.',

@@ -136,6 +136,7 @@ export async function addTemplateScreenshot({
     },
   })
 
+  let next: number[] = []
   try {
     // Re-read: another tab may have added, moved or removed screenshots since the ownership read.
     const current = await findOwnedTemplate({ payload, maintainer, slug })
@@ -143,20 +144,33 @@ export async function addTemplateScreenshot({
       await deleteMediaQuietly(payload, media.id, 'template screenshot')
       return { status: 'forbidden' }
     }
-    // `maxRows` (8) rejects a 9th that raced past the count check above.
-    await writeScreenshots(payload, maintainer, current.id, [...current.screenshots, media.id])
+    // Known race (accepted): the screenshots array is read then written in full, so two uploads at the same moment can
+    // lose one entry (last write wins). The lost media row is unreferenced and `sweepOrphanMedia` deletes it after a day.
+    // `maxRows` (8) still rejects a 9th that raced past the count check above.
+    next = [...current.screenshots, media.id]
+    await writeScreenshots(payload, maintainer, current.id, next)
   } catch (err) {
     await deleteMediaQuietly(payload, media.id, 'template screenshot')
     if (err instanceof Forbidden) return { status: 'forbidden' }
-    if (err instanceof ValidationError) return { status: 'invalid', message: SCREENSHOT_MESSAGES.tooMany }
+    if (err instanceof ValidationError) {
+      return { status: 'invalid', message: isTooManyScreenshots(err, next.length) ? SCREENSHOT_MESSAGES.tooMany : validationMessage(err) }
+    }
     throw err
   }
   return { status: 'saved' }
 }
 
+/** The `screenshots` maxRows failure (and only that): a `screenshots` error on a write of more than 8 ids. */
+export function isTooManyScreenshots(err: ValidationError, attempted: number): boolean {
+  const errors = (err.data as { errors?: { path?: string }[] } | undefined)?.errors ?? []
+  return attempted > SCREENSHOT_MAX_COUNT && errors.some((e) => e.path === 'screenshots')
+}
+
 /**
- * Removes one screenshot the template currently references, then deletes its media row if nothing references it any
- * more. An id the template does not reference is `forbidden` and nothing is deleted.
+ * Removes one screenshot the template currently references. Its media row is deleted only when it was uploaded as a
+ * template screenshot (`origin: 'template-screenshot'`) and nothing references it any more; any other row (an admin
+ * upload attached by an admin) is only unlinked and kept. An id the template does not reference is `forbidden` and
+ * nothing is changed.
  */
 export async function removeTemplateScreenshot({ payload, maintainer, slug, mediaId }: Base & { mediaId: number }): Promise<BrandingResult> {
   if (!isMediaId(mediaId)) return { status: 'forbidden' }
@@ -169,7 +183,9 @@ export async function removeTemplateScreenshot({ payload, maintainer, slug, medi
     if (err instanceof ValidationError) return { status: 'invalid', message: validationMessage(err) }
     throw err
   }
-  await deleteMediaIfUnreferenced(payload, mediaId, 'template screenshot')
+  // System read: `origin` is admin-only. Ownership and the reference were proven above.
+  const media = await payload.findByID({ collection: 'media', id: mediaId, overrideAccess: true, depth: 0, disableErrors: true, select: { origin: true } })
+  if (media?.origin === 'template-screenshot') await deleteMediaIfUnreferenced(payload, mediaId, 'template screenshot')
   return { status: 'saved' }
 }
 

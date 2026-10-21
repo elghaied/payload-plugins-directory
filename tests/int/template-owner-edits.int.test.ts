@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
-import { Forbidden, type Payload } from 'payload'
+import { Forbidden, ValidationError, type Payload } from 'payload'
 import sharp from 'sharp'
 import type { CurrentMaintainer } from '@/lib/auth/current'
 import { sweepOrphanMedia } from '@/lib/maintainers/mediaCleanup'
 import { loadMeData } from '@/lib/maintainers/meData'
 import {
   addTemplateScreenshot,
+  isTooManyScreenshots,
   moveTemplateScreenshot,
   removeTemplateScreenshot,
   saveTemplateDetails,
@@ -117,6 +118,22 @@ describe('saveTemplateDetails', () => {
   })
 })
 
+describe('addTemplateScreenshot errors', () => {
+  const err = (path: string) => new ValidationError({ collection: 'templates', errors: [{ path, message: `bad ${path}` }] })
+  it('maps only the screenshots maxRows failure to the 8-max message', () => {
+    expect(isTooManyScreenshots(err('screenshots'), SCREENSHOT_MAX_COUNT + 1)).toBe(true)
+    expect(isTooManyScreenshots(err('screenshots'), SCREENSHOT_MAX_COUNT)).toBe(false)
+    expect(isTooManyScreenshots(err('demoUrl'), SCREENSHOT_MAX_COUNT + 1)).toBe(false)
+  })
+  it('the upload action answers signed_out before the size check', async () => {
+    const { addTemplateScreenshotAction } = await import('@/app/(site)/me/actions')
+    holder.maintainer = null
+    const big = new File([Buffer.alloc(SCREENSHOT_MAX_BYTES + 1)], 'big.png', { type: 'image/png' })
+    expect(await addTemplateScreenshotAction({ status: 'idle' }, form({ slug: 'tpl', screenshot: big }))).toEqual({ status: 'signed_out' })
+    holder.maintainer = owner
+  })
+})
+
 describe('Local API as the maintainer', () => {
   it('setting screenshots to another template\'s media without the context key is Forbidden', async () => {
     const doc = await tpl()
@@ -206,6 +223,15 @@ describe('removeTemplateScreenshot and moveTemplateScreenshot', () => {
     expect(await moveTemplateScreenshot({ payload, maintainer: owner, slug: 'tpl', mediaId: a, direction: 'up' })).toEqual({ status: 'saved' })
     expect(await shots()).toEqual([a, b, ...rest])
     expect(await moveTemplateScreenshot({ payload, maintainer: owner, slug: 'tpl', mediaId: otherShotId, direction: 'up' })).toEqual({ status: 'forbidden' })
+  })
+  it('an admin-uploaded screenshot removed by the owner is unlinked, but its media row is kept', async () => {
+    const adminShot = await mkMedia('admin-shot', 'admin')
+    const doc = await tpl('other-tpl')
+    await payload.update({ collection: 'templates', id: doc.id, overrideAccess: true, context: { skipRevalidate: true }, data: { screenshots: [otherShotId, adminShot.id] } })
+    expect(await removeTemplateScreenshot({ payload, maintainer: other, slug: 'other-tpl', mediaId: adminShot.id })).toEqual({ status: 'saved' })
+    expect(await shots('other-tpl')).toEqual([otherShotId])
+    expect(await media(adminShot.id)).not.toBeNull()
+    await payload.delete({ collection: 'media', id: adminShot.id, overrideAccess: true })
   })
   it('removes a referenced screenshot and deletes its media', async () => {
     const [a, ...rest] = await shots()

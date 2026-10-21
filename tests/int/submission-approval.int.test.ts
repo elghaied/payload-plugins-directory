@@ -237,7 +237,7 @@ describe('approving submissions', () => {
       for (const status of ['rejected', 'pending']) {
         const err = await payload.update({ collection: 'submissions', id: claim.id, overrideAccess: true, data: { status: status as 'rejected' } }).catch((e) => e)
         expect(err).toBeInstanceOf(ValidationError)
-        expect(JSON.stringify(err.data)).toMatch(/Remove the maintainer from the plugin instead/)
+        expect(JSON.stringify(err.data)).toMatch(/Remove the maintainer from the listing instead/)
       }
       expect((await payload.findByID({ collection: 'submissions', id: claim.id, overrideAccess: true })).status).toBe('approved')
     })
