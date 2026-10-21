@@ -66,8 +66,11 @@ export function cleanStoredReadmeHtml(html: string): string | null {
   }
 }
 
-/** Re-sanitized once per stored value: keyed by slug + render version + hash of the stored HTML; tagged `plugin:<slug>`. */
-export function getCleanReadmeHtml(slug: string, html: string, version: string | null): Promise<string | null> {
+/**
+ * Re-sanitized once per stored value: keyed by slug + render version + hash of the stored HTML; tagged `tag`
+ * (`plugin:<slug>` by default; the template page passes `template:<slug>`).
+ */
+export function getCleanReadmeHtml(slug: string, html: string, version: string | null, tag: string = pluginTag(slug)): Promise<string | null> {
   const hash = createHash('sha256').update(html).digest('hex').slice(0, 32)
-  return unstable_cache(async () => cleanStoredReadmeHtml(html), ['readme-html-clean', slug, version ?? 'none', hash], { tags: [pluginTag(slug)] })()
+  return unstable_cache(async () => cleanStoredReadmeHtml(html), ['readme-html-clean', slug, version ?? 'none', hash], { tags: [tag] })()
 }

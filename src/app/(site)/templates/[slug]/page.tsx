@@ -9,6 +9,7 @@ import { getSimilarTemplates, getTemplateCategoryNodes, getTemplateDetail } from
 import { capReadme, truncateAtWord } from "@/lib/directory/readme";
 import { README_MARKDOWN_MAX } from "@/lib/directory/readmeLimits";
 import { getCleanReadmeHtml } from "@/lib/directory/readmeClean";
+import { templateTag } from "@/lib/cacheTags";
 import { TEMPLATES_HOME_HREF, templateCategoryHref } from "@/lib/taxonomy/links";
 import { trailFor } from "@/taxonomy/tree";
 import { Badge } from "@/components/ui/badge";
@@ -57,9 +58,10 @@ export default async function TemplatePage({ params }: Props) {
   const trail = template.category ? trailFor(nodes, template.category.path) : [];
   const categoryLink = template.category && trail.length > 0 ? templateCategoryHref(template.category.path) : null;
   const readmeFull = template.readmeFull ? capReadme(template.readmeFull) : null;
-  // The cache key is namespaced so a template never shares an entry with a plugin of the same slug.
+  // The cache key is namespaced so a template never shares an entry with a plugin of the same slug; template writes
+  // revalidate `template:<slug>`, so the entry carries that tag.
   const readmeHtml = template.readmeHtml
-    ? await getCleanReadmeHtml(`template-${template.slug}`, template.readmeHtml, template.readmeRenderVersion ?? null)
+    ? await getCleanReadmeHtml(`template-${template.slug}`, template.readmeHtml, template.readmeRenderVersion ?? null, templateTag(template.slug))
     : null;
   const showFullReadme = !readmeHtml && Boolean(readmeFull && template.readme && readmeFull.text.length > template.readme.length);
   const readmeCut = (template.readmeFull?.length ?? 0) > README_MARKDOWN_MAX && readmeHtml !== null;
