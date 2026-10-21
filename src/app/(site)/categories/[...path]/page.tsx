@@ -8,27 +8,12 @@ import { PluginListCard } from "@/components/PluginListCard";
 import { truncateAtWord } from "@/lib/directory/readme";
 import { getCategoryPage } from "@/lib/directory/taxonomy";
 import { getServerURL } from "@/lib/serverUrl";
+import { segmentsOf } from "@/lib/taxonomy/segments";
 import { categoryHref } from "@/lib/taxonomy/links";
 
 export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ path: string[] }> };
-
-/** Decoded segments, or null when one is not a single path segment (a "/" or "%2F" inside it, or bad encoding). */
-function segmentsOf(path: string[]): string[] | null {
-  const out: string[] = [];
-  for (const raw of path) {
-    let seg: string;
-    try {
-      seg = decodeURIComponent(raw);
-    } catch {
-      return null;
-    }
-    if (!seg || seg.includes("/")) return null;
-    out.push(seg);
-  }
-  return out;
-}
 
 /** One lookup per request for generateMetadata and the page (React.cache keys on the joined path). */
 const loadPath = cache(async (path: string) => getCategoryPage(path));

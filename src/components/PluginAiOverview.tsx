@@ -1,13 +1,20 @@
 import { Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
-export type PluginAiOverviewProps = { summary?: string; features: string[]; useCases: string[]; generated: boolean };
+export type PluginAiOverviewProps = {
+  summary?: string;
+  features: string[];
+  useCases: string[];
+  generated: boolean;
+  /** Heading overrides; templates call their third list "Good for". */
+  labels?: { useCases?: string };
+};
 
 /**
  * AI summary, features and use cases (spec §5.4). Text nodes only: never dangerouslySetInnerHTML, markdown or
  * links (spec §5.3) — the strings were already cleaned server-side, this is the second wall.
  */
-export function PluginAiOverview({ summary, features, useCases, generated }: PluginAiOverviewProps) {
+export function PluginAiOverview({ summary, features, useCases, generated, labels }: PluginAiOverviewProps) {
   if (!summary && features.length === 0 && useCases.length === 0) return null;
   return (
     <Card className="mb-8">
@@ -32,7 +39,7 @@ export function PluginAiOverview({ summary, features, useCases, generated }: Plu
         )}
         {useCases.length > 0 && (
           <div>
-            <h3 className="text-xs font-medium text-muted-foreground mb-2">Use cases</h3>
+            <h3 className="text-xs font-medium text-muted-foreground mb-2">{labels?.useCases ?? "Use cases"}</h3>
             <ul className="list-disc pl-5 space-y-1 text-sm">
               {useCases.map((u, i) => <li key={i}>{u}</li>)}
             </ul>
