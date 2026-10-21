@@ -123,3 +123,39 @@ describe('isCrossOriginWrite', () => {
     expect(isCrossOriginWrite('POST', 'https://evil.example', '')).toBe(false)
   })
 })
+
+describe('github-session strategy: system endpoints (allow-list)', () => {
+  const call = async (path: string, method: string, headers: Headers, body?: string) => {
+    const { handleEndpoints } = await import('payload')
+    const { default: config } = await import('@payload-config')
+    return handleEndpoints({
+      config: await config,
+      request: new Request(`http://localhost:3000${path}`, { method, headers, body }),
+    })
+  }
+  const json = (token: string) => new Headers({ cookie: `${SESSION_COOKIE}=${token}`, 'content-type': 'application/json' })
+
+  it('refuses a maintainer cookie on POST /api/payload-preferences/:key and stores nothing', async () => {
+    const res = await call('/api/payload-preferences/x', 'POST', json(await tokenFor(m.id, 4242)), JSON.stringify({ value: { big: 'y'.repeat(100) } }))
+    expect([401, 403]).toContain(res.status)
+    expect((await payload.count({ collection: 'payload-preferences', overrideAccess: true })).totalDocs).toBe(0)
+  })
+  it('does not authenticate the maintainer on other system paths', async () => {
+    const token = await tokenFor(m.id, 4242)
+    for (const path of ['/api/payload-preferences/x', '/api/graphql', '/api/maintainers/me', '/api/users/me']) {
+      const result = await githubSessionStrategy.authenticate({ headers: cookie(token), payload, req: { method: 'GET', pathname: path } as never } as never)
+      expect(result.user, path).toBeNull()
+    }
+  })
+  it('still authenticates on the allowed API paths and on non-API paths', async () => {
+    const token = await tokenFor(m.id, 4242)
+    for (const path of ['/api/plugins', '/api/plugins/12', '/api/submissions', '/me', '/']) {
+      const result = await githubSessionStrategy.authenticate({ headers: cookie(token), payload, req: { method: 'GET', pathname: path } as never } as never)
+      expect(result.user, path).toMatchObject({ id: m.id })
+    }
+  })
+  it('a maintainer can read their submissions through the REST endpoint (allowed path)', async () => {
+    const res = await call('/api/submissions', 'GET', json(await tokenFor(m.id, 4242)))
+    expect(res.status).toBe(200)
+  })
+})

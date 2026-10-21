@@ -18,6 +18,27 @@ export function isCrossOriginWrite(method: string | undefined, origin: string | 
   }
 }
 
+/**
+ * Payload REST paths a maintainer session may authenticate on. Everything else under /api/ (payload-preferences,
+ * graphql, the other collections) is system surface the product does not need; the UI uses server actions. This is an
+ * allow-list so a new Payload endpoint is closed to maintainers by default.
+ */
+export const MAINTAINER_API_ALLOW_LIST = ['/api/plugins', '/api/submissions'] as const
+
+export function maintainerMayUseApiPath(pathname: string): boolean {
+  if (!pathname.startsWith('/api/') && pathname !== '/api') return true
+  return MAINTAINER_API_ALLOW_LIST.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
+
+function requestPathname(req: { pathname?: string; url?: string } | undefined): string {
+  if (req?.pathname) return req.pathname
+  try {
+    return req?.url ? new URL(req.url).pathname : '/'
+  } catch {
+    return '/api/invalid' // unparseable: fail closed
+  }
+}
+
 const toSeconds = (d: Date) => Math.floor(d.getTime() / 1000)
 
 /**
@@ -39,6 +60,7 @@ export const githubSessionStrategy: AuthStrategy = {
   authenticate: async ({ headers, payload, req }) => {
     const token = readCookie(headers, SESSION_COOKIE)
     if (!token) return { user: null }
+    if (!maintainerMayUseApiPath(requestPathname(req))) return { user: null }
     if (isCrossOriginWrite(req?.method, headers.get('origin'), getServerURL())) return { user: null }
 
     let secret: Uint8Array
