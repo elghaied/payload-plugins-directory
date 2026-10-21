@@ -17,9 +17,20 @@ function age(iso: string, now: Date): string {
   return `${Math.round(minutes / 1440)} days ago`
 }
 
+/** Only http(s) URLs become links: `url` is submitter input (validated on save, but never trusted in an admin page). */
+function safeHref(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.href : null
+  } catch {
+    return null
+  }
+}
+
 /** What the submission is about: a listing's URL, or the plugin / template a claim is for. */
 function target(s: Pick<Submission, 'type' | 'kind' | 'url' | 'plugin' | 'template'>): { label: string; href: string | null } {
-  if (s.type === 'listing') return { label: s.url ?? '(no URL)', href: s.url ?? null }
+  if (s.type === 'listing') return { label: s.url ?? '(no URL)', href: safeHref(s.url) }
   const listing = (s.kind === 'template' ? s.template : s.plugin) as Plugin | Template | number | null | undefined
   if (!listing || typeof listing === 'number') return { label: `(missing ${s.kind})`, href: null }
   return { label: listing.name ?? listing.slug, href: `/${s.kind === 'template' ? 'templates' : 'plugins'}/${encodeURIComponent(listing.slug)}` }

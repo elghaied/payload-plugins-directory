@@ -34,6 +34,14 @@ describe('SubmissionsWidget', () => {
     expect(html).toContain('Showing the oldest 2 of 30')
   })
 
+  it('never links a non-http(s) URL', async () => {
+    const bad = [{ ...docs[0], id: 9, url: 'javascript:alert(1)' }, { ...docs[0], id: 10, url: 'some-npm-package' }]
+    const html = renderToStaticMarkup((await SubmissionsWidget(props({ collection: 'users' }, async () => ({ docs: bad, totalDocs: 2 })).props))!)
+    expect(html).not.toContain('href="javascript:')
+    expect(html).not.toContain('href="some-npm-package"')
+    expect(html).toContain('javascript:alert(1)') // still shown as plain text for the reviewer
+  })
+
   it('says when there is nothing to review', async () => {
     const html = renderToStaticMarkup((await SubmissionsWidget(props({ collection: 'users' }, async () => ({ docs: [], totalDocs: 0 })).props))!)
     expect(html).toContain('Nothing to review.')
