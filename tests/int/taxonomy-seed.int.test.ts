@@ -4,7 +4,7 @@ import { AI_PRESETS } from '@/enrich/presets'
 import { applyAliasTagsToAll, seedTaxonomy, unmappedTopics } from '@/taxonomy/seed'
 import { STARTER_CATEGORIES, STARTER_TAGS } from '@/taxonomy/starter'
 import { flattenStarter } from '@/taxonomy/tree'
-import { createPlugin, createRepo } from './helpers/directory'
+import { createPlugin, createRepo, searchDocsFor } from './helpers/directory'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 
 let payload: Payload
@@ -84,6 +84,16 @@ describe('alias tags', () => {
     expect(tagIds(doc._h_tags)).toEqual([manual.id, await idOf('s3'), await idOf('stripe')].sort((a, b) => a - b))
     expect(await applyAliasTagsToAll(payload)).toEqual({ updated: [] })
     expect(await unmappedTopics(payload)).toEqual([{ topic: 'some-odd-topic', count: 1 }])
+  })
+
+  it('refreshes the search index (tagsText) of plugins it tags, unlike the seed itself', async () => {
+    await seedTaxonomy(payload)
+    expect((await payload.count({ collection: 'search', overrideAccess: true })).totalDocs).toBe(0)
+    const repo = await createRepo(payload, { topics: ['aws-s3'] })
+    const plugin = await createPlugin(payload, repo.id, { slug: 'indexed-by-alias' })
+    expect((await searchDocsFor(payload, 'plugins', plugin.id))[0].tagsText ?? null).toBeNull()
+    expect(await applyAliasTagsToAll(payload)).toEqual({ updated: ['indexed-by-alias'] })
+    expect((await searchDocsFor(payload, 'plugins', plugin.id))[0].tagsText).toBeTruthy()
   })
 
   it('skips plugins whose tags are locked by an admin', async () => {

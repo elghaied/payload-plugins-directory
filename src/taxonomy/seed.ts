@@ -87,7 +87,8 @@ export async function applyAliasTagsToAll(payload: Payload): Promise<{ updated: 
       id: p.id,
       overrideAccess: true,
       depth: 0,
-      context: seedContext(),
+      // Live plugins: revalidation is queued by the caller, but the search index (tagsText) must follow the new tags.
+      context: { skipRevalidate: true },
       data: { _h_tags: next },
     })
     updated.push(p.slug)
