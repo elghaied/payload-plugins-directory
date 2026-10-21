@@ -11,6 +11,11 @@ vi.mock('@/lib/directory/taxonomy', () => ({
   ],
 }))
 
+vi.mock('@/lib/templates/queries', () => ({
+  getTemplateSummaries: async () => [],
+  getTemplateCategoryIndex: async () => [],
+}))
+
 import sitemap from '@/app/sitemap'
 
 beforeEach(() => vi.stubEnv('SERVER_URL', 'https://payloaddirectory.dev'))

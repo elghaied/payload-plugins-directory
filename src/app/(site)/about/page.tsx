@@ -199,6 +199,23 @@ export default function AboutPage() {
             </div>
           </section>
 
+          {/* Templates */}
+          <section id="templates" className="bg-card border rounded-lg p-6">
+            <h2 className="text-lg font-semibold mb-3">Templates</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Besides plugins, the directory lists Payload templates: complete starter projects you can scaffold or
+              clone. Official templates come from the Payload repository, and community templates are discovered the
+              same way as plugins. Have one of your own? Submit it at{" "}
+              <a
+                href="/submit"
+                className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
+              >
+                /submit
+              </a>{" "}
+              and choose &ldquo;Template&rdquo;.
+            </p>
+          </section>
+
           {/* Use with your agent */}
           <section id="mcp" className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-3">Use with your agent</h2>

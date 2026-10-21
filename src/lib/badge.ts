@@ -51,6 +51,36 @@ export function parseBadgeFile(file: string): string | null {
   return match ? match[1] : null
 }
 
+const BADGE_HEADERS = {
+  'Content-Type': 'image/svg+xml; charset=utf-8',
+  'X-Content-Type-Options': 'nosniff',
+  'Content-Security-Policy': "default-src 'none'",
+}
+
+function notFoundBadge(): Response {
+  return new Response(buildBadgeSvg({ message: 'not found', color: GREY }), {
+    status: 404,
+    headers: { ...BADGE_HEADERS, 'Cache-Control': MISS_CACHE_CONTROL },
+  })
+}
+
+/** Badge for a listed template; null (unknown, hidden or trashed) renders the shared "not found" badge. */
+export function templateBadgeResponse({
+  template,
+  origin,
+}: {
+  template: { slug: string; isOfficial?: boolean | null } | null
+  origin: string
+}): Response {
+  if (!template) return notFoundBadge()
+  const svg = buildBadgeSvg({
+    message: template.isOfficial ? 'official template' : 'template',
+    color: '#0a7ea4',
+    href: origin ? `${origin}/templates/${encodeURIComponent(template.slug)}` : undefined,
+  })
+  return new Response(svg, { status: 200, headers: { ...BADGE_HEADERS, 'Cache-Control': BADGE_CACHE_CONTROL } })
+}
+
 export function badgeResponse({
   plugin,
   origin,
@@ -58,17 +88,8 @@ export function badgeResponse({
   plugin: { slug: string; healthScore?: number | null } | null
   origin: string
 }): Response {
-  const headers = {
-    'Content-Type': 'image/svg+xml; charset=utf-8',
-    'X-Content-Type-Options': 'nosniff',
-    'Content-Security-Policy': "default-src 'none'",
-  }
-  if (!plugin) {
-    return new Response(buildBadgeSvg({ message: 'not found', color: GREY }), {
-      status: 404,
-      headers: { ...headers, 'Cache-Control': MISS_CACHE_CONTROL },
-    })
-  }
+  const headers = BADGE_HEADERS
+  if (!plugin) return notFoundBadge()
   const score = plugin.healthScore == null ? null : Math.round(plugin.healthScore)
   const svg = buildBadgeSvg({
     message: `health ${score ?? 'n/a'}`,

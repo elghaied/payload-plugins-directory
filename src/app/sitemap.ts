@@ -1,14 +1,20 @@
 import type { MetadataRoute } from "next";
 import { getPluginSummaries } from "@/lib/directory/queries";
 import { getCategoryIndex } from "@/lib/directory/taxonomy";
-import { categoryHref } from "@/lib/taxonomy/links";
+import { getTemplateCategoryIndex, getTemplateSummaries } from "@/lib/templates/queries";
+import { categoryHref, templateCategoryHref } from "@/lib/taxonomy/links";
 import { getServerURL } from "@/lib/serverUrl";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getServerURL();
-  const [plugins, categories] = await Promise.all([getPluginSummaries(), getCategoryIndex()]);
+  const [plugins, categories, templates, templateCategories] = await Promise.all([
+    getPluginSummaries(),
+    getCategoryIndex(),
+    getTemplateSummaries(),
+    getTemplateCategoryIndex(),
+  ]);
 
   // Empty categories are thin pages: only categories with at least one listed plugin are submitted.
   const categoryUrls: MetadataRoute.Sitemap = categories
@@ -26,6 +32,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: "weekly",
     priority: 0.7,
   }));
+
+  // /templates redirects, so it is not listed. Summaries only hold listed (not hidden/trashed) templates.
+  const templateUrls: MetadataRoute.Sitemap = templates.map((t) => ({
+    url: `${base}/templates/${t.slug}`,
+    lastModified: t.lastUpdate ? new Date(t.lastUpdate) : undefined,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+  const templateCategoryUrls: MetadataRoute.Sitemap = templateCategories
+    .filter((c) => c.count > 0)
+    .map((c) => ({
+      url: `${base}${templateCategoryHref(c.path)}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.6,
+    }));
 
   return [
     {
@@ -60,5 +82,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...categoryUrls,
     ...pluginUrls,
+    ...templateCategoryUrls,
+    ...templateUrls,
   ];
 }

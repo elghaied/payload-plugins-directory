@@ -5,6 +5,7 @@ vi.mock('@/lib/directory/queries', () => ({
   getDirectoryMeta: async () => ({ lastUpdated: '2026-10-01T00:00:00.000Z', totalCount: 1 }),
 }))
 vi.mock('@/lib/directory/taxonomy', () => ({ getCategoryIndex: async () => [] }))
+vi.mock('@/lib/templates/queries', () => ({ getTemplateSummaries: async () => [], getTemplateCategoryIndex: async () => [] }))
 
 import robots from '@/app/robots'
 import sitemap from '@/app/sitemap'
