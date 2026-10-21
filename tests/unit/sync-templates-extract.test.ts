@@ -108,6 +108,10 @@ describe('extractCommunityTemplate', () => {
     expect(t.readme).toBeUndefined()
   })
 
+  it('a repository owned by the payloadcms org is still a community template (Ruling 12)', async () => {
+    expect((await extractCommunityTemplate(ghRepo(9, 'payloadcms/starter'), gh({}), null)).isOfficial).toBe(false)
+  })
+
   it('ignores generic package names and bad licenses', async () => {
     for (const name of ['template', 'payload-template']) {
       const t = await extractCommunityTemplate(ghRepo(6, 'acme/fancy-blog', { license: null }), gh({

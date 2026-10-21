@@ -12,8 +12,10 @@ import { API, contents, dirEntry, ghRepo, json, npmRoutes, pkg, RAW, raw, repoBy
 import { createPlugin, createRepo } from './helpers/directory'
 import { getTestPayload, resetDatabase } from './helpers/payload'
 import { syncContext } from './helpers/syncContext'
+import { toTemplateDetail } from '@/lib/templates/mappers'
 
 let payload: Payload
+const TINY_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 const NOW = new Date('2026-10-21T12:00:00Z')
 const OFFICIAL = 'payloadcms/payload'
 const PAYLOAD_REPO = ghRepo(100, OFFICIAL, { topics: [], stargazers_count: 40_000 })
@@ -25,12 +27,14 @@ const ctxFor = (routes: Record<string, FakeRoute>, readme?: ReadmeRendering) => 
   ...(readme ? { readme } : {}),
 })
 
-const officialRoutes = (folders = ['blank', 'blank-tanstack', 'website']): Record<string, FakeRoute> => {
+const officialRoutes = (folders = ['blank', 'blank-tanstack', 'website'], monorepoVersion: string | null = '4.0.0-beta.3'): Record<string, FakeRoute> => {
   const routes: Record<string, FakeRoute> = {
     [repoById(100)]: json(PAYLOAD_REPO),
     [repoByName(OFFICIAL)]: json(PAYLOAD_REPO),
     [contents(OFFICIAL, 'templates')]: json([dirEntry('_template', 'templates/_template'), ...folders.map((f) => dirEntry(f, `templates/${f}`))]),
+    // npm latest disagrees on purpose: official templates track the monorepo's own version (Ruling 10).
     ...npmRoutes('payload', { version: '3.60.0' }),
+    ...(monorepoVersion ? { [raw(OFFICIAL, 'packages/payload/package.json')]: pkg({ name: 'payload', version: monorepoVersion }) } : {}),
   }
   for (const f of folders) {
     const dep = f.endsWith('tanstack') ? '@payloadcms/tanstack-start' : '@payloadcms/next'
@@ -101,7 +105,7 @@ describe('runSyncTemplate (official)', () => {
     for (const d of docs) {
       expect(d).toMatchObject({
         isOfficial: true, source: 'official', path: `templates/${d.slug}`, repository: row.id, visibility: 'listed',
-        firstSeenAt: NOW.toISOString(), payloadVersionRange: 'workspace:*', payloadMajors: ['3'], isTemplateRepo: false,
+        firstSeenAt: NOW.toISOString(), payloadVersionRange: '4.0.0-beta.3', payloadMajors: ['4'], isTemplateRepo: false,
       })
       expect(d.contentHash).toMatch(/^[0-9a-f]{64}$/)
     }
@@ -141,6 +145,24 @@ describe('runSyncTemplate (official)', () => {
     expect((await template('website'))!.deletedAt).toBeTruthy()
   })
 
+  it('resolves workspace:* from the monorepo packages/payload version, which never changes the content hash', async () => {
+    await runSyncTemplate(payload, officialInput, ctxFor(officialRoutes(['website'])))
+    const first = (await template('website'))!
+    expect(first).toMatchObject({ payloadVersionRange: '4.0.0-beta.3', payloadMajors: ['4'] })
+    const r = await runSyncTemplate(payload, officialInput, ctxFor(officialRoutes(['website'], '5.1.0')))
+    const next = (await template('website'))!
+    expect(next).toMatchObject({ payloadVersionRange: '5.1.0', payloadMajors: ['unknown'] })
+    expect(next.contentHash).toBe(first.contentHash)
+    await payload.update({ collection: 'templates', id: next.id, overrideAccess: true, context: { skipRevalidate: true, enrichment: true }, data: { ai: { enrichedHash: next.contentHash } } })
+    expect((await runSyncTemplate(payload, officialInput, ctxFor(officialRoutes(['website'], '4.0.1')))).contentChanged).toEqual([])
+    expect(r.status).toBe('synced')
+  })
+
+  it('stores no version (unknown major) when the monorepo version cannot be read', async () => {
+    await runSyncTemplate(payload, officialInput, ctxFor(officialRoutes(['website'], null)))
+    expect(await template('website')).toMatchObject({ payloadVersionRange: null, payloadMajors: ['unknown'] })
+  })
+
   it('never touches official plugins of the shared repository', async () => {
     const row = await createRepo(payload, { fullName: OFFICIAL, owner: 'payloadcms', githubId: 100 })
     await createPlugin(payload, row.id, { slug: 'official-plugin-seo', path: 'packages/plugin-seo', source: 'official', isOfficial: true })
@@ -168,6 +190,22 @@ describe('runSyncTemplate (community)', () => {
     expect(gone).toMatchObject({ status: 'gone', trashed: ['5-root'] })
     expect(await template('5-root')).toMatchObject({ syncTrashReason: 'repository-gone' })
     expect((await template('5-root'))!.deletedAt).toBeTruthy()
+  })
+
+  it('a community template in a payloadcms-owned repository is not official: it shows stars and the clone command', async () => {
+    const meta = ghRepo(7, 'payloadcms/starter', { topics: [], is_template: false })
+    const r = await runSyncTemplate(payload, { fullName: 'payloadcms/starter', githubId: 7, path: null, source: 'submission' }, ctxFor({
+      [repoById(7)]: json(meta),
+      [repoByName('payloadcms/starter')]: json(meta),
+      [raw('payloadcms/starter', 'package.json')]: pkg(COMMUNITY_PKG),
+    }))
+    expect(r.created).toEqual(['7-root'])
+    const doc = (await payload.find({ collection: 'templates', overrideAccess: true, depth: 1, where: { slug: { equals: '7-root' } } })).docs[0]
+    expect(doc).toMatchObject({ isOfficial: false, source: 'submission' })
+    const detail = toTemplateDetail(doc)
+    expect(detail.isOfficial).toBe(false)
+    expect(detail.stars).toBe(42)
+    expect(detail.getStarted).toEqual({ kind: 'command', value: 'git clone https://github.com/payloadcms/starter.git' })
   })
 
   it('updates repository stats on re-sync without advancing pushedAt for sync-repository', async () => {
@@ -263,6 +301,40 @@ describe('runSyncTemplate (community)', () => {
     // A new README without an image clears it.
     await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes({}, '# plain'), r))
     expect((await template('5-root'))!.fallbackImageUrl ?? null).toBeNull()
+  })
+})
+
+describe('a transient 404 of a community repository', () => {
+  it('rediscovers a sync-trashed template and restores it with its screenshots and owners intact', async () => {
+    await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes()))
+    const doc = (await template('5-root'))!
+    const media = await payload.create({
+      collection: 'media', overrideAccess: true, data: { alt: 'Home' },
+      file: { data: TINY_PNG, mimetype: 'image/png', name: 'home.png', size: TINY_PNG.length },
+    })
+    const maintainer = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 991, login: 'owner' } })
+    await payload.update({
+      collection: 'templates', id: doc.id, overrideAccess: true, context: { skipRevalidate: true },
+      data: { screenshots: [media.id], maintainers: [maintainer.id] } as never,
+    })
+
+    expect((await runSyncTemplate(payload, communityInput, ctxFor({}))).status).toBe('gone')
+    expect((await template('5-root'))!.syncTrashReason).toBe('repository-gone')
+
+    const inputs = await runDiscoverTemplates(payload)
+    expect(inputs).toContainEqual({ fullName: 'a/b', githubId: 5, path: null, source: 'submission' })
+
+    const back = await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes()))
+    expect(back.updated).toEqual(['5-root'])
+    const restored = (await template('5-root'))!
+    expect(restored).toMatchObject({ deletedAt: null, syncTrashReason: null, screenshots: [media.id], maintainers: [maintainer.id] })
+  })
+
+  it('never rediscovers a template an admin trashed', async () => {
+    await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes()))
+    const doc = (await template('5-root'))!
+    await payload.update({ collection: 'templates', id: doc.id, overrideAccess: true, context: { skipRevalidate: true }, data: { deletedAt: NOW.toISOString() } })
+    expect(await runDiscoverTemplates(payload)).toEqual([{ fullName: OFFICIAL, githubId: null, path: null, source: 'official' }])
   })
 })
 

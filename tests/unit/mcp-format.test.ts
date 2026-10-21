@@ -151,6 +151,11 @@ describe('MCP template output allowlist', () => {
     expect(Object.keys(s).sort()).toEqual(['category', 'isOfficial', 'name', 'payloadMajors', 'repositoryUrl', 'slug', 'stack', 'stars', 'tagline', 'tags', 'url'].sort())
     expect(s).toMatchObject({ url: `${SITE}/templates/blank`, stack: 'tanstack-start', stars: 7, tagline: 'A blank slate', category: { slug: 'landing-pages', title: 'Landing pages', path: 'landing-pages' } })
   })
+  it('shows the resolved Payload version of an official template, never workspace:*', () => {
+    expect(toMcpTemplateDetail({ ...tdoc, isOfficial: true, source: 'official', payloadVersionRange: '4.0.0-beta.3' } as Template, SITE).payloadVersionRange).toBe('4.0.0-beta.3')
+    // A row synced before the version was resolved.
+    expect(toMcpTemplateDetail({ ...tdoc, isOfficial: true, source: 'official', payloadVersionRange: 'workspace:*' } as Template, SITE).payloadVersionRange).toBeNull()
+  })
   it('official templates have null stars', () => {
     expect(toMcpTemplateSummary({ ...tdoc, isOfficial: true } as Template, SITE).stars).toBeNull()
   })

@@ -8,7 +8,7 @@ import { FULL_NAME_RE, parseTemplateSubmissionUrl, validTemplatePath } from '@/l
 import { firstReadmeImage } from '@/lib/templates/fallbackImage'
 import { payloadMajorsFromRange } from '@/lib/versions'
 import type { SyncContext } from '../context'
-import { OFFICIAL_REPO } from '../extract'
+import { OFFICIAL_REPO, PACKAGE_JSON_LIMIT } from '../extract'
 import type { GitHubRepo } from '../github'
 import { clampExtractedTemplate } from '../limits'
 import { InvalidNpmPackageNameError } from '../npm'
@@ -62,7 +62,7 @@ async function pluginPaths(payload: Payload, repositoryId: number): Promise<Set<
   return new Set(res.docs.map((p) => pathKey(p.path)))
 }
 
-/** Latest `payload` version on npm, read once per run and only when some template depends on `workspace:*`. */
+/** Latest `payload` version on npm, read once per run and only when some community template depends on `workspace:*`. */
 async function latestPayloadVersion(ctx: SyncContext, templates: readonly ExtractedTemplate[]): Promise<string | null> {
   if (!templates.some((t) => t.payloadVersionRange?.startsWith('workspace:'))) return null
   try {
@@ -70,6 +70,27 @@ async function latestPayloadVersion(ctx: SyncContext, templates: readonly Extrac
   } catch (error) {
     if (error instanceof InvalidNpmPackageNameError) return null
     throw error
+  }
+}
+
+const MONOREPO_PAYLOAD_PACKAGE = 'packages/payload/package.json'
+const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+const MAX_VERSION_CHARS = 64
+
+/**
+ * The `version` of `packages/payload/package.json` on the monorepo's default branch (Ruling 10): what `workspace:*`
+ * means for the official templates on that branch. One raw read (no API quota), only when some template needs it.
+ * Null when missing, oversized or not an exact version.
+ */
+async function monorepoPayloadVersion(ctx: SyncContext, meta: GitHubRepo, templates: readonly ExtractedTemplate[]): Promise<string | null> {
+  if (!templates.some((t) => t.payloadVersionRange?.startsWith('workspace:'))) return null
+  const text = await ctx.github.getRawFile(meta.full_name, meta.default_branch, MONOREPO_PAYLOAD_PACKAGE, PACKAGE_JSON_LIMIT)
+  if (!text) return null
+  try {
+    const version = (JSON.parse(text) as { version?: unknown } | null)?.version
+    return typeof version === 'string' && version.length <= MAX_VERSION_CHARS && EXACT_VERSION.test(version) ? version : null
+  } catch {
+    return null
   }
 }
 
@@ -211,7 +232,8 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
 
   // Every remote read happens before the first write: a RateLimitError leaves the database untouched.
   const extracted = official ? await extractOfficialTemplates(meta, ctx.github) : [await extractCommunityTemplate(meta, ctx.github, inputPath)]
-  const latest = await latestPayloadVersion(ctx, extracted)
+  // workspace:* means the monorepo's own version for official templates (Ruling 10), npm latest for anything else.
+  const workspaceVersion = official ? await monorepoPayloadVersion(ctx, meta, extracted) : await latestPayloadVersion(ctx, extracted)
 
   // One repository path is never both a plugin and a template.
   const heldByPlugins = existing ? await pluginPaths(payload, existing.id) : new Set<string>()
@@ -232,24 +254,29 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
   for (const raw of toWrite) {
     const t = clampExtractedTemplate(raw)
     const prev = bySlug.get(t.slug)
+    // Hashed from the range as written (`workspace:*`): a Payload release never changes the hash or re-bills enrichment.
     const contentHash = templateContentHash(t)
+    const workspace = Boolean(t.payloadVersionRange?.startsWith('workspace:'))
     const readmeRender = await renderReadmeFor(payload, ctx, prev, { slug: t.slug, readme: t.readme, path: t.path }, repoRef)
     const data = {
       name: t.name,
       repository: repo.id,
       path: t.path,
       url: t.url,
-      isOfficial: t.isOfficial,
+      // Official only when synced from templates/ of the official monorepo (Ruling 12).
+      isOfficial: official && t.isOfficial,
       description: t.description,
       readme: t.readme ?? null,
       readmeTruncated: (raw.readme?.length ?? 0) > (t.readme?.length ?? 0),
       ...readmeRender,
       // Only when the README HTML was (re)rendered: otherwise the stored image still matches the stored HTML.
+      // Only when the README HTML was (re)rendered: otherwise the stored image still matches the stored HTML.
       ...('readmeHtml' in readmeRender ? { fallbackImageUrl: firstReadmeImage(readmeRender.readmeHtml) } : {}),
       contentHash,
       dependencyNames: t.dependencyNames,
-      payloadVersionRange: t.payloadVersionRange,
-      payloadMajors: payloadMajorsFromRange(t.payloadVersionRange, latest),
+      // Official: the resolved monorepo version (or null) is stored in place of `workspace:*`.
+      payloadVersionRange: official && workspace ? workspaceVersion : t.payloadVersionRange,
+      payloadMajors: payloadMajorsFromRange(t.payloadVersionRange, workspaceVersion),
       stackDetected: t.stack,
       isTemplateRepo: meta.is_template === true,
       lastUpdatedAt: t.lastUpdatedAt,
@@ -302,8 +329,9 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
 }
 
 /**
- * Inputs for one `sync-template` job each: the official monorepo first, then every non-trashed community or converted
- * template, then approved template submissions without a template. Deduplicated by lower-cased full name + path.
+ * Inputs for one `sync-template` job each: the official monorepo first, then every community or converted template that
+ * is not trashed or was trashed by sync because its repository was gone (a transient 404 recovers; an admin's trash
+ * stands), then approved template submissions without a template. Deduplicated by lower-cased full name + path.
  */
 export async function runDiscoverTemplates(payload: Payload): Promise<SyncTemplateInput[]> {
   const seen = new Set<string>()
@@ -324,8 +352,13 @@ export async function runDiscoverTemplates(payload: Payload): Promise<SyncTempla
   add({ fullName: OFFICIAL_REPO, githubId: officialRow?.githubId ?? null, path: null, source: 'official' })
 
   const community = await payload.find({
-    collection: 'templates', overrideAccess: true, depth: 0, limit: 0, pagination: false, sort: 'id',
-    where: { source: { in: ['submission', 'converted'] } },
+    collection: 'templates', overrideAccess: true, depth: 0, limit: 0, pagination: false, sort: 'id', trash: true,
+    where: {
+      and: [
+        { source: { in: ['submission', 'converted'] } },
+        { or: [{ deletedAt: { exists: false } }, { syncTrashReason: { equals: 'repository-gone' } }] },
+      ],
+    },
     select: { repository: true, path: true, source: true },
   })
   const repoIds = [...new Set(community.docs.map((t) => relationId(t.repository)).filter((id): id is number => typeof id === 'number'))]

@@ -2,7 +2,7 @@ import { readmePreview } from '@/lib/directory/readme'
 import { authorDescriptionOf } from '@/lib/directory/tagline'
 import type { Media, Repository, Template } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
-import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl } from './links'
+import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange } from './links'
 import { effectiveStack } from './stack'
 import type { TemplateDetail, TemplateImage, TemplateSummary } from './types'
 
@@ -120,6 +120,6 @@ export function toTemplateDetail(doc: TemplateDoc): TemplateDetail {
     readme: readmePreview(doc.readme),
     readmeFull: doc.readme ?? undefined,
     readmeTruncated: doc.readmeTruncated === true,
-    payloadVersionRange: doc.payloadVersionRange ?? null,
+    payloadVersionRange: shownVersionRange(doc.payloadVersionRange),
   }
 }

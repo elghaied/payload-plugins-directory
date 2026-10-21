@@ -1,7 +1,7 @@
 import type { Category, Plugin, Repository, Template } from '@/payload-types'
 import { clampChars } from '@/sync/limits'
 import { authorDescriptionOf, pluginTagline } from '@/lib/directory/tagline'
-import { canonicalVideoUrl, getStartedFor, parseDemoUrl, parseVideoUrl } from '@/lib/templates/links'
+import { canonicalVideoUrl, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange } from '@/lib/templates/links'
 import { templateTagline } from '@/lib/templates/mappers'
 import { effectiveStack, type StackValue } from '@/lib/templates/stack'
 import { UNTRUSTED_NOTICE } from './instructions'
@@ -214,7 +214,7 @@ export function toMcpTemplateDetail(doc: Template, siteURL: string): McpTemplate
     demoUrl: doc.demoUrl ? parseDemoUrl(doc.demoUrl) : null,
     videoUrl: video ? canonicalVideoUrl(video) : null,
     license: doc.license ?? repo?.license ?? null,
-    payloadVersionRange: doc.payloadVersionRange ?? null,
+    payloadVersionRange: shownVersionRange(doc.payloadVersionRange),
     readme: readme ? clampChars(readme, README_MCP_LIMIT) : null,
     untrustedFields: ['tagline', 'summary', 'features', 'goodFor', 'authorDescription', 'readme'],
     notice: UNTRUSTED_NOTICE,

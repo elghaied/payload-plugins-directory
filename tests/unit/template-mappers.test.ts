@@ -31,6 +31,10 @@ describe('toTemplateSummary', () => {
     const withStored = toTemplateSummary({ ...base, fallbackImageUrl: 'https://raw.githubusercontent.com/a/b/main/s.png' } as never)
     expect(withStored.image).toEqual({ src: 'https://raw.githubusercontent.com/a/b/main/s.png', local: false })
   })
+  it('never shows workspace:* as a version range', () => {
+    expect(toTemplateDetail({ ...base, payloadVersionRange: 'workspace:*' } as never).payloadVersionRange).toBeNull()
+    expect(toTemplateDetail({ ...base, payloadVersionRange: '4.0.0-beta.3' } as never).payloadVersionRange).toBe('4.0.0-beta.3')
+  })
   it('ignores an unpopulated screenshot id', () => {
     expect(toTemplateSummary({ ...base, screenshots: [3] } as never).image.local).toBe(false)
   })

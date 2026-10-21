@@ -132,6 +132,7 @@ export async function extractCommunityTemplate(repo: GitHubRepo, gh: GitHubClien
     dependencyNames: dependencyNamesOf(json),
     license: licenseOf(json, repo),
     lastUpdatedAt: repo.pushed_at,
-    isOfficial: repo.owner.login.toLowerCase() === 'payloadcms',
+    // Official means synced from templates/ of payloadcms/payload (Ruling 12), never "owned by the payloadcms org".
+    isOfficial: false,
   }
 }

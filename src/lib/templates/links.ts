@@ -66,6 +66,12 @@ export function embedUrlFor(ref: VideoRef): string {
   return `https://www.loom.com/embed/${ref.id}`
 }
 
+/** A template's stored Payload range for display: sync stores the resolved version for official templates (Ruling 10); a
+ * leftover `workspace:*` means nothing outside the monorepo, so it is shown as unknown (null). */
+export function shownVersionRange(range: string | null | undefined): string | null {
+  return range && !range.startsWith('workspace:') ? range : null
+}
+
 export function getStartedFor(t: { isOfficial: boolean; slug: string; fullName: string; path: string | null; isTemplateRepo: boolean }): { kind: 'command' | 'link'; value: string } {
   if (t.isOfficial) return { kind: 'command', value: `npx create-payload-app -t ${t.slug}` }
   if (t.path) return { kind: 'command', value: `npx giget@latest gh:${t.fullName}/${t.path} my-app` }
