@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { LIST_TAG, pluginTag } from '@/lib/cacheTags'
 import { SUMMARY_SELECT, toDetail, toSummary } from './mappers'
+import { stampMatchesText } from './readmeStamp'
 import { rankSimilar } from './similar'
 import type { PluginDetail, PluginSummary } from './types'
 
@@ -53,9 +54,10 @@ export async function getPluginDetail(slug: string): Promise<PluginDetail | null
       if (!doc) return null
       // readmeHtml has admin-only field access (never in the public API): read it here, server side, for a plugin
       // the access-controlled query above has already shown to be listed.
-      const html = await p.findByID({ collection: 'plugins', id: doc.id, overrideAccess: true, depth: 0, select: { readmeHtml: true, readmeRenderVersion: true } })
+      const html = await p.findByID({ collection: 'plugins', id: doc.id, overrideAccess: true, depth: 0, select: { readmeHtml: true, readmeRenderVersion: true, readme: true } })
       const detail = toDetail(doc)
-      return html.readmeHtml
+      // HTML rendered from different text (the README was edited since) is stale: show the plain text instead.
+      return html.readmeHtml && stampMatchesText(html.readmeRenderVersion, html.readme)
         ? { ...detail, readmeHtml: html.readmeHtml, ...(html.readmeRenderVersion ? { readmeRenderVersion: html.readmeRenderVersion } : {}) }
         : detail
     },

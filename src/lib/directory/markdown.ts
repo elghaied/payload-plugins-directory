@@ -92,13 +92,19 @@ export function rewriteReadmeUrl(url: string, kind: UrlKind, repo: RepoRef): str
 }
 
 /** srcset: rewrite every candidate URL, drop candidates whose host is not allow-listed. */
-function rewriteSrcSet(value: string, repo: RepoRef): string {
+function isRelativeUrl(url: string): boolean {
+  const v = url.trim()
+  return !(ABSOLUTE_HTTP.test(v) || v.startsWith('//') || HAS_SCHEME.test(v))
+}
+
+function rewriteSrcSet(value: string, repo: RepoRef, relative: 'rewrite' | 'drop' = 'rewrite'): string {
   return value
     .split(',')
     .map((c) => c.trim())
     .filter(Boolean)
     .flatMap((candidate) => {
       const [url, ...descriptor] = candidate.split(/\s+/)
+      if (relative === 'drop' && isRelativeUrl(url)) return []
       const rewritten = rewriteReadmeUrl(url, 'image', repo)
       const allowed = allowedReadmeImageUrl(rewritten)
       return allowed ? [[allowed, ...descriptor].join(' ')] : []
@@ -246,7 +252,15 @@ function blockedImage(el: Element, original: string, inAnchor: boolean): RootCon
  * rehype plugin, run AFTER sanitize: rewrites relative URLs, blocks images from hosts that are not allow-listed,
  * hardens links and images, demotes headings (the page already has its own h1) and keeps task-list checkboxes inert.
  */
-export function rehypeReadme(repo: RepoRef) {
+export type RehypeReadmeOptions = {
+  /** Demote h1-h5 by one level (write time). Off on read: stored headings were demoted already. */
+  demoteHeadings?: boolean
+  /** Relative URLs: rewrite against the repository (write time) or drop them (read time; none should exist). */
+  relative?: 'rewrite' | 'drop'
+}
+
+export function rehypeReadme(repo: RepoRef, options: RehypeReadmeOptions = {}) {
+  const { demoteHeadings = true, relative = 'rewrite' } = options
   const visit = (parent: Root | Element, inAnchor: boolean): void => {
     const next: RootContent[] = []
     for (const child of parent.children) {
@@ -260,7 +274,7 @@ export function rehypeReadme(repo: RepoRef) {
       if (tag === 'input' && !(parent.type === 'element' && (parent.tagName === 'li' || parent.tagName === 'p'))) continue
       if (tag === 'img') {
         const original = typeof props.src === 'string' ? props.src : ''
-        const src = original ? rewriteReadmeUrl(original, 'image', repo) : ''
+        const src = original && !(relative === 'drop' && isRelativeUrl(original)) ? rewriteReadmeUrl(original, 'image', repo) : ''
         const allowedSrc = src ? allowedReadmeImageUrl(src) : null
         if (!allowedSrc) {
           next.push(blockedImage(child, original, inAnchor))
@@ -268,7 +282,7 @@ export function rehypeReadme(repo: RepoRef) {
         }
         props.src = allowedSrc
         if (typeof props.srcSet === 'string') {
-          const srcSet = rewriteSrcSet(props.srcSet, repo)
+          const srcSet = rewriteSrcSet(props.srcSet, repo, relative)
           if (srcSet) props.srcSet = srcSet
           else delete props.srcSet
         }
@@ -276,20 +290,21 @@ export function rehypeReadme(repo: RepoRef) {
         props.decoding = 'async'
         props.referrerPolicy = NO_REFERRER
       } else if (tag === 'source') {
-        const srcSet = typeof props.srcSet === 'string' ? rewriteSrcSet(props.srcSet, repo) : ''
+        const srcSet = typeof props.srcSet === 'string' ? rewriteSrcSet(props.srcSet, repo, relative) : ''
         if (!srcSet) continue
         props.srcSet = srcSet
         props.referrerPolicy = NO_REFERRER
       } else if (tag === 'a') {
         const href = typeof props.href === 'string' ? props.href : undefined
         if (href && !href.startsWith('#')) {
-          props.href = rewriteReadmeUrl(href, 'link', repo)
+          props.href = relative === 'drop' && isRelativeUrl(href) ? '' : rewriteReadmeUrl(href, 'link', repo)
+          if (props.href === '') delete props.href
           props.rel = EXTERNAL_REL
           if (ABSOLUTE_HTTP.test(String(props.href)) || String(props.href).startsWith('//')) props.target = '_blank'
         }
       } else if (tag === 'input') {
         props.disabled = true
-      } else if (/^h[1-5]$/.test(tag)) {
+      } else if (demoteHeadings && /^h[1-5]$/.test(tag)) {
         child.tagName = `h${Number(tag[1]) + 1}`
       }
       visit(child, inAnchor || tag === 'a')

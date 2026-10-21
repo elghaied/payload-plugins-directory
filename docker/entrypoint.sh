@@ -16,9 +16,6 @@ case "$1" in
     # exec + direct bin (no npx wrapper) so SIGTERM reaches the worker, which then shuts down gracefully.
     cd /app/cli
     export DIRECTORY_ROLE=worker
-    # Render README HTML for plugins whose stored render version is out of date (a no-op when current). Runs in the
-    # background in isolated worker threads so it never delays the worker; failures are logged, never fatal.
-    (./node_modules/.bin/payload render-readmes || echo "WARNING: render-readmes failed; run 'payload render-readmes' in /app/cli" >&2) &
     exec ./node_modules/.bin/payload worker --cron "* * * * *"
     ;;
   *)

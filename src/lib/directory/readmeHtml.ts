@@ -20,13 +20,65 @@ import { readmeSanitizeSchema, rehypeReadme, type RepoRef } from './markdown'
 export const README_MAX_NESTING = 20
 /** Most table body cells (columns x rows, summed over the README) rendered as Markdown. */
 export const README_MAX_TABLE_CELLS = 20_000
+/** Deepest emphasis nesting (unmatched `*`/`_` openers within a paragraph) rendered as Markdown. */
+export const README_MAX_EMPHASIS_DEPTH = 20
 /** Share of characters that may be inline-delimiter characters before the README is treated as plain text. */
 export const README_MAX_DELIMITER_DENSITY = 0.3
 
 const DELIMITERS = new Set(['*', '_', '[', ']', '!', '~'])
 const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
+/** Raw-HTML elements that exist in the sanitizer schema: other "tags" (generics, JSX components) are not counted. */
+const KNOWN_TAGS = new Set((readmeSanitizeSchema.tagNames ?? []).map((t) => t.toLowerCase()))
 
-/** Deepest blockquote/list nesting on any line: leading `>` markers + list markers + list indentation. Linear. */
+/** The source without fenced code blocks and inline code spans: what the nesting and emphasis scans should look at. */
+function withoutCode(source: string): string {
+  const lines = source.split('\n')
+  const kept: string[] = []
+  let fence: { char: string; len: number } | null = null
+  for (const line of lines) {
+    const m = /^ {0,3}(`{3,}|~{3,})/.exec(line)
+    if (fence) {
+      if (m && m[1][0] === fence.char && m[1].length >= fence.len && line.slice(m[0].length).trim() === '') fence = null
+      continue
+    }
+    if (m) {
+      fence = { char: m[1][0], len: m[1].length }
+      continue
+    }
+    kept.push(line)
+  }
+  return stripInlineCode(kept.join('\n'))
+}
+
+/** Removes `code` spans: an opening backtick run is closed by the next run of exactly the same length. Linear. */
+function stripInlineCode(text: string): string {
+  if (text.indexOf('`') === -1) return text
+  const out: string[] = []
+  const open = new Map<number, number>() // run length -> start of the pending opener
+  let last = 0
+  let i = text.indexOf('`')
+  while (i !== -1) {
+    let j = i
+    while (text.charCodeAt(j) === 96) j++
+    const len = j - i
+    const start = open.get(len)
+    if (start !== undefined && start >= last) {
+      out.push(text.slice(last, start))
+      last = j
+      for (const [l, at] of open) if (at >= start) open.delete(l)
+    } else {
+      open.set(len, i)
+    }
+    i = text.indexOf('`', j)
+  }
+  out.push(text.slice(last))
+  return out.join('')
+}
+
+/**
+ * Deepest blockquote/list nesting on any line: leading `>` markers, list markers, and indentation (also after a
+ * quote marker, tabs counted as 4). Linear.
+ */
 function maxBlockNesting(source: string): number {
   let max = 0
   let start = 0
@@ -38,18 +90,16 @@ function maxBlockNesting(source: string): number {
     let indent = 0
     let quotes = 0
     let markers = 0
-    let sawMarker = false
     while (i < end) {
       const c = source.charCodeAt(i)
       if (c === 32 || c === 9) {
-        if (!sawMarker && quotes === 0 && markers === 0) indent += c === 9 ? 4 : 1
+        if (markers === 0) indent += c === 9 ? 4 : 1
         i++
       } else if (c === 62) {
         quotes++
         i++
       } else if ((c === 45 || c === 42 || c === 43) && (source.charCodeAt(i + 1) === 32 || source.charCodeAt(i + 1) === 9)) {
         markers++
-        sawMarker = true
         i += 2
       } else if (c >= 48 && c <= 57) {
         let j = i
@@ -57,7 +107,6 @@ function maxBlockNesting(source: string): number {
         const d = source.charCodeAt(j)
         if ((d === 46 || d === 41) && (source.charCodeAt(j + 1) === 32 || source.charCodeAt(j + 1) === 9)) {
           markers++
-          sawMarker = true
           i = j + 2
         } else break
       } else break
@@ -70,8 +119,9 @@ function maxBlockNesting(source: string): number {
 }
 
 /**
- * Deepest open raw-HTML element stack. A start tag of a non-void element opens (`<div/>` too: HTML ignores the
- * slash on non-void elements); an end tag closes only a matching open element. Linear: every step advances.
+ * Deepest open raw-HTML element stack, counting only elements the sanitizer knows (code is already removed). A start
+ * tag of a non-void element opens (`<div/>` too: HTML ignores the slash on non-void elements); an end tag closes only
+ * a matching open element. Linear: every step advances.
  */
 function maxHtmlNesting(source: string, limit: number): number {
   const stack: string[] = []
@@ -89,13 +139,15 @@ function maxHtmlNesting(source: string, limit: number): number {
     const m = /^(\/?)([a-zA-Z][a-zA-Z0-9-]*)/.exec(source.slice(i + 1, close))
     if (m) {
       const name = m[2].toLowerCase()
-      if (m[1]) {
-        const at = stack.lastIndexOf(name)
-        if (at !== -1) stack.length = at
-      } else if (!VOID_TAGS.has(name)) {
-        stack.push(name)
-        if (stack.length > max) max = stack.length
-        if (max > limit) return max
+      if (KNOWN_TAGS.has(name)) {
+        if (m[1]) {
+          const at = stack.lastIndexOf(name)
+          if (at !== -1) stack.length = at
+        } else if (!VOID_TAGS.has(name)) {
+          stack.push(name)
+          if (stack.length > max) max = stack.length
+          if (max > limit) return max
+        }
       }
     }
     i = next
@@ -103,21 +155,53 @@ function maxHtmlNesting(source: string, limit: number): number {
   return max
 }
 
-/** Cells (columns x body rows) of every GFM table, summed. Linear scan over the lines. */
+/** Cells (columns x body rows) of every GFM table, summed, also inside blockquotes. Linear scan over the lines. */
 function tableCells(source: string): number {
   const lines = source.split('\n')
+  const bare = (line: string) => line.replace(/^[\s>]+/, '')
   let cells = 0
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i]
+    const line = bare(lines[i])
     if (line.indexOf('-') === -1 || line.indexOf('|') === -1 || !/^[\s|:-]+$/.test(line)) continue
     let pipes = 0
     for (let k = 0; k < line.length; k++) if (line.charCodeAt(k) === 124) pipes++
     let rows = 0
-    for (let j = i + 1; j < lines.length && lines[j].trim() !== ''; j++) rows++
+    for (let j = i + 1; j < lines.length && bare(lines[j]).trim() !== ''; j++) rows++
     cells += (pipes + 1) * Math.max(rows, 1)
     if (cells > README_MAX_TABLE_CELLS) return cells
   }
   return cells
+}
+
+/**
+ * Deepest run of unmatched emphasis openers (`*`/`_` that can open but not close) inside one paragraph. Linear.
+ * Word-separated emphasis nested thousands deep is cheap to write and slow or stack-hungry everywhere downstream.
+ */
+function maxEmphasisDepth(text: string, limit: number): number {
+  let depth = 0
+  let max = 0
+  const isSpace = (c: string | undefined) => c === undefined || /\s/.test(c)
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]
+    if (c === '\n') {
+      if (text[i - 1] === '\n') depth = 0 // a blank line ends the paragraph
+      continue
+    }
+    if (c !== '*' && c !== '_') continue
+    let j = i
+    while (text[j + 1] === c) j++
+    const prev = text[i - 1]
+    const next = text[j + 1]
+    const canOpen = !isSpace(next) && (c === '*' || isSpace(prev) || /[^\p{L}\p{N}]/u.test(prev ?? ' '))
+    const canClose = !isSpace(prev) && (c === '*' || isSpace(next) || /[^\p{L}\p{N}]/u.test(next ?? ' '))
+    if (canOpen && !canClose) {
+      depth++
+      if (depth > max) max = depth
+      if (max > limit) return max
+    } else if (canClose && !canOpen) depth = Math.max(0, depth - 1)
+    i = j
+  }
+  return max
 }
 
 function delimiterDensity(source: string): number {
@@ -129,26 +213,31 @@ function delimiterDensity(source: string): number {
 
 /** True when the source nests deeply enough to make the Markdown/HTML parsers slow or recursive. */
 export function isPathologicallyNested(source: string, limit = README_MAX_NESTING): boolean {
-  return maxBlockNesting(source) > limit || maxHtmlNesting(source, limit) > limit
+  return maxBlockNesting(source) > limit || maxHtmlNesting(withoutCode(source), limit) > limit
 }
 
 /** Why a README is rendered as plain text without even trying to parse it, or null when it may be parsed. */
-export function readmeRenderBlocker(source: string): string | null {
-  if (isPathologicallyNested(source)) return 'nesting'
+export function readmeRenderBlocker(source: string): 'nesting' | 'table' | 'delimiters' | 'emphasis' | null {
+  if (maxBlockNesting(source) > README_MAX_NESTING) return 'nesting'
+  const text = withoutCode(source)
+  if (maxHtmlNesting(text, README_MAX_NESTING) > README_MAX_NESTING) return 'nesting'
   if (tableCells(source) > README_MAX_TABLE_CELLS) return 'table'
   if (delimiterDensity(source) > README_MAX_DELIMITER_DENSITY) return 'delimiters'
+  if (maxEmphasisDepth(text, README_MAX_EMPHASIS_DEPTH) > README_MAX_EMPHASIS_DEPTH) return 'emphasis'
   return null
 }
 
+export type ReadmeRenderResult = { html: string | null; /** Why `html` is null: `cap:<which>`, `size` or `error`. */ reason?: string }
+
 /**
- * The sanitized, URL-rewritten HTML of a README, or null when it must stay plain text: refused by a cheap pre-parse
- * cap, any parser error (including stack overflow), or output over README_HTML_MAX_CHARS. Never throws. The output
- * is safe to embed: `rehype-sanitize` (GitHub's schema) runs before the tree is serialised.
+ * The sanitized, URL-rewritten HTML of a README plus, when it stays plain text, why. Never throws. The output is safe
+ * to embed: `rehype-sanitize` (GitHub's schema) runs before the tree is serialised.
  */
-export function renderReadmeHtml(source: string, repo: RepoRef): string | null {
+export function renderReadmeDetailed(source: string, repo: RepoRef): ReadmeRenderResult {
   try {
     const text = source.length > README_MARKDOWN_MAX ? source.slice(0, README_MARKDOWN_MAX) : source
-    if (readmeRenderBlocker(text)) return null
+    const blocker = readmeRenderBlocker(text)
+    if (blocker) return { html: null, reason: `cap:${blocker}` }
     const processor = unified()
       .use(remarkParse)
       .use(remarkGfm)
@@ -159,8 +248,13 @@ export function renderReadmeHtml(source: string, repo: RepoRef): string | null {
       .use(rehypeReadme, repo)
     const tree = processor.runSync(processor.parse(text)) as Root
     const html = toHtml(tree)
-    return html.length > README_HTML_MAX_CHARS ? null : html
+    return html.length > README_HTML_MAX_CHARS ? { html: null, reason: 'size' } : { html }
   } catch {
-    return null
+    return { html: null, reason: 'error' }
   }
+}
+
+/** The HTML of renderReadmeDetailed, or null (plain text). */
+export function renderReadmeHtml(source: string, repo: RepoRef): string | null {
+  return renderReadmeDetailed(source, repo).html
 }

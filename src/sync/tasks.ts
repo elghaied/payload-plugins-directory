@@ -13,6 +13,7 @@ import { QUEUES } from './queues'
 import { postRevalidate } from './revalidate'
 import { sweepOrphanMedia } from '@/lib/maintainers/mediaCleanup'
 import { searchResyncTask } from '@/lib/search/resync'
+import { renderReadmesTask } from './readmeTask'
 import { runSnapshot } from './snapshot'
 import { runSyncRepository } from './syncRepository'
 import { queueRevalidate, SyncConfigError, track } from './taskKit'
@@ -263,5 +264,5 @@ export const jobsConfig: JobsConfig = {
     access: { ...defaultJobsCollection.access, read: isAdmin },
     admin: { ...defaultJobsCollection.admin, group: 'System', hidden: false },
   }),
-  tasks: [...syncTasks, ...enrichTasks, searchResyncTask],
+  tasks: [...syncTasks, ...enrichTasks, searchResyncTask, renderReadmesTask],
 }

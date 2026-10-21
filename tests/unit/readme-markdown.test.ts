@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { README_MARKDOWN_MAX } from '@/lib/directory/readmeLimits'
-import { isPathologicallyNested, readmeRenderBlocker, renderReadmeHtml } from '@/lib/directory/readmeHtml'
+import { isPathologicallyNested, readmeRenderBlocker, renderReadmeHtml, renderReadmeDetailed } from '@/lib/directory/readmeHtml'
 import { ALLOWED_README_IMAGE_HOSTS, isAllowedReadmeImageUrl, rewriteReadmeUrl } from '@/lib/directory/markdown'
 
 const repo = { fullName: 'acme/plugins', defaultBranch: 'main' }
@@ -280,5 +280,43 @@ describe('review follow-ups', () => {
   })
   it('does not leave a table inside a paragraph', () => {
     expect(render('<math><mtext><table><tr><td>x</td></tr></table></mtext></math>')).not.toMatch(/<p><table/)
+  })
+})
+
+describe('cap corrections (review M2, M3, M4, M13)', () => {
+  it('M2: TypeScript generics and JSX in code fences and inline code are not tags', () => {
+    const fenced = '```tsx\n' + '<Foo><Bar><Baz>'.repeat(10) + '\n```\n'
+    const inline = 'Use `' + '<T>'.repeat(30) + '` and ``<a><b>`` here.\n'
+    const tilde = '~~~\n' + '<div>'.repeat(30) + '\n~~~\n'
+    for (const source of [fenced, inline, tilde]) {
+      expect(isPathologicallyNested(source)).toBe(false)
+      expect(readmeRenderBlocker(source)).toBeNull()
+    }
+    expect(renderReadmeHtml(fenced, repo)).not.toBeNull()
+  })
+  it('M2: real raw HTML outside code still counts, and unknown tags do not', () => {
+    expect(isPathologicallyNested('<div>'.repeat(25))).toBe(true)
+    expect(isPathologicallyNested('<t>'.repeat(40) + '<config>'.repeat(40))).toBe(false)
+    expect(isPathologicallyNested('```\nx\n```\n' + '<div>'.repeat(25))).toBe(true)
+  })
+  it('M3: indentation after a quote marker counts as nesting', () => {
+    expect(isPathologicallyNested('>\t\t\t\t\t\t\t\t\t\t\t- a')).toBe(true)
+    expect(isPathologicallyNested('>' + ' '.repeat(60) + '- a')).toBe(true)
+    expect(isPathologicallyNested('> - a\n> - b')).toBe(false)
+  })
+  it('M4: a table inside a blockquote is capped like any other', () => {
+    const source = '> |' + 'a|'.repeat(3_000) + '\n> |' + '-|'.repeat(3_000) + '\n' + '> a\n'.repeat(1_500)
+    expect(readmeRenderBlocker(source)).toBe('table')
+  })
+  it('M13: deeply nested emphasis is refused at render time, ordinary emphasis is not', () => {
+    expect(readmeRenderBlocker('*a '.repeat(2_000) + 'word '.repeat(5_000))).toBe('emphasis')
+    expect(readmeRenderBlocker('_a '.repeat(500) + 'word '.repeat(5_000))).toBe('emphasis')
+    expect(readmeRenderBlocker('Some *emphasis* and **strong** and _under_ with snake_case_name and `*code*`.\n'.repeat(200))).toBeNull()
+    expect(renderReadmeDetailed('*a '.repeat(2_000) + 'word '.repeat(5_000), repo)).toEqual({ html: null, reason: 'cap:emphasis' })
+  })
+  it('M9: the fallback reason is reported', () => {
+    expect(renderReadmeDetailed('>'.repeat(100), repo)).toEqual({ html: null, reason: 'cap:nesting' })
+    expect(renderReadmeDetailed('| a |\n|-|\n'.repeat(1) + 'x', repo).reason).toBeUndefined()
+    expect(renderReadmeDetailed('# ok', repo).html).toContain('<h2')
   })
 })

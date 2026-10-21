@@ -138,6 +138,7 @@ export interface Config {
       'enrich-all': TaskEnrichAll;
       'enrich-batch': TaskEnrichBatch;
       'search-resync': TaskSearchResync;
+      'render-readmes': TaskRenderReadmes;
       inline: {
         input: unknown;
         output: unknown;
@@ -654,7 +655,8 @@ export interface PayloadJob {
           | 'enrich'
           | 'enrich-all'
           | 'enrich-batch'
-          | 'search-resync';
+          | 'search-resync'
+          | 'render-readmes';
         taskID: string;
         input:
           | {
@@ -697,6 +699,7 @@ export interface PayloadJob {
                 | 'enrich-all'
                 | 'enrich-batch'
                 | 'search-resync'
+                | 'render-readmes'
               )
             | null;
           taskID?: string | null;
@@ -716,6 +719,7 @@ export interface PayloadJob {
         | 'enrich-all'
         | 'enrich-batch'
         | 'search-resync'
+        | 'render-readmes'
       )
     | null;
   queue?: string | null;
@@ -1634,6 +1638,25 @@ export interface TaskSearchResync {
   output: {
     synced?: number | null;
     failed?: number | null;
+    continued?: boolean | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskRender-readmes".
+ */
+export interface TaskRenderReadmes {
+  input: {
+    afterId?: number | null;
+    all?: boolean | null;
+  };
+  output: {
+    status?: string | null;
+    considered?: number | null;
+    rendered?: number | null;
+    plainText?: number | null;
+    skipped?: number | null;
+    raced?: number | null;
     continued?: boolean | null;
   };
 }

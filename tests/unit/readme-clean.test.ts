@@ -20,9 +20,29 @@ describe('cleanStoredReadmeHtml (re-sanitize on read)', () => {
     expect(clean).toContain('id="user-content-usage"')
     expect(clean).not.toContain('user-content-user-content')
   })
-  it('prefixes nothing it should not, but never lets an unprefixed id through as an element id clobber of the page', () => {
-    // An unprefixed id in a stored value is not rewritten here (write time did that); it is the worker's contract.
-    expect(cleanStoredReadmeHtml('<p>x</p>')).toBe('<p>x</p>')
+  it('M1: applies the write-time clobber rules to unprefixed ids, names and aria references', () => {
+    const clean = cleanStoredReadmeHtml('<p id="__next">a</p><img name="cookie" src="https://img.shields.io/x.svg"><a name="top">t</a><table aria-describedby="main aria-x"><tr><td>c</td></tr></table>')!
+    expect(clean).not.toMatch(/id="__next"|name="cookie"|name="top"|aria-describedby="main/)
+    expect(clean).toContain('id="user-content-__next"')
+    expect(clean).toContain('name="user-content-cookie"')
+    expect(clean).toContain('aria-describedby="user-content-main user-content-aria-x"')
+  })
+  it('M1: applies the image host allow-list and srcset checks', () => {
+    const clean = cleanStoredReadmeHtml(
+      '<img src="https://evil.example/p.png" alt="tracker"><img src="http://img.shields.io/a.svg"><picture><source srcset="https://evil.example/t.png 1x, https://camo.githubusercontent.com/b.png 2x"><img src="//evil.example/q.png"></picture><img src="/relative.png">',
+    )!
+    expect(clean).not.toContain('evil.example')
+    expect(clean).not.toContain('relative.png')
+    expect(clean).toContain('src="https://img.shields.io/a.svg"')
+    expect(clean).toContain('srcset="https://camo.githubusercontent.com/b.png 2x"')
+    expect(clean).toContain('tracker')
+  })
+  it('M1: forces referrerpolicy, rel and target', () => {
+    const clean = cleanStoredReadmeHtml('<img src="https://img.shields.io/a.svg" referrerpolicy="unsafe-url"><a href="https://example.com" rel="opener">x</a><a href="/admin">rel</a>')!
+    expect(clean).toContain('referrerpolicy="no-referrer"')
+    expect(clean).toContain('rel="nofollow ugc noopener noreferrer" target="_blank"')
+    expect(clean).not.toContain('unsafe-url')
+    expect(clean).not.toContain('href="/admin"')
   })
   it('is the identity on what the write pipeline produces (nothing legitimate is stripped on read)', () => {
     const readme = [

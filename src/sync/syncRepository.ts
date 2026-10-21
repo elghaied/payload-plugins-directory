@@ -3,6 +3,7 @@ import type { Plugin, Repository } from '@/payload-types'
 import { revalidationTagsFor } from '@/lib/cacheTags'
 import { payloadMajorsFromRange } from '@/lib/versions'
 import { aliasTagIds, mergeTagIds, type AliasTag } from './aliasTags'
+import { readmeStamp } from '@/lib/directory/readmeStamp'
 import { computeContentHash } from './contentHash'
 import type { SyncContext } from './context'
 import { extractOfficialPlugins, extractPlugins, OFFICIAL_REPO, type ExtractedPlugin } from './extract'
@@ -41,22 +42,26 @@ export type SyncRepositoryResult = {
 
 /**
  * The README HTML fields to write, or {} to leave them alone. Rendered (in an isolated worker thread, never in this
- * process) only when the README text or the pipeline version changed; a failed or refused render stores null HTML
- * with the version, so it is not retried every sync.
+ * process) only when the stored stamp (pipeline version + README hash) is out of date; a failed or refused render
+ * stores null HTML with the stamp, so it is not retried every sync. The reason is logged once per render.
  */
 async function renderReadmeFor(
+  payload: Payload,
   ctx: SyncContext,
   prev: Plugin | undefined,
-  p: { readme?: string | null; path?: string | null },
+  p: { slug: string; readme?: string | null; path?: string | null },
   repoData: { fullName: string; defaultBranch: string | null },
 ): Promise<{ readmeHtml?: string | null; readmeRenderVersion?: string }> {
   if (!ctx.readme) return {}
-  const version = ctx.readme.version()
-  if (prev && (prev.readme ?? null) === (p.readme ?? null) && prev.readmeRenderVersion === version) return {}
-  const html = p.readme
+  const stamp = readmeStamp(ctx.readme.version(), p.readme)
+  if (prev && prev.readmeRenderVersion === stamp) return {}
+  const rendered = p.readme
     ? await ctx.readme.render(p.readme, { fullName: repoData.fullName, defaultBranch: repoData.defaultBranch, path: p.path ?? null })
-    : null
-  return { readmeHtml: html, readmeRenderVersion: version }
+    : { html: null }
+  if (p.readme && rendered.html === null) {
+    payload.logger.info({ slug: p.slug, reason: (rendered as { reason?: string }).reason ?? 'unknown' }, 'README rendered as plain text')
+  }
+  return { readmeHtml: rendered.html, readmeRenderVersion: stamp }
 }
 
 /** Repository fields owned by sync. `missedDiscoveries` belongs to `discover` and is never written here. */
@@ -253,7 +258,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       kept.push(p.slug)
       const prev = bySlug.get(p.slug)
       const contentHash = computeContentHash(p)
-      const readmeRender = await renderReadmeFor(ctx, prev, p, repoData)
+      const readmeRender = await renderReadmeFor(payload, ctx, prev, p, repoData)
       const data = {
         name: p.name,
         packageName: p.packageName ?? null,

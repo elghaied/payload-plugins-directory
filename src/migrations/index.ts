@@ -15,6 +15,7 @@ import * as migration_20261021_011329_search_index from './20261021_011329_searc
 import * as migration_20261021_013801_search_resync_task from './20261021_013801_search_resync_task';
 import * as migration_20261021_034401_readme_truncated from './20261021_034401_readme_truncated';
 import * as migration_20261021_070342_readme_html from './20261021_070342_readme_html';
+import * as migration_20261021_073906_render_readmes_task from './20261021_073906_render_readmes_task';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20261021_070342_readme_html.up,
     down: migration_20261021_070342_readme_html.down,
-    name: '20261021_070342_readme_html'
+    name: '20261021_070342_readme_html',
+  },
+  {
+    up: migration_20261021_073906_render_readmes_task.up,
+    down: migration_20261021_073906_render_readmes_task.down,
+    name: '20261021_073906_render_readmes_task'
   },
 ];

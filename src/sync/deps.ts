@@ -44,12 +44,21 @@ export function getSyncDeps(): SyncDeps {
   return { ...deps, fetch: withTimeout(deps.fetch) }
 }
 
+/**
+ * The README renderer exists only in the worker process (DIRECTORY_ROLE=worker): it needs the sources on disk and
+ * starts worker threads. Anywhere else (web, an admin-triggered /api/payload-jobs/run) sync leaves README HTML alone.
+ */
+export function defaultReadmeRendering(): ReadmeRendering | undefined {
+  if (process.env.DIRECTORY_ROLE !== 'worker') return undefined
+  return { render: (source, repo) => renderReadmeIsolated(source, repo), version: readmeRenderVersion }
+}
+
 export function createSyncContext(deps: SyncDeps): SyncContext {
   return {
     github: createGitHubClient({ fetch: deps.fetch, token: deps.env.githubToken, now: deps.now }),
     npm: createNpmClient({ fetch: deps.fetch, now: deps.now }),
     now: deps.now,
-    readme: deps.readme ?? { render: (source, repo) => renderReadmeIsolated(source, repo), version: readmeRenderVersion },
+    readme: deps.readme ?? defaultReadmeRendering(),
   }
 }
 

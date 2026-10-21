@@ -1,5 +1,6 @@
 import { strictObject } from 'payload'
 import { defineCLICommand } from 'payload/cli'
+import { QUEUES } from '@/sync/queues'
 import { runWorkerTick } from '@/sync/worker'
 
 /** Longest a SIGTERM waits for the running batch; keep below the compose `stop_grace_period`. */
@@ -8,6 +9,7 @@ const SHUTDOWN_GRACE_MS = 45_000
 let stopping = false
 let current: Promise<unknown> | null = null
 let handlersInstalled = false
+let readmeRenderQueued = false
 
 /**
  * Payload's `--cron` runner (croner) has no stop hook and installs no signal handlers, so a bare SIGTERM
@@ -42,6 +44,16 @@ export const workerCommand = defineCLICommand({
     const payload = await getPayload()
     installShutdownHandlers((msg) => payload.logger.info(msg))
     if (stopping) return
+    // Make sure README HTML is current after a deploy: a queued, retried, single-flight job (cheap when nothing is
+    // stale). Retried every tick until accepted, e.g. when the worker starts before web has migrated the jobs enum.
+    if (!readmeRenderQueued && process.env.DIRECTORY_ROLE === 'worker') {
+      try {
+        await payload.jobs.queue({ task: 'render-readmes', input: {}, queue: QUEUES.default, overrideAccess: true })
+        readmeRenderQueued = true
+      } catch (err) {
+        payload.logger.warn({ err }, 'Could not queue render-readmes yet; will retry next tick')
+      }
+    }
     const tick = runWorkerTick(payload, { shouldStop: () => stopping })
     current = tick
     try {

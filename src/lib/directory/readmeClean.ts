@@ -1,39 +1,62 @@
 import { createHash } from 'node:crypto'
 import { unstable_cache } from 'next/cache'
 import { fromHtml } from 'hast-util-from-html'
-import { sanitize, type Schema } from 'hast-util-sanitize'
 import { toHtml } from 'hast-util-to-html'
+import { unified } from 'unified'
+import rehypeSanitize from 'rehype-sanitize'
+import type { Element, Root } from 'hast'
 import { pluginTag } from '@/lib/cacheTags'
-import { readmeSanitizeSchema } from './markdown'
+import { readmeSanitizeSchema, rehypeReadme } from './markdown'
+
+const PREFIX = 'user-content-'
 
 /**
- * Read-time schema: the write-time schema (GitHub's, see markdown.ts) with two differences, both needed because the
- * stored HTML is the OUTPUT of the write-time pipeline, not author input:
- *  - `clobber` is off: ids and names already carry the `user-content-` prefix; prefixing again would break anchors;
- *  - the attributes the pipeline adds after sanitizing (link target/rel, image loading/decoding/referrerpolicy) are
- *    allowed, each restricted to the single value the pipeline writes.
+ * Read-time schema: the write-time schema plus the sr-only footnote heading class (an h2 at sanitize time that the
+ * pipeline later demotes to h3). Everything else, including the clobber prefix, is the write-time schema.
  */
-export const storedReadmeSchema: Schema = {
-  ...(readmeSanitizeSchema as Schema),
-  clobber: [],
+const readSchema: typeof readmeSanitizeSchema = {
+  ...readmeSanitizeSchema,
   attributes: {
-    ...(readmeSanitizeSchema as Schema).attributes,
-    a: [...((readmeSanitizeSchema.attributes?.a ?? []) as never[]), ['target', '_blank'], ['rel', 'nofollow', 'ugc', 'noopener', 'noreferrer']],
-    img: [...((readmeSanitizeSchema.attributes?.img ?? []) as never[]), ['loading', 'lazy'], ['decoding', 'async'], ['referrerPolicy', 'no-referrer']],
-    // The footnote heading is an h2 (class sr-only) at sanitize time; the pipeline then demotes it to h3.
+    ...readmeSanitizeSchema.attributes,
     h3: [...((readmeSanitizeSchema.attributes?.h3 ?? []) as never[]), ['className', 'sr-only']],
-    source: [...((readmeSanitizeSchema.attributes?.source ?? []) as never[]), ['referrerPolicy', 'no-referrer']],
   },
 }
 
+const unprefix = (value: string) => (value.startsWith(PREFIX) ? value.slice(PREFIX.length) : value)
+
 /**
- * Stored README HTML parsed (parse5, linear), sanitized again with the write-time schema and serialised. Anything
- * a bug or a hand-edited row put into the stored value that the schema does not allow is dropped here. Returns null
- * on any error (the page then shows plain text).
+ * The stored HTML is the OUTPUT of the write pipeline, so its ids, names, aria references and in-page links already
+ * carry the `user-content-` prefix. Removing exactly one prefix first lets the write-time sanitizer (which prefixes)
+ * and anchor resolution run unchanged: legitimate values end up as they were, and an unprefixed (hostile or
+ * hand-edited) id or name gets prefixed exactly as it would have been at write time.
+ */
+function stripPrefixOnce(node: Root | Element): void {
+  for (const child of node.children) {
+    if (child.type !== 'element') continue
+    const props = child.properties
+    for (const key of ['id', 'name'] as const) if (typeof props[key] === 'string') props[key] = unprefix(props[key])
+    for (const key of ['ariaDescribedBy', 'ariaLabelledBy'] as const) {
+      const v = props[key]
+      if (typeof v === 'string') props[key] = v.split(/\s+/).filter(Boolean).map(unprefix).join(' ')
+      else if (Array.isArray(v)) props[key] = v.map((t) => unprefix(String(t)))
+    }
+    if (child.tagName === 'a' && typeof props.href === 'string' && props.href.startsWith(`#${PREFIX}`)) props.href = `#${unprefix(props.href.slice(1))}`
+    stripPrefixOnce(child)
+  }
+}
+
+/**
+ * Stored README HTML parsed (parse5, linear) and run through the SAME rules as at write time (the write-time schema,
+ * clobber prefix, the image host allow-list and srcset checks, forced referrerpolicy/rel/target) minus the Markdown
+ * parse. Relative URLs cannot occur in stored HTML and are dropped. Returns null on any error (the page then shows
+ * plain text).
  */
 export function cleanStoredReadmeHtml(html: string): string | null {
   try {
-    return toHtml(sanitize(fromHtml(html, { fragment: true }), storedReadmeSchema))
+    const tree = fromHtml(html, { fragment: true })
+    stripPrefixOnce(tree)
+    const processor = unified().use(rehypeSanitize, readSchema).use(rehypeReadme, { fullName: 'unknown/unknown' }, { demoteHeadings: false, relative: 'drop' })
+    return toHtml(processor.runSync(tree) as Root)
   } catch {
     return null
   }
