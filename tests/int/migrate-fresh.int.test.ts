@@ -28,6 +28,7 @@ describe('migrations from an empty database', () => {
       expect(out).toContain('Migrated:  20261021_011329_search_index')
       expect(out).toContain('Migrated:  20261021_013801_search_resync_task')
       expect(out).toContain('Migrated:  20261021_034401_readme_truncated')
+      expect(out).toContain('Migrated:  20261021_070342_readme_html')
       expect(out).not.toMatch(/relation "search" does not exist/)
     } finally {
       await payload.db.drizzle.execute(sql.raw(`DROP DATABASE IF EXISTS ${SCRATCH} WITH (FORCE)`))

@@ -9,6 +9,7 @@ import { forgetSyncedDoc, removeUnlistedPluginFromSearch } from '@/lib/search/ho
 import { normalizeTagline } from '@/lib/maintainers/tagline'
 import { PLUGINS_LLM_INSTRUCTIONS } from '@/mcp/instructions'
 import { DESCRIPTION_MAX_CHARS, README_MAX_CHARS } from '@/sync/limits'
+import { README_HTML_MAX_CHARS } from '@/lib/directory/readmeLimits'
 
 export const listedPluginsWhere: Where = {
   and: [{ visibility: { equals: 'listed' } }, { deletedAt: { exists: false } }],
@@ -72,6 +73,23 @@ export const Plugins: CollectionConfig = {
     { name: 'keywords', type: 'text', hasMany: true, admin: { readOnly: true, description: 'npm keywords (written by sync).' } },
     { name: 'readme', type: 'textarea', maxLength: README_MAX_CHARS },
     { name: 'readmeTruncated', type: 'checkbox', defaultValue: false, admin: { readOnly: true, description: 'Set by sync when the README was cut at the storage limit.' } },
+    // Rendered at sync time in the worker (src/lib/directory/readmeHtml.ts, isolated): sanitized HTML, null = show the
+    // README as plain text. Never part of the public API (field read access) or the search index or the AI prompt;
+    // the plugin detail page reads it with a dedicated server-side query.
+    {
+      name: 'readmeHtml',
+      type: 'textarea',
+      maxLength: README_HTML_MAX_CHARS,
+      // System-written only (worker render, `payload render-readmes`: overrideAccess); no role writes it through the API.
+      access: { read: adminOnly, create: () => false, update: () => false },
+      admin: { readOnly: true, hidden: true },
+    },
+    {
+      name: 'readmeRenderVersion',
+      type: 'text',
+      access: { read: adminOnly, create: () => false, update: () => false },
+      admin: { readOnly: true, hidden: true },
+    },
     { name: 'contentHash', type: 'text', admin: { readOnly: true } },
     // Compatibility
     { name: 'payloadVersionRange', type: 'text' },

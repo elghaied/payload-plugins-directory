@@ -38,11 +38,13 @@ export type PluginDetail = PluginSummary & {
   customTagline?: string
   /** Maintainer-uploaded logo (media URL); replaces the owner avatar in the detail header. */
   logoUrl?: string
-  /** Where relative README URLs resolve: repository "owner/repo", its default branch, and the plugin's monorepo subdirectory. */
-  readmeSource: { fullName: string; defaultBranch?: string; path?: string }
   readme?: string
   /** Full README for the "Full README" disclosure; `readme` stays the short preview. */
   readmeFull?: string
+  /** Sanitized HTML of the README rendered at sync time (worker); absent = show the plain text. Server-side only. */
+  readmeHtml?: string
+  /** Pipeline version that produced readmeHtml (part of the re-sanitize cache key). */
+  readmeRenderVersion?: string
   /** True when sync cut the stored README at the storage limit. */
   readmeTruncated?: boolean
   /** Plain strings only: render as text, never as HTML or markdown. */

@@ -1,6 +1,8 @@
 import { enrichClientFromEnv } from '@/enrich/client'
 import type { EnrichClient } from '@/enrich/types'
-import type { SyncContext } from './context'
+import { renderReadmeIsolated } from '@/lib/directory/renderReadmeIsolated'
+import { readmeRenderVersion } from '@/lib/directory/readmeVersion'
+import type { ReadmeRendering, SyncContext } from './context'
 import { createGitHubClient } from './github'
 import { withTimeout, type FetchFn } from './http'
 import { createNpmClient } from './npm'
@@ -12,6 +14,8 @@ export type SyncDeps = {
   env: SyncEnv
   /** Tests: setSyncDeps({ enrichClient: fakeEnrichClient(…) }) or `null`. Unset = real client from ANTHROPIC_API_KEY. */
   enrichClient?: EnrichClient | null
+  /** Tests: a fake README renderer (the real one starts a worker thread). Unset = the isolated worker renderer. */
+  readme?: ReadmeRendering
 }
 
 export function readSyncEnv(env: Record<string, string | undefined> = process.env): SyncEnv {
@@ -45,6 +49,7 @@ export function createSyncContext(deps: SyncDeps): SyncContext {
     github: createGitHubClient({ fetch: deps.fetch, token: deps.env.githubToken, now: deps.now }),
     npm: createNpmClient({ fetch: deps.fetch, now: deps.now }),
     now: deps.now,
+    readme: deps.readme ?? { render: (source, repo) => renderReadmeIsolated(source, repo), version: readmeRenderVersion },
   }
 }
 

@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { getPluginDetail, getSimilarPlugins } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
-import { README_MARKDOWN_ENABLED, README_MARKDOWN_MAX } from "@/lib/directory/readmeTree";
+import { README_MARKDOWN_MAX } from "@/lib/directory/readmeLimits";
 import { getServerURL } from "@/lib/serverUrl";
 import { BadgeEmbed } from "@/components/BadgeEmbed";
 import { getPluginTrends } from "@/lib/trends/queries";
@@ -34,7 +34,8 @@ import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
 import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
 import { SimilarPlugins } from "@/components/SimilarPlugins";
-import { ReadmePlain, renderReadme } from "@/components/ReadmeMarkdown";
+import { ReadmeHtml, ReadmePlain } from "@/components/ReadmeBody";
+import { getCleanReadmeHtml } from "@/lib/directory/readmeClean";
 import { PluginAiOverview } from "@/components/PluginAiOverview";
 import { getCategoryNodes } from "@/lib/directory/taxonomy";
 import { categoryHref, tagHref } from "@/lib/taxonomy/links";
@@ -109,12 +110,10 @@ export default async function PluginDetailPage({
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
   const trail = plugin.category ? trailFor(await getCategoryNodes(), plugin.category.path) : [];
   const readmeFull = plugin.readmeFull ? capReadme(plugin.readmeFull) : null;
-  const showFullReadme = Boolean(readmeFull && plugin.readme && readmeFull.text.length > plugin.readme.length);
-  // Markdown is not parsed in the request path (README_MARKDOWN_ENABLED): escaped plain text.
-  const readmeNode = async (text: string) =>
-    README_MARKDOWN_ENABLED ? renderReadme(plugin.slug, text, plugin.readmeSource) : <ReadmePlain source={text} />;
-  const readmePreviewNode = plugin.readme ? await readmeNode(plugin.readme) : null;
-  const readmeFullNode = showFullReadme && readmeFull ? await readmeNode(readmeFull.text) : null;
+  // The stored HTML covers the first README_MARKDOWN_MAX characters; the rest is on GitHub.
+  const readmeHtml = plugin.readmeHtml ? await getCleanReadmeHtml(plugin.slug, plugin.readmeHtml, plugin.readmeRenderVersion ?? null) : null;
+  const showFullReadme = !readmeHtml && Boolean(readmeFull && plugin.readme && readmeFull.text.length > plugin.readme.length);
+  const readmeCut = (plugin.readmeFull?.length ?? 0) > README_MARKDOWN_MAX && readmeHtml !== null;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -448,21 +447,25 @@ export default async function PluginDetailPage({
           )}
         </div>
 
-        {/* README: preview, full text on demand (untrusted author markdown, sanitized on the server) */}
+        {/* README: rendered HTML (sanitized at sync time) or escaped plain text with a preview and the full text on demand */}
         {plugin.readme && (
           <Card className="mb-8">
             <CardContent className="p-6">
               <p className="text-xs font-medium text-muted-foreground mb-3">README</p>
-              {readmePreviewNode}
-              {readmeFull && readmeFull.text.length > plugin.readme.length && (
+              {readmeHtml ? (
+                <ReadmeHtml cleanHtml={readmeHtml} />
+              ) : (
+                <ReadmePlain source={plugin.readme} />
+              )}
+              {showFullReadme && readmeFull && (
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Full README</summary>
                   <div className="mt-3">
-                    {readmeFullNode}
+                    <ReadmePlain source={readmeFull.text} />
                   </div>
                 </details>
               )}
-              {(plugin.readmeTruncated || readmeFull?.truncated) && (
+              {(plugin.readmeTruncated || readmeFull?.truncated || readmeCut) && (
                 <a
                   href={plugin.repositoryUrl}
                   target="_blank"

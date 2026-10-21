@@ -59,7 +59,7 @@ export default buildConfig({
   endpoints: [healthEndpoint],
   plugins: [directorySearchPlugin(), ...directoryMcpPlugin()],
   jobs: jobsConfig,
-  cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand', 'seed-taxonomy': './cli/taxonomy.js#seedTaxonomyCommand', enrich: './cli/enrich.js#enrichCommand', 'reindex-search': './cli/reindexSearch.js#reindexSearchCommand' } },
+  cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand', 'seed-taxonomy': './cli/taxonomy.js#seedTaxonomyCommand', enrich: './cli/enrich.js#enrichCommand', 'reindex-search': './cli/reindexSearch.js#reindexSearchCommand', 'render-readmes': './cli/renderReadmes.js#renderReadmesCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',
   // Runtime value (SERVER_URL): Payload derives CSRF/CORS allowed origins from it.
   serverURL: getServerURL(),

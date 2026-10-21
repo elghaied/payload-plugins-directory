@@ -49,7 +49,15 @@ export async function getPluginDetail(slug: string): Promise<PluginDetail | null
         where: { slug: { equals: slug } },
         context: { computeHierarchyPaths: true },
       })
-      return res.docs[0] ? toDetail(res.docs[0]) : null
+      const doc = res.docs[0]
+      if (!doc) return null
+      // readmeHtml has admin-only field access (never in the public API): read it here, server side, for a plugin
+      // the access-controlled query above has already shown to be listed.
+      const html = await p.findByID({ collection: 'plugins', id: doc.id, overrideAccess: true, depth: 0, select: { readmeHtml: true, readmeRenderVersion: true } })
+      const detail = toDetail(doc)
+      return html.readmeHtml
+        ? { ...detail, readmeHtml: html.readmeHtml, ...(html.readmeRenderVersion ? { readmeRenderVersion: html.readmeRenderVersion } : {}) }
+        : detail
     },
     ['plugin-detail', slug],
     { tags: [LIST_TAG, pluginTag(slug)], revalidate: 3600 },

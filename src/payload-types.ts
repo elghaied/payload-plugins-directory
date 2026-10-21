@@ -321,6 +321,8 @@ export interface Plugin {
    * Set by sync when the README was cut at the storage limit.
    */
   readmeTruncated?: boolean | null;
+  readmeHtml?: string | null;
+  readmeRenderVersion?: string | null;
   contentHash?: string | null;
   payloadVersionRange?: string | null;
   payloadMajors?: ('1' | '2' | '3' | '4' | 'unknown')[] | null;
@@ -988,6 +990,8 @@ export interface PluginsSelect<T extends boolean = true> {
   keywords?: T;
   readme?: T;
   readmeTruncated?: T;
+  readmeHtml?: T;
+  readmeRenderVersion?: T;
   contentHash?: T;
   payloadVersionRange?: T;
   payloadMajors?: T;

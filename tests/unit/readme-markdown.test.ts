@@ -1,14 +1,13 @@
-import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ReadmeView } from '@/components/ReadmeMarkdown'
-import { README_MARKDOWN_MAX, isPathologicallyNested, renderReadmeTree } from '@/lib/directory/readmeTree'
+import { README_MARKDOWN_MAX } from '@/lib/directory/readmeLimits'
+import { isPathologicallyNested, readmeRenderBlocker, renderReadmeHtml } from '@/lib/directory/readmeHtml'
 import { ALLOWED_README_IMAGE_HOSTS, isAllowedReadmeImageUrl, rewriteReadmeUrl } from '@/lib/directory/markdown'
 
 const repo = { fullName: 'acme/plugins', defaultBranch: 'main' }
 const mono = { fullName: 'acme/plugins', defaultBranch: 'main', path: 'packages/seo' }
 
-const render = (source: string, r = repo) => renderToStaticMarkup(createElement(ReadmeView, { tree: renderReadmeTree(source, r), source }))
+/** The stored HTML; '' when the README stays plain text (null). */
+const render = (source: string, r = repo) => renderReadmeHtml(source, r) ?? ''
 
 describe('README sanitizer', () => {
   it('removes <script> elements and their content', () => {
@@ -53,7 +52,7 @@ describe('README sanitizer', () => {
     expect(html).toContain('<picture>')
     expect(html).toContain('<details>')
     expect(html).toContain('<table>')
-    expect(html).toContain('<br/>')
+    expect(html).toContain('<br>')
   })
   it('renders task-list checkboxes disabled and nothing else interactive', () => {
     const html = render('- [x] done\n- [ ] todo\n\n<input type="checkbox" checked>')
@@ -84,13 +83,13 @@ describe('README image tracking protection', () => {
   it('keeps allow-listed hosts and adds no-referrer to the img', () => {
     const html = render('![ci](https://img.shields.io/npm/v/x.svg)\n\n![shot](docs/a.png)')
     expect(html).toContain('src="https://img.shields.io/npm/v/x.svg"')
-    expect(html.match(/referrerPolicy="no-referrer"|referrerpolicy="no-referrer"/gi)?.length).toBe(2)
+    expect(html.match(/referrerpolicy="no-referrer"/gi)?.length).toBe(2)
   })
   it('filters bad srcset candidates and keeps the good one, with no-referrer on img and source', () => {
     const html = render('<picture><source srcset="https://evil.example/a.png 1x, https://camo.githubusercontent.com/b.png 2x"><img src="https://img.shields.io/x.svg"></picture>')
     expect(html).not.toContain('evil.example')
-    expect(html).toContain('srcSet="https://camo.githubusercontent.com/b.png 2x"')
-    expect(html.match(/referrerPolicy="no-referrer"/gi)?.length).toBe(2)
+    expect(html).toContain('srcset="https://camo.githubusercontent.com/b.png 2x"')
+    expect(html.match(/referrerpolicy="no-referrer"/gi)?.length).toBe(2)
   })
   it('removes a <source> whose candidates are all blocked', () => {
     const html = render('<picture><source srcset="https://evil.example/a.png"><img src="https://img.shields.io/x.svg"></picture>')
@@ -178,51 +177,54 @@ describe('rewriteReadmeUrl', () => {
   })
 })
 
-describe('hostile nesting (denial of service)', () => {
-  const payloads: Record<string, string> = {
-    'blockquote x 100k': '>'.repeat(100_000) + ' x',
-    'nested list markers': '- '.repeat(2_000) + 'x',
-    'div x 2000': '<div>'.repeat(2_000),
-    'ordered list markers': '1. '.repeat(500) + 'x',
-    'indented list ladder': Array.from({ length: 60 }, (_, i) => `${'  '.repeat(i)}- item`).join('\n'),
+describe('pre-parse caps (the parsers never see these)', () => {
+  const blocked: Record<string, [string, string]> = {
+    'blockquote x 100k': ['>'.repeat(100_000) + ' x', 'nesting'],
+    'nested list markers': ['- '.repeat(2_000) + 'x', 'nesting'],
+    'div x 2000': ['<div>'.repeat(2_000), 'nesting'],
+    'div/ self-closing x 12k (N3)': ['<div/>'.repeat(10_000), 'nesting'],
+    'unmatched end tags never close': ['<div></x>'.repeat(6_000), 'nesting'],
+    'ordered list markers': ['1. '.repeat(500) + 'x', 'nesting'],
+    'indented list ladder': [Array.from({ length: 60 }, (_, i) => `${'  '.repeat(i)}- item`).join('\n'), 'nesting'],
+    'table padding (3000 cols x 1500 rows)': ['|' + 'a|'.repeat(3_000) + '\n|' + '-|'.repeat(3_000) + '\n' + 'a\n'.repeat(1_500), 'table'],
+    'emphasis *_ x 60k': ['*_'.repeat(30_000), 'delimiters'],
+    'nested links [[[x]]](u)': ['[[[x]]](u)'.repeat(6_000), 'delimiters'],
+    'nested images': ['![a'.repeat(20_000), 'delimiters'],
   }
-  for (const [name, source] of Object.entries(payloads)) {
-    it(`falls back to escaped plain text quickly: ${name}`, () => {
+  for (const [name, [source, why]] of Object.entries(blocked)) {
+    it(`is refused quickly (${why}): ${name}`, () => {
       const start = performance.now()
-      let html = ''
-      expect(() => {
-        html = renderToStaticMarkup(createElement(ReadmeView, { tree: renderReadmeTree(source, repo), source }))
-      }).not.toThrow()
+      expect(readmeRenderBlocker(source)).toBe(why)
+      expect(renderReadmeHtml(source, repo)).toBeNull()
       expect(performance.now() - start).toBeLessThan(500)
-      expect(html).toContain('<pre')
-      expect(html).not.toContain('readme-prose')
     })
   }
-  it('stays fast on unclosed angle-bracket floods (not nested, rendered as text)', () => {
-    for (const source of ['<a '.repeat(30_000), '<'.repeat(50_000) + '>', '[' .repeat(30_000), '*'.repeat(30_000)]) {
-      const start = performance.now()
-      expect(() => renderToStaticMarkup(createElement(ReadmeView, { tree: renderReadmeTree(source, repo), source }))).not.toThrow()
-      expect(performance.now() - start).toBeLessThan(500)
-    }
-  })
   it('flags depth only above the limit', () => {
     expect(isPathologicallyNested('> '.repeat(20) + 'x')).toBe(false)
     expect(isPathologicallyNested('> '.repeat(21) + 'x')).toBe(true)
     expect(isPathologicallyNested('<div>'.repeat(20))).toBe(false)
     expect(isPathologicallyNested('<div>'.repeat(21))).toBe(true)
     expect(isPathologicallyNested('<div><br><img src=x><p>a</p></div>'.repeat(500))).toBe(false)
+    expect(isPathologicallyNested('<div></div>'.repeat(5_000))).toBe(false)
   })
-  it('renders ordinary nested READMEs as Markdown', () => {
-    const html = render('- a\n  - b\n    - c\n\n> quote\n\n<details><summary>s</summary><div><p>x</p></div></details>')
-    expect(html).toContain('readme-prose')
+  it('renders ordinary READMEs: nested lists, quotes, tables, details', () => {
+    const html = render('- a\n  - b\n    - c\n\n> quote\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n<details><summary>s</summary><div><p>x</p></div></details>')
+    expect(html).toContain('<table>')
     expect(html).toContain('<details>')
   })
   it('caps the rendered input at README_MARKDOWN_MAX', () => {
     const html = render('a'.repeat(README_MARKDOWN_MAX + 500))
     expect(html.match(/a/g)!.length).toBeLessThan(README_MARKDOWN_MAX + 200)
   })
-  it('never throws on an error inside the pipeline', () => {
-    expect(renderReadmeTree('x'.repeat(10), { fullName: undefined as never })).toBeTypeOf('object')
+  it('returns null instead of throwing on bad input', () => {
+    expect(renderReadmeHtml('x', { fullName: undefined as never })).toBeTypeOf('string')
+    expect(() => renderReadmeHtml(undefined as never, repo)).not.toThrow()
+  })
+  it('drops output above the storage limit', () => {
+    // 59k of dense but legal Markdown: many short links expand well beyond the 400k limit when serialised
+    const source = Array.from({ length: 9_000 }, (_, i) => `[a${i}](https://example.com/${i})`).join(' ')
+    const html = renderReadmeHtml(source, repo)
+    expect(html === null || html.length <= 400_000).toBe(true)
   })
 })
 

@@ -8,11 +8,8 @@ const state = vi.hoisted(() => ({ detail: null as unknown, trends: null as unkno
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => createElement('a', { href }, children),
 }))
+vi.mock('next/cache', () => ({ unstable_cache: (fn: () => unknown) => fn }))
 vi.mock('@/lib/directory/queries', () => ({ getPluginDetail: async () => state.detail, getSimilarPlugins: async () => [] }))
-vi.mock('@/lib/directory/readmeCache', async () => {
-  const { renderReadmeTree } = await import('@/lib/directory/readmeTree')
-  return { getReadmeTree: async (_slug: string, source: string, repo: never) => ({ tree: renderReadmeTree(source, repo) }) }
-})
 vi.mock('@/lib/trends/queries', () => ({ getPluginTrends: async () => state.trends }))
 vi.mock('@/lib/directory/taxonomy', () => ({
   getCategoryNodes: async () =>
@@ -29,7 +26,6 @@ const base: PluginDetail = {
   slug: 's3', name: 'payload s3', description: 'AI tagline', owner: 'acme', ownerAvatar: '', url: 'https://github.com/acme/s3',
   repositoryUrl: 'https://github.com/acme/s3', stars: 1, forks: 0, openIssues: 0, lastUpdate: '2026-10-01T00:00:00.000Z',
   createdAt: '2026-01-01T00:00:00.000Z', topics: [], isOfficial: false, payloadMajors: ['3'], license: null, isArchived: false,
-  readmeSource: { fullName: 'acme/s3', defaultBranch: 'main' },
   authorDescription: 'Author words', tagList: [], payloadVersionRange: null,
 }
 const render = async (detail: Partial<PluginDetail>) => {
@@ -43,6 +39,22 @@ beforeEach(() => {
 })
 
 describe('plugin detail page', () => {
+  it('shows the stored sanitized README HTML in the scoped container, without a plain-text duplicate', async () => {
+    const html = await render({ readme: '# Title', readmeFull: '# Title\n\nbody', readmeHtml: '<h2 id="user-content-title">Title</h2><p>body</p>' })
+    expect(html).toContain('<div class="readme-prose"><h2 id="user-content-title">Title</h2><p>body</p></div>')
+    expect(html).not.toContain('# Title')
+    expect(html).not.toContain('Full README')
+  })
+  it('re-sanitizes the stored HTML on read: a hostile stored value comes out clean', async () => {
+    const html = await render({ readme: '# Title', readmeHtml: '<p>x</p><script>alert(1)</script><img src=x onerror=alert(1)><a href="javascript:alert(1)">l</a><iframe src="https://e.example"></iframe>' })
+    expect(html).toContain('<div class="readme-prose"><p>x</p>')
+    expect(html).not.toMatch(/alert\(1\)|onerror|javascript:|<iframe/i)
+  })
+  it('links to GitHub when the stored HTML covers only the first part of a long README', async () => {
+    const html = await render({ readme: 'short', readmeFull: 'x'.repeat(70_000), readmeHtml: '<p>x</p>' })
+    expect(html).toContain('README truncated')
+  })
+
   it('shows the README as escaped plain text, never parsed Markdown', async () => {
     const html = await render({ readme: '# Title\n\n<script>alert(1)</script> [x](javascript:alert(1))' })
     expect(html).toContain('<pre')
