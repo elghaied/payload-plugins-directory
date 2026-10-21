@@ -41,11 +41,12 @@ export async function recordGitHubQuota(payload: Payload, quota: GitHubQuota | n
 
 export const MONITORED_TASKS = [
   'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich-all', 'enrich-batch', 'enrich',
+  'discover-templates', 'sync-template',
 ] as const
 export type MonitoredTask = (typeof MONITORED_TASKS)[number]
 
-/** Scheduled tasks only; queued tasks (sync-repository, revalidate, enrich, enrich-batch) have no expected rhythm. */
-const EXPECTED_EVERY_HOURS: Partial<Record<MonitoredTask, number>> = { discover: 6, 'npm-stats': 24, snapshot: 24, 'enrich-all': 1 }
+/** Scheduled tasks only; queued tasks (sync-repository, sync-template, revalidate, enrich, enrich-batch) have no expected rhythm. */
+const EXPECTED_EVERY_HOURS: Partial<Record<MonitoredTask, number>> = { discover: 6, 'npm-stats': 24, snapshot: 24, 'enrich-all': 1, 'discover-templates': 6 }
 
 /** A scheduled task is overdue when it has not succeeded within twice its interval. */
 export function isOverdue(task: MonitoredTask, lastSuccessAt: Date | null, now: Date): boolean {

@@ -97,7 +97,7 @@ const skipContext = () => ({ skipRevalidate: true })
 
 const COMPARED = ['fullName', 'owner', 'ownerAvatar', 'description', 'stars', 'forks', 'openIssues', 'license', 'isArchived', 'defaultBranch'] as const
 
-function repositoryChanged(prev: Repository | null, next: RepositoryData): boolean {
+export function repositoryChanged(prev: Repository | null, next: RepositoryData): boolean {
   if (!prev) return true
   if (COMPARED.some((k) => (prev[k] ?? null) !== (next[k] ?? null))) return true
   if (!sameInstant(prev.pushedAt, next.pushedAt)) return true

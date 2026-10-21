@@ -43,7 +43,9 @@ describe('getJobHealth', () => {
 
     const health = await getJobHealth(payload, now)
     const task = (slug: string) => health.tasks.find((t) => t.slug === slug)
-    expect(health.tasks.map((t) => t.slug)).toEqual(['discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich-all', 'enrich-batch', 'enrich'])
+    expect(health.tasks.map((t) => t.slug)).toEqual(['discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich-all', 'enrich-batch', 'enrich', 'discover-templates', 'sync-template'])
+    expect(task('discover-templates')).toMatchObject({ lastSuccessAt: null, overdue: true })
+    expect(task('sync-template')?.overdue).toBe(false)
     expect(task('discover')).toMatchObject({ lastSuccessAt: hoursAgo(5).toISOString(), overdue: false, failing: false })
     expect(task('npm-stats')?.overdue).toBe(true)
     expect(task('snapshot')).toMatchObject({ lastSuccessAt: null, overdue: true })

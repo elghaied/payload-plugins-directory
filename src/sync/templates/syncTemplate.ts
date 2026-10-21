@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import type { Payload, Where } from 'payload'
 import type { Repository, Template } from '@/payload-types'
-import { templateRevalidationTagsFor } from '@/lib/cacheTags'
+import { revalidationTagsFor, templateRevalidationTagsFor } from '@/lib/cacheTags'
 import { relationId } from '@/lib/relationId'
 import { firstReadmeImage } from '@/lib/templates/fallbackImage'
 import { payloadMajorsFromRange } from '@/lib/versions'
@@ -10,7 +10,7 @@ import { OFFICIAL_REPO } from '../extract'
 import type { GitHubRepo } from '../github'
 import { clampExtractedTemplate } from '../limits'
 import { InvalidNpmPackageNameError } from '../npm'
-import { renderReadmeFor, resolveRepository, toRepositoryData } from '../syncRepository'
+import { renderReadmeFor, repositoryChanged, resolveRepository, toRepositoryData } from '../syncRepository'
 import { trashTemplates } from '../trash'
 import { extractCommunityTemplate, extractOfficialTemplates, type ExtractedTemplate } from './extract'
 
@@ -100,6 +100,9 @@ export async function approvedTemplateSubmissionInputs(payload: Payload): Promis
  * (never updated) here, only when missing. A community row is created or refreshed, but its `pushedAt` and
  * `lastSyncedAt` are never advanced on an existing row and a created row is never marked synced, so a plugin sync of
  * the same repository still sees a new push and re-reads its content.
+ *
+ * Writes skip the Repositories revalidation hook, so when a refresh changes a row that also has plugins, `pluginTags`
+ * carries their cache tags (the change signal sync-repository would otherwise have produced for those pages).
  */
 async function upsertRepository(
   payload: Payload,
@@ -108,8 +111,8 @@ async function upsertRepository(
   existing: Repository | null,
   stale: Repository | null,
   now: Date,
-): Promise<Repository> {
-  if (official && existing) return existing
+): Promise<{ repo: Repository; pluginTags: string[] }> {
+  if (official && existing) return { repo: existing, pluginTags: [] }
   if (stale) {
     // Free the unique full name held by another repository's row (as sync-repository does after a rename).
     await payload.update({
@@ -119,13 +122,21 @@ async function upsertRepository(
   }
   const data = toRepositoryData(meta, official || Boolean(existing?.isMonorepo), now)
   if (!existing) {
-    return payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, context: skipContext(), data: { ...data, lastSyncedAt: null } })
+    const repo = await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, context: skipContext(), data: { ...data, lastSyncedAt: null } })
+    return { repo, pluginTags: [] }
   }
+  // pushedAt is never written here, so it is not part of the comparison either.
+  if (!repositoryChanged({ ...existing, pushedAt: data.pushedAt }, data)) return { repo: existing, pluginTags: [] }
   const metadata: Partial<typeof data> = { ...data }
   delete metadata.pushedAt
   delete metadata.lastSyncedAt
   delete metadata.isMonorepo
-  return payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, context: skipContext(), data: metadata })
+  const repo = await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, context: skipContext(), data: metadata })
+  const plugins = await payload.find({
+    collection: 'plugins', overrideAccess: true, depth: 0, limit: 0, pagination: false,
+    where: { repository: { equals: existing.id } }, select: { slug: true },
+  })
+  return { repo, pluginTags: revalidationTagsFor(plugins.docs.map((p) => p.slug)) }
 }
 
 export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput, ctx: SyncContext): Promise<SyncTemplateResult> {
@@ -168,7 +179,7 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
   }
   const toWrite = extracted.filter((t) => !conflicting.includes(t))
 
-  const repo = await upsertRepository(payload, meta, official, existing, stale, now)
+  const { repo, pluginTags } = await upsertRepository(payload, meta, official, existing, stale, now)
   const bySlug = await templatesBySlug(payload, toWrite.map((t) => t.slug))
   const repoRef = { fullName: meta.full_name, defaultBranch: meta.default_branch ?? null }
 
@@ -239,7 +250,7 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
     )
   }
 
-  result.revalidateTags = templateRevalidationTagsFor([...result.created, ...result.updated, ...result.trashed])
+  result.revalidateTags = [...templateRevalidationTagsFor([...result.created, ...result.updated, ...result.trashed]), ...pluginTags]
   return result
 }
 

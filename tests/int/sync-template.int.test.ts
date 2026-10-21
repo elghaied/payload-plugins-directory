@@ -1,9 +1,10 @@
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { Payload } from 'payload'
 import type { Template } from '@/payload-types'
 import type { ReadmeRendering } from '@/sync/context'
 import { readmeStamp } from '@/lib/directory/readmeStamp'
 import { renderReadmeBatch, renderReadmes } from '@/lib/directory/renderReadmes'
+import { setSyncDeps } from '@/sync/deps'
 import { runSyncRepository } from '@/sync/syncRepository'
 import { runDiscoverTemplates, runSyncTemplate, type SyncTemplateInput } from '@/sync/templates/syncTemplate'
 import { fakeFetch, type FakeRoute } from '../helpers/fakeFetch'
@@ -86,6 +87,7 @@ beforeEach(async () => {
   payload = await getTestPayload()
   await resetDatabase(payload)
 })
+afterEach(() => setSyncDeps(null))
 afterAll(async () => resetDatabase(payload))
 
 describe('runSyncTemplate (official)', () => {
@@ -174,6 +176,27 @@ describe('runSyncTemplate (community)', () => {
     const repo = (await payload.find({ collection: 'repositories', overrideAccess: true, where: { githubId: { equals: 5 } } })).docs[0]
     expect(repo).toMatchObject({ stars: 77, pushedAt: '2026-10-20T08:00:00.000Z', lastSyncedAt: null })
     expect((await template('5-root'))!.lastUpdatedAt).toBe('2026-10-21T08:00:00.000Z')
+  })
+
+  it('revalidates the plugins of a repository holding both kinds when the template sync refreshes its row', async () => {
+    const row = await createRepo(payload, { fullName: 'a/b', owner: 'a', githubId: 5, stars: 1 })
+    await createPlugin(payload, row.id, { slug: '5-plugin', path: 'packages/plugin' })
+    const sub: SyncTemplateInput = { fullName: 'a/b', githubId: 5, path: 'templates/site', source: 'submission' }
+    const routes = (stars: number): Record<string, FakeRoute> => ({
+      [repoById(5)]: json({ ...COMMUNITY, stargazers_count: stars }),
+      [raw('a/b', 'templates/site/package.json')]: pkg(COMMUNITY_PKG),
+    })
+    const r = await runSyncTemplate(payload, sub, ctxFor(routes(50)))
+    expect(r.created).toEqual(['5-site'])
+    expect(r.revalidateTags).toEqual(['templates', 'template:5-site', 'plugins', 'plugin:5-plugin'])
+    expect((await payload.findByID({ collection: 'repositories', id: row.id, overrideAccess: true })).stars).toBe(50)
+    // Unchanged row: no plugin tags.
+    expect((await runSyncTemplate(payload, sub, ctxFor(routes(50)))).revalidateTags).toEqual(['templates', 'template:5-site'])
+  })
+
+  it('stores an oversized package.json license clamped instead of failing the sync', async () => {
+    await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes({ license: { spdx_id: 'X'.repeat(300) } }, '# r', { ...COMMUNITY_PKG, license: 'L'.repeat(100) })))
+    expect((await template('5-root'))!.license).toBe('X'.repeat(200))
   })
 
   it('returns conflict and writes nothing when a non-trashed plugin holds the same repository and path', async () => {
@@ -338,9 +361,23 @@ describe('README rendering for templates', () => {
     expect(r.calls).toEqual(['# plugin', '# template'])
   })
 
-  it('the render-readmes job continues with templates after the plugins', async () => {
-    const { renderReadmesTask } = await import('@/sync/readmeTask')
-    expect(renderReadmesTask.inputSchema?.map((f) => ('name' in f ? f.name : null))).toContain('collection')
+  it('the render-readmes job continues with templates after the plugins, then stops', async () => {
+    const row = await createRepo(payload, { fullName: 'a/b', owner: 'a', githubId: 5 })
+    await createTemplate(row.id, { slug: 'stale', readme: '# IMG stale' })
+    const r = rendering()
+    setSyncDeps({ readme: r })
+    await payload.jobs.queue({ task: 'render-readmes', input: {}, queue: 'default', overrideAccess: true })
+    await payload.jobs.run({ queue: 'default', limit: 1, overrideAccess: true })
+    const pending = (await jobs('render-readmes')).filter((j) => !j.completedAt)
+    expect(pending.map((j) => j.input)).toEqual([expect.objectContaining({ collection: 'templates', afterId: null })])
+    expect(r.calls).toEqual([]) // the plugin pass found nothing to render
+
+    await payload.jobs.run({ queue: 'default', limit: 1, overrideAccess: true })
+    expect((await jobs('render-readmes')).filter((j) => !j.completedAt)).toEqual([])
+    expect(r.calls).toEqual(['# IMG stale'])
+    expect(await template('stale')).toMatchObject({ readmeRenderVersion: readmeStamp('v1', '# IMG stale') })
+    expect((await template('stale'))!.readmeHtml).toContain('shot.png')
+    expect((await template('stale'))!.fallbackImageUrl).toContain('shot.png')
   })
 
   it('an admin edit of a template README queues a re-render; a sync-style write does not', async () => {

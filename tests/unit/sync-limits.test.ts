@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ExtractedPlugin } from '@/sync/extract'
-import { clampExtracted, DESCRIPTION_MAX_CHARS, KEYWORDS_MAX, README_MAX_CHARS, truncateReadme } from '@/sync/limits'
+import { clampExtracted, clampExtractedTemplate, DESCRIPTION_MAX_CHARS, KEYWORDS_MAX, LICENSE_MAX_CHARS, README_MAX_CHARS, truncateReadme } from '@/sync/limits'
+import type { ExtractedTemplate } from '@/sync/templates/extract'
 
 describe('truncateReadme', () => {
   it('leaves a README under the limit untouched', () => {
@@ -62,5 +63,29 @@ describe('clampExtracted', () => {
     expect(out.keywords).toHaveLength(KEYWORDS_MAX)
     expect(out.keywords.every((k) => k.length <= 100)).toBe(true)
     expect(clampExtracted({ ...base, description: { a: 1 } as unknown as string }).description).not.toBe('[object Object]')
+  })
+})
+
+describe('clampExtractedTemplate', () => {
+  const base: ExtractedTemplate = {
+    slug: '5-root', name: 'n', path: null, url: 'https://github.com/a/b', description: 'd', payloadVersionRange: null,
+    stack: 'other', dependencyNames: [], license: 'MIT', lastUpdatedAt: null, isOfficial: false,
+  }
+
+  it('clamps an oversized license to 200 characters and turns an empty one into null', () => {
+    expect(LICENSE_MAX_CHARS).toBe(200)
+    expect(clampExtractedTemplate({ ...base, license: 'L'.repeat(60_000) }).license).toHaveLength(200)
+    expect(clampExtractedTemplate({ ...base, license: '' }).license).toBeNull()
+    expect(clampExtractedTemplate({ ...base, license: '   ' }).license).toBeNull()
+    expect(clampExtractedTemplate({ ...base, license: null }).license).toBeNull()
+    expect(clampExtractedTemplate(base).license).toBe('MIT')
+  })
+
+  it('bounds name, description, path and README like plugins', () => {
+    const out = clampExtractedTemplate({ ...base, name: 'n'.repeat(1_000), description: 'd'.repeat(60_000), path: 'p'.repeat(1_000), readme: 'r'.repeat(README_MAX_CHARS + 10) })
+    expect(out.name).toHaveLength(200)
+    expect(out.description).toHaveLength(DESCRIPTION_MAX_CHARS)
+    expect(out.path).toHaveLength(500)
+    expect(out.readme!.length).toBeLessThanOrEqual(README_MAX_CHARS)
   })
 })

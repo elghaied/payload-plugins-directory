@@ -18,6 +18,7 @@ export const PATH_MAX_CHARS = 500
 export const VERSION_RANGE_MAX_CHARS = 200
 export const KEYWORD_MAX_CHARS = 100
 export const KEYWORDS_MAX = 50
+export const LICENSE_MAX_CHARS = 200
 
 /** `text` cut to at most `max` characters, never splitting a surrogate pair. */
 export function clampChars(text: string, max: number): string {
@@ -67,5 +68,6 @@ export function clampExtractedTemplate(t: ExtractedTemplate): ExtractedTemplate 
     description: str(t.description, DESCRIPTION_MAX_CHARS) || NO_DESCRIPTION,
     payloadVersionRange: str(t.payloadVersionRange, VERSION_RANGE_MAX_CHARS) ?? null,
     readme: typeof t.readme === 'string' ? truncateReadme(t.readme) : undefined,
+    license: str(t.license, LICENSE_MAX_CHARS)?.trim() || null,
   }
 }
