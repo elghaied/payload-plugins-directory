@@ -71,6 +71,7 @@ export const Plugins: CollectionConfig = {
     { name: 'description', type: 'textarea', maxLength: DESCRIPTION_MAX_CHARS },
     { name: 'keywords', type: 'text', hasMany: true, admin: { readOnly: true, description: 'npm keywords (written by sync).' } },
     { name: 'readme', type: 'textarea', maxLength: README_MAX_CHARS },
+    { name: 'readmeTruncated', type: 'checkbox', defaultValue: false, admin: { readOnly: true, description: 'Set by sync when the README was cut at the storage limit.' } },
     { name: 'contentHash', type: 'text', admin: { readOnly: true } },
     // Compatibility
     { name: 'payloadVersionRange', type: 'text' },

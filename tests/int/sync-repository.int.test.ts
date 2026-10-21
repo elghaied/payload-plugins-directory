@@ -64,6 +64,7 @@ describe('runSyncRepository', () => {
     const r = await sync(seoRoutes(SEO, readme))
     expect(r.created).toEqual(['7-root'])
     expect((await plugin('7-root')).readme).toBe(readme)
+    expect((await plugin('7-root')).readmeTruncated).toBe(false)
   })
 
   it('truncates a 150,000-character README to 100,000 characters with a stable contentHash', async () => {
@@ -74,6 +75,7 @@ describe('runSyncRepository', () => {
     expect(doc.readme!.length).toBeLessThanOrEqual(100_000)
     expect(doc.readme!.length).toBeGreaterThan(98_000)
     expect(readme.startsWith(doc.readme!)).toBe(true)
+    expect(doc.readmeTruncated).toBe(true)
     await sync(seoRoutes({ ...SEO, pushed_at: '2026-10-19T09:00:00Z' }, readme), input)
     expect((await plugin('7-root')).contentHash).toBe(doc.contentHash)
   })

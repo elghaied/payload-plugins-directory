@@ -451,18 +451,18 @@ export default async function PluginDetailPage({
                   <pre className="mt-3 whitespace-pre-wrap break-words text-sm text-foreground font-sans leading-relaxed bg-transparent p-0 m-0 border-0">
                     {readmeFull.text}
                   </pre>
-                  {readmeFull.truncated && (
-                    <a
-                      href={plugin.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 mt-3 text-sm text-muted-foreground hover:text-foreground"
-                    >
-                      View full README on GitHub
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                  )}
                 </details>
+              )}
+              {(plugin.readmeTruncated || readmeFull?.truncated) && (
+                <a
+                  href={plugin.repositoryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 mt-3 text-sm text-muted-foreground hover:text-foreground"
+                >
+                  README truncated — read the full version on GitHub
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               )}
             </CardContent>
           </Card>

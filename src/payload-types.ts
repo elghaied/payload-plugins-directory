@@ -317,6 +317,10 @@ export interface Plugin {
    */
   keywords?: string[] | null;
   readme?: string | null;
+  /**
+   * Set by sync when the README was cut at the storage limit.
+   */
+  readmeTruncated?: boolean | null;
   contentHash?: string | null;
   payloadVersionRange?: string | null;
   payloadMajors?: ('1' | '2' | '3' | '4' | 'unknown')[] | null;
@@ -983,6 +987,7 @@ export interface PluginsSelect<T extends boolean = true> {
   description?: T;
   keywords?: T;
   readme?: T;
+  readmeTruncated?: T;
   contentHash?: T;
   payloadVersionRange?: T;
   payloadMajors?: T;

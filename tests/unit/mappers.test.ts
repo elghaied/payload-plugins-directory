@@ -35,6 +35,11 @@ describe('toSummary', () => {
 })
 
 describe('toDetail', () => {
+  it('carries readmeTruncated through to the detail', () => {
+    expect(toDetail({ ...doc, readmeTruncated: true } as never).readmeTruncated).toBe(true)
+    expect(toDetail(doc as never).readmeTruncated).toBe(false)
+  })
+
   it('includes readme and version range', () => {
     expect(toDetail(doc as never)).toMatchObject({ readme: 'Long readme', payloadVersionRange: '^3.0.0' })
   })

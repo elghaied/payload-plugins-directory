@@ -41,6 +41,8 @@ export type PluginDetail = PluginSummary & {
   readme?: string
   /** Full README for the "Full README" disclosure; `readme` stays the short preview. */
   readmeFull?: string
+  /** True when sync cut the stored README at the storage limit. */
+  readmeTruncated?: boolean
   /** Plain strings only: render as text, never as HTML or markdown. */
   ai?: { summary?: string; features: string[]; useCases: string[]; generated: boolean }
   category?: { slug: string; title: string; path: string }

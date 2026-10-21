@@ -84,6 +84,7 @@ export function toDetail(doc: Plugin): PluginDetail {
     ...(typeof doc.logo === 'object' && doc.logo?.url ? { logoUrl: doc.logo.url } : {}),
     readme: readmePreview(doc.readme),
     readmeFull: doc.readme ?? undefined,
+    readmeTruncated: doc.readmeTruncated === true,
     payloadVersionRange: doc.payloadVersionRange ?? null,
     npm: doc.npm ?? undefined,
     ...(ai ? { ai } : {}),

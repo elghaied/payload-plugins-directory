@@ -243,6 +243,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         description: p.description,
         keywords: p.keywords,
         readme: p.readme ?? null,
+        readmeTruncated: (extracted.readme?.length ?? 0) > (p.readme?.length ?? 0),
         contentHash,
         payloadVersionRange: p.payloadVersionRange,
         payloadMajors: payloadMajorsFromRange(p.payloadVersionRange, prev?.npm?.latestVersion ?? latestVersions.get(p.slug) ?? null),

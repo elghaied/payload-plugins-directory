@@ -38,14 +38,19 @@ beforeEach(() => {
 })
 
 describe('plugin detail page', () => {
-  it('caps a huge README at render time and links to the full one on GitHub', async () => {
+  it('caps a huge README at render time', async () => {
     const huge = 'x'.repeat(README_RENDER_MAX + 5_000)
     const html = await render({ readme: 'short preview', readmeFull: huge })
     expect(README_RENDER_MAX).toBe(100_000)
     expect(html).not.toContain(huge)
     expect(html).toContain('x'.repeat(1_000))
-    expect(html).toMatch(/<a[^>]*href="https:\/\/github.com\/acme\/s3"[^>]*>View full README on GitHub/)
-    expect(await render({ readme: 'short', readmeFull: 'short and complete' })).not.toContain('View full README on GitHub')
+  })
+
+  it('shows the truncation notice with the repository URL only when sync truncated the README', async () => {
+    const html = await render({ readme: 'short preview', readmeFull: 'x'.repeat(2_000), readmeTruncated: true })
+    expect(html).toMatch(/<a[^>]*href="https:\/\/github.com\/acme\/s3"[^>]*>README truncated — read the full version on GitHub/)
+    const whole = await render({ readme: 'short', readmeFull: 'short and complete' })
+    expect(whole).not.toContain('README truncated')
   })
 
   it('shows the category badge only when the category resolves to a trail', async () => {
