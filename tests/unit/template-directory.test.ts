@@ -72,6 +72,13 @@ describe('DirectoryHome', () => {
     nav.params = new URLSearchParams('type=all')
     expect(home()).toContain('data-testid="plugin-directory"')
   })
+  it('labels every filter trigger, also for a URL value no template has (never a blank Select)', () => {
+    nav.params = new URLSearchParams('type=templates')
+    const triggers = (html: string) => [...html.matchAll(/<button[^>]*role="combobox"[^>]*>(.*?)<\/button>/g)].map((m) => m[1].replace(/<[^>]*>/g, ''))
+    expect(triggers(home())).toEqual(['Any stack', 'Any version', 'Any source', 'Default'])
+    nav.params = new URLSearchParams('type=templates&major=4&stack=tanstack-start&category=ecommerce&source=official&sort=name')
+    expect(triggers(home())).toEqual(['ecommerce', 'TanStack Start', 'v4', 'Official', 'Name'])
+  })
   it('filters by URL params and shows the empty state with a clear link', () => {
     nav.params = new URLSearchParams('type=templates&q=zzzz')
     const html = home()

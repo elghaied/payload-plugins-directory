@@ -24,7 +24,7 @@ export function TemplatePanel({ name, stack, className }: { name: string; stack:
       <BrandMark className="h-6 w-6 text-background" />
       <div className="relative min-w-0">
         <p className="truncate text-lg font-semibold sm:text-xl">{name}</p>
-        <p className="mt-1 text-xs font-medium tracking-wide text-[var(--brand-amber)] uppercase">
+        <p className="mt-1 text-xs font-medium tracking-wide text-background/75 uppercase">
           {stackLabel(stack)} · Official template
         </p>
       </div>

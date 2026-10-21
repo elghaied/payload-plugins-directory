@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { CategoryOption } from "@/lib/directory/filters";
 import { filterTemplates, resolveTemplateParams, sortTemplates, type TemplateSort } from "@/lib/templates/filters";
-import { stackLabel } from "@/lib/templates/stack";
+import { stackLabel, type StackValue } from "@/lib/templates/stack";
 import type { TemplateSummary } from "@/lib/templates/types";
 import { TemplateCard } from "./TemplateCard";
 
@@ -72,21 +72,35 @@ export function TemplateDirectory({
     [templates, params, categories],
   );
 
-  const sel = (key: string, value: string | undefined, placeholder: string, options: { value: string; label: string }[]) => (
-    <Select value={value ?? ANY} onValueChange={(v) => setParam(key, v === ANY ? undefined : v)}>
-      <SelectTrigger className="w-full sm:w-[180px]" aria-label={placeholder}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value={ANY}>{placeholder}</SelectItem>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
+  /**
+   * The trigger always shows its label as explicit SelectValue children: Radix otherwise fills it from the selected
+   * item only after the (portalled) content mounts, so the server HTML had blank triggers, and a URL value no option
+   * matches (a major or stack no template has yet) stayed blank for good. Such a value is kept as its own option.
+   */
+  const sel = (key: string, value: string | undefined, placeholder: string, options: { value: string; label: string }[], labelOf: (v: string) => string) => {
+    const all = value && !options.some((o) => o.value === value) ? [...options, { value, label: labelOf(value) }] : options;
+    const current = value ? (all.find((o) => o.value === value)?.label ?? value) : placeholder;
+    return (
+      <Select value={value ?? ANY} onValueChange={(v) => setParam(key, v === ANY ? undefined : v)}>
+        <SelectTrigger className="w-full sm:w-[180px]" aria-label={placeholder}>
+          <SelectValue placeholder={placeholder}>{current}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ANY}>{placeholder}</SelectItem>
+          {all.map((o) => (
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+  const majorLabel = (m: string) => (m === "unknown" ? "Unknown" : `v${m}`);
+  const categoryLabel = (path: string) => {
+    const c = categories.find((x) => x.path === path);
+    return c ? c.title : path;
+  };
 
   return (
     <div data-testid="template-directory" className="mx-auto w-full max-w-7xl px-4 pb-12 pt-4 sm:px-6">
@@ -103,17 +117,18 @@ export function TemplateDirectory({
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          {visibleCategories.length > 0 &&
-            sel("category", params.category, "All categories", visibleCategories.map((c) => ({ value: c.path, label: `${c.title} (${c.count})` })))}
-          {stacks.length > 0 && sel("stack", params.stack, "Any stack", stacks.map((s) => ({ value: s, label: stackLabel(s) })))}
-          {sel("major", params.major, "Any version", majors.map((m) => ({ value: m, label: m === "unknown" ? "Unknown" : `v${m}` })))}
+          {(visibleCategories.length > 0 || params.category) &&
+            sel("category", params.category, "All categories", visibleCategories.map((c) => ({ value: c.path, label: `${c.title} (${c.count})` })), categoryLabel)}
+          {(stacks.length > 0 || params.stack) &&
+            sel("stack", params.stack, "Any stack", stacks.map((s) => ({ value: s, label: stackLabel(s) })), (v) => stackLabel(v as StackValue))}
+          {sel("major", params.major, "Any version", majors.map((m) => ({ value: m, label: majorLabel(m) })), majorLabel)}
           {sel("source", params.source, "Any source", [
             { value: "official", label: "Official" },
             { value: "community", label: "Community" },
-          ])}
+          ], (v) => v)}
           <Select value={params.sort ?? "default"} onValueChange={(v) => setParam("sort", v === "default" ? undefined : v)}>
             <SelectTrigger className="w-full sm:w-[180px]" aria-label="Sort templates">
-              <SelectValue />
+              <SelectValue>{SORT_LABELS[params.sort ?? "default"]}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               {(Object.keys(SORT_LABELS) as TemplateSort[]).map((s) => (
