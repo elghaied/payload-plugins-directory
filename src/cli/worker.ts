@@ -1,6 +1,7 @@
 import { strictObject } from 'payload'
 import { defineCLICommand } from 'payload/cli'
 import { QUEUES } from '@/sync/queues'
+import { queueFirstTemplateDiscovery } from '@/sync/templates/bootstrap'
 import { runWorkerTick } from '@/sync/worker'
 
 /** Longest a SIGTERM waits for the running batch; keep below the compose `stop_grace_period`. */
@@ -10,6 +11,7 @@ let stopping = false
 let current: Promise<unknown> | null = null
 let handlersInstalled = false
 let readmeRenderQueued = false
+let templateBootstrapDone = false
 
 /**
  * Payload's `--cron` runner (croner) has no stop hook and installs no signal handlers, so a bare SIGTERM
@@ -52,6 +54,16 @@ export const workerCommand = defineCLICommand({
         readmeRenderQueued = true
       } catch (err) {
         payload.logger.warn({ err }, 'Could not queue render-readmes yet; will retry next tick')
+      }
+    }
+    // A directory with no templates yet (first deploy of templates) discovers them now instead of at the next
+    // 6-hourly schedule. Same retry-until-accepted rule as above.
+    if (!templateBootstrapDone && process.env.DIRECTORY_ROLE === 'worker') {
+      try {
+        if (await queueFirstTemplateDiscovery(payload)) payload.logger.info('No templates yet: queued discover-templates')
+        templateBootstrapDone = true
+      } catch (err) {
+        payload.logger.warn({ err }, 'Could not check for first template discovery yet; will retry next tick')
       }
     }
     const tick = runWorkerTick(payload, { shouldStop: () => stopping })

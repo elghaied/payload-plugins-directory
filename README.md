@@ -374,6 +374,7 @@ to the public MCP endpoint described on `/about#mcp`.
 
 Templates run on their own queue jobs: `discover-templates` finds candidate repositories and the official `templates/*`
 folders, `sync-template` refreshes one template from GitHub, and `enrich-template` writes its AI summary and category.
+When the directory has no templates yet, the worker queues `discover-templates` on boot instead of waiting for the schedule.
 The hourly `enrich-all` job queues stale templates after its plugin pass. Hidden or trashed templates are excluded
 from the sitemap, search, MCP and `/badge/templates/<slug>.svg`.
 
