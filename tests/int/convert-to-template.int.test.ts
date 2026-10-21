@@ -114,6 +114,21 @@ describe('convertPluginToTemplate', () => {
     expect((await res.json()).error).toMatch(/Restore or delete/)
   })
 
+  it('refuses official plugins (Ruling 13): status official, endpoint 400, nothing changes', async () => {
+    const repo = await createRepo(payload)
+    const byFlag = await createPlugin(payload, repo.id, { slug: 'official-flag', path: 'packages/a', isOfficial: true })
+    const bySource = await createPlugin(payload, repo.id, { slug: 'official-source', path: 'packages/b', source: 'official' })
+    const req = await createPayloadRequest({ payload, user: admin })
+    expect(await convertPluginToTemplate(payload, byFlag.id, req)).toEqual({ status: 'official' })
+    expect(await convertPluginToTemplate(payload, bySource.id, req)).toEqual({ status: 'official' })
+    const res = await callEndpoint(admin, byFlag.id)
+    expect(res.status).toBe(400)
+    expect((await res.json()).error).toMatch(/Official plugins cannot be converted/)
+    expect((await pluginRow('official-flag')).deletedAt).toBeFalsy()
+    expect((await pluginRow('official-source')).deletedAt).toBeFalsy()
+    expect((await payload.find({ collection: 'templates', overrideAccess: true, trash: true, where: { repository: { equals: repo.id } }, limit: 0 })).totalDocs).toBe(0)
+  })
+
   it('propagates database errors instead of reporting missing', async () => {
     const req = await createPayloadRequest({ payload, user: admin })
     const spy = vi.spyOn(payload, 'findByID').mockRejectedValueOnce(new Error('connection lost'))

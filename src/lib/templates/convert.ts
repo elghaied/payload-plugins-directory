@@ -7,6 +7,8 @@ export type ConvertResult =
   | { status: 'exists'; templateSlug: string }
   /** A template (trashed or not) already uses the plugin's slug, so the copy cannot be created. */
   | { status: 'slug-taken'; templateSlug: string }
+  /** Official plugins are never converted (Ruling 13): official templates come only from sync of templates/. */
+  | { status: 'official' }
   | { status: 'missing' }
 
 /**
@@ -20,6 +22,7 @@ export async function convertPluginToTemplate(payload: Payload, pluginId: number
   // disableErrors turns only a genuine not-found into null; any other (database) error propagates.
   const plugin = await payload.findByID({ collection: 'plugins', id: pluginId, overrideAccess: true, depth: 0, disableErrors: true, req })
   if (!plugin || plugin.deletedAt) return { status: 'missing' }
+  if (plugin.isOfficial || plugin.source === 'official') return { status: 'official' }
 
   const repositoryId = relationId(plugin.repository)
   if (repositoryId === undefined) return { status: 'missing' }

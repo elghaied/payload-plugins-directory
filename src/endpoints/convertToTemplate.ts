@@ -16,6 +16,12 @@ export const convertToTemplateEndpoint: Endpoint = {
       const result = await convertPluginToTemplate(req.payload, Number(id), req)
       if (started) await commitTransaction(req)
       if (result.status === 'missing') return Response.json({ error: 'Not found' }, { status: 404 })
+      if (result.status === 'official') {
+        return Response.json(
+          { error: 'Official plugins cannot be converted: official templates are listed automatically from payloadcms/payload templates/.', status: result.status },
+          { status: 400 },
+        )
+      }
       if (result.status === 'slug-taken') {
         return Response.json(
           { error: 'A template with this slug exists (it may be in Trash). Restore or delete it first.', status: result.status, templateSlug: result.templateSlug },
