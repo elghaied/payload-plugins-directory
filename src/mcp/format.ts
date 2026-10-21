@@ -1,4 +1,5 @@
 import type { Category, Plugin, Repository } from '@/payload-types'
+import { clampChars } from '@/sync/limits'
 import { authorDescriptionOf, pluginTagline } from '@/lib/directory/tagline'
 import { UNTRUSTED_NOTICE } from './instructions'
 
@@ -119,7 +120,7 @@ export function toMcpPluginDetail(doc: Plugin, siteURL: string): McpPluginDetail
     license: repo?.license ?? null,
     forks: repo?.forks ?? null,
     openIssues: repo?.openIssues ?? null,
-    readme: readme ? readme.slice(0, README_MCP_LIMIT) : null,
+    readme: readme ? clampChars(readme, README_MCP_LIMIT) : null,
     readmeTruncated: Boolean(readme && readme.length > README_MCP_LIMIT),
     untrustedFields: ['tagline', 'authorDescription', 'readme', 'ai'],
     notice: UNTRUSTED_NOTICE,

@@ -43,24 +43,36 @@ export async function findListedPlugins(payload: Payload, slugs: string[]): Prom
   return res.docs as unknown as Plugin[]
 }
 
+/**
+ * The category tree with the number of listed plugins directly in each category. The (small) category table is read per
+ * call; the plugin counts come from the cached listed-plugin summaries (LIST_TAG), so this never scans plugins itself.
+ * A category that lacks `_h_slugPath` is logged and skipped rather than failing the whole tool.
+ */
 export async function listCategoriesWithCounts(payload: Payload): Promise<McpCategory[]> {
-  const cats = await payload.find({
-    collection: 'categories',
-    ...anon,
-    depth: 0,
-    pagination: false,
-    limit: 0,
-    select: { title: true, slug: true, intro: true, parent: true, _h_slugPath: true },
-    context: pathsContext(),
-  })
-  const plugins = await payload.find({ collection: 'plugins', ...anon, depth: 0, pagination: false, limit: 0, select: { category: true } })
-  const counts = new Map<number, number>()
-  for (const p of plugins.docs) {
-    const id = relationId(p.category)
-    if (id !== undefined) counts.set(id, (counts.get(id) ?? 0) + 1)
-  }
+  // Lazy: queries.ts imports @payload-config, which imports this module through the MCP plugin (a static import is a cycle).
+  const { getPluginSummaries } = await import('@/lib/directory/queries')
+  const [cats, summaries] = await Promise.all([
+    payload.find({
+      collection: 'categories',
+      ...anon,
+      depth: 0,
+      pagination: false,
+      limit: 0,
+      select: { title: true, slug: true, intro: true, parent: true, _h_slugPath: true },
+      context: pathsContext(),
+    }),
+    getPluginSummaries(),
+  ])
+  const counts = new Map<string, number>()
+  for (const s of summaries) if (s.categoryPath) counts.set(s.categoryPath, (counts.get(s.categoryPath) ?? 0) + 1)
   const slugById = new Map(cats.docs.map((c) => [c.id, c.slug]))
-  return cats.docs
-    .map((c) => toMcpCategory(c, slugById.get(relationId(c.parent) ?? -1) ?? null, counts.get(c.id) ?? 0))
-    .sort((a, b) => a.path.localeCompare(b.path))
+  const out: McpCategory[] = []
+  for (const c of cats.docs) {
+    try {
+      out.push(toMcpCategory(c, slugById.get(relationId(c.parent) ?? -1) ?? null, counts.get(c._h_slugPath ?? '') ?? 0))
+    } catch (err) {
+      payload.logger.error({ err, msg: `mcp: skipping category "${c.slug}" in listCategories` })
+    }
+  }
+  return out.sort((a, b) => a.path.localeCompare(b.path))
 }

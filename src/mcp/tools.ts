@@ -1,6 +1,7 @@
 import { defineTool } from '@payloadcms/plugin-mcp'
 import type { PayloadRequest } from 'payload'
 import type { Plugin } from '@/payload-types'
+import { SearchBusyError, withSearchBudget } from '@/lib/search/budget'
 import { searchDirectory } from '@/lib/search/searchDirectory'
 import { getServerURL } from '@/lib/serverUrl'
 import { findListedPlugins, listCategoriesWithCounts } from './data'
@@ -27,14 +28,19 @@ const firstCall = (req: PayloadRequest): boolean => {
 
 const GENERIC_ERROR = 'The directory could not complete this request. Try again later.'
 
-/** Shared tool wrapper: one call per request, and no internals in errors. */
+/**
+ * Shared tool wrapper: one call per request, DB work under the shared search budget (same concurrency limit and queue as
+ * `/search`), and no internals in errors. `searchPlugins` passes `budgeted: false` because `searchDirectory` takes the
+ * budget itself (nesting would hold two slots per call).
+ */
 const guarded =
-  <A extends { req: PayloadRequest }>(name: string, fn: (args: A) => Promise<ReturnType<typeof json>>) =>
+  <A extends { req: PayloadRequest }>(name: string, fn: (args: A) => Promise<ReturnType<typeof json>>, { budgeted = true } = {}) =>
   async (args: A) => {
     if (!firstCall(args.req)) return fail('Only one tool call is allowed per request.')
     try {
-      return await fn(args)
+      return await (budgeted ? withSearchBudget(() => fn(args)) : fn(args))
     } catch (err) {
+      if (err instanceof SearchBusyError) return fail('The directory is busy. Try again shortly.')
       args.req.payload.logger.error({ err, msg: `mcp: ${name} failed` })
       return fail(GENERIC_ERROR)
     }
@@ -73,7 +79,7 @@ export const searchPluginsTool = defineTool({
       results: result.plugins.slice(0, limit).map((d) => toMcpPluginSummary(d, siteURL())),
       notice: UNTRUSTED_NOTICE,
     })
-  }),
+  }, { budgeted: false }),
 )
 
 export const getPluginTool = defineTool({

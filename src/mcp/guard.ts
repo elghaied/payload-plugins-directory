@@ -35,8 +35,8 @@ const noStore = (res: Response): Response => {
 /**
  * Wraps plugin-mcp's POST handler. Exactly one JSON-RPC call per request: batch arrays are refused
  * (the SDK would otherwise run up to 100 calls concurrently per HTTP request), the body is capped,
- * and every response is `Cache-Control: no-store`. Errors raised by the endpoint (e.g. the dev-only
- * overrideAccess guard) propagate to Payload's own error mapping.
+ * and every response is `Cache-Control: no-store`, including errors raised by the endpoint (e.g. the
+ * dev-only overrideAccess guard), which are answered here with their status and, when public, their message.
  */
 export const guardMcpPost = (inner: NonNullable<PayloadHandler>): PayloadHandler => async (req) => {
   const declared = Number(req.headers.get('content-length'))
@@ -50,7 +50,16 @@ export const guardMcpPost = (inner: NonNullable<PayloadHandler>): PayloadHandler
     parsed = undefined // the SDK answers malformed JSON with its own parse error
   }
   if (Array.isArray(parsed)) return noStore(rpcError(400, -32600, 'Batch requests are not supported: send one JSON-RPC call per request.'))
-  return noStore(await inner(req))
+  try {
+    return noStore(await inner(req))
+  } catch (err) {
+    // Payload would map this itself, but only after we returned: answer here so the error is `no-store` too.
+    const e = err as { status?: number; message?: string; isPublic?: boolean }
+    const status = typeof e.status === 'number' && e.status >= 400 && e.status < 600 ? e.status : 500
+    const message = e.isPublic && typeof e.message === 'string' ? e.message : 'Something went wrong.'
+    if (status >= 500) req.payload?.logger?.error({ err, msg: 'mcp: endpoint failed' })
+    return noStore(Response.json({ errors: [{ message }] }, { status }))
+  }
 }
 
 /** Runs after plugin-mcp (order 10) and wraps its `/mcp` endpoints. */

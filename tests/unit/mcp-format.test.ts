@@ -59,6 +59,13 @@ describe('MCP output allowlist', () => {
     expect(d.readme).toHaveLength(README_MCP_LIMIT)
     expect(d.readmeTruncated).toBe(true)
   })
+  it('never splits a surrogate pair when truncating the README', () => {
+    const readme = 'x'.repeat(README_MCP_LIMIT - 1) + '😀' + 'tail'
+    const d = toMcpPluginDetail({ ...doc, readme } as Plugin, SITE)
+    expect(d.readme).toBe('x'.repeat(README_MCP_LIMIT - 1))
+    expect(d.readme).not.toMatch(/[\ud800-\udbff]$/)
+    expect(d.readmeTruncated).toBe(true)
+  })
   it('detail has exactly the allowlisted keys', () => {
     expect(Object.keys(toMcpPluginDetail(doc, SITE)).sort()).toEqual(
       [
