@@ -61,7 +61,7 @@ describe('templates access', () => {
     await expect(payload.delete({ collection: 'templates', id: listedId, ...asUser(owner) })).rejects.toThrow(Forbidden)
   })
   it('a non-maintainer may not update', async () => {
-    await expect(payload.update({ collection: 'templates', id: listedId, data: { customTagline: 'x' }, ...asUser(stranger) })).rejects.toThrow()
+    await expect(payload.update({ collection: 'templates', id: listedId, data: { customTagline: 'x' }, ...asUser(stranger) })).rejects.toThrow(Forbidden)
   })
   it('rejects an invalid video URL', async () => {
     await expect(payload.update({ collection: 'templates', id: listedId, data: { videoUrl: 'https://vimeo.com/abc' }, ...asUser(admin) })).rejects.toThrow(ValidationError)
@@ -73,11 +73,21 @@ describe('templates access', () => {
   })
   it('an empty demoUrl is stored as null', async () => {
     await payload.update({ collection: 'templates', id: listedId, data: { demoUrl: 'https://demo.example.com' }, overrideAccess: true })
-    const doc = await payload.update({ collection: 'templates', id: listedId, data: { demoUrl: '' }, overrideAccess: true })
-    expect(doc.demoUrl ?? null).toBeNull()
+    await payload.update({ collection: 'templates', id: listedId, data: { demoUrl: '' }, overrideAccess: true })
+    const stored = await payload.findByID({ collection: 'templates', id: listedId, overrideAccess: true, depth: 0 })
+    expect(stored.demoUrl ?? null).toBeNull()
   })
   it('an admin editing ai.summary locks it', async () => {
     const doc = await payload.update({ collection: 'templates', id: listedId, data: { ai: { summary: 'Hand written' } }, ...asUser(admin) })
     expect(doc.locks?.summary).toBe(true)
+  })
+  it('a maintainer save that changes no owner field queues no revalidate job; a real change queues one', async () => {
+    const count = async () => (await payload.count({ collection: 'payload-jobs', overrideAccess: true, where: { taskSlug: { equals: 'revalidate' } } })).totalDocs
+    await payload.update({ collection: 'templates', id: listedId, data: { customTagline: 'Steady' }, ...asUser(owner) })
+    const before = await count()
+    await payload.update({ collection: 'templates', id: listedId, data: { customTagline: 'Steady' }, ...asUser(owner) })
+    expect(await count()).toBe(before)
+    await payload.update({ collection: 'templates', id: listedId, data: { customTagline: 'Changed' }, ...asUser(owner) })
+    expect(await count()).toBe(before + 1)
   })
 })

@@ -22,6 +22,8 @@ export function parseDemoUrl(raw: unknown): string | null {
   if (!url) return null
   const host = url.hostname.toLowerCase()
   if (!host.includes('.') || host.startsWith('[') || host.includes(':')) return null
+  // A trailing dot (FQDN form) or an empty label would slip past the suffix checks below.
+  if (host.endsWith('.') || host.split('.').some((label) => label === '')) return null
   if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) return null
   // IPv4 literal (any all-numeric last label also covers shorthand forms the URL parser would normalise).
   if (/^\d+$/.test(host.split('.').pop() ?? '')) return null

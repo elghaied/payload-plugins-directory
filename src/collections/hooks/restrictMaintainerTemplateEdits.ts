@@ -1,5 +1,6 @@
 import type { CollectionBeforeOperationHook } from 'payload'
 import { Forbidden } from 'payload'
+import { relationId } from '@/lib/relationId'
 import { isMaintainerWrite } from '@/collections/hooks/restrictMaintainerPluginEdits'
 
 export const MAINTAINER_EDITABLE_TEMPLATE_FIELDS = ['customTagline', 'demoUrl', 'videoUrl', 'stackOverride', 'screenshots'] as const
@@ -26,4 +27,19 @@ export const restrictMaintainerTemplateEdits: CollectionBeforeOperationHook = ({
   if (keys.some((key) => !ALLOWED.has(key))) throw new Forbidden(req.t)
   if (keys.includes('screenshots') && (req.context as Record<string, unknown> | undefined)?.[MAINTAINER_TEMPLATE_CONTEXT_KEY] !== true) throw new Forbidden(req.t)
   return args
+}
+
+type OwnerFields = { customTagline?: unknown; demoUrl?: unknown; videoUrl?: unknown; stackOverride?: unknown; screenshots?: unknown }
+
+const screenshotIds = (value: unknown): Array<number | undefined> => (Array.isArray(value) ? value.map(relationId) : [])
+
+/**
+ * True when a maintainer's save left every owner-editable field as it was. Decided per document from the saved
+ * result, so it is safe in bulk updates and for a caller-reused context (nothing is written to `req.context`).
+ */
+export function isUnchangedMaintainerTemplateEdit(req: { user?: unknown }, previousDoc: OwnerFields | undefined, doc: OwnerFields): boolean {
+  if (!previousDoc || !isMaintainerWrite(req)) return false
+  const scalars = ['customTagline', 'demoUrl', 'videoUrl', 'stackOverride'] as const
+  if (scalars.some((key) => (previousDoc[key] ?? null) !== (doc[key] ?? null))) return false
+  return JSON.stringify(screenshotIds(previousDoc.screenshots)) === JSON.stringify(screenshotIds(doc.screenshots))
 }

@@ -8,7 +8,7 @@ describe('parseDemoUrl', () => {
   it('rejects hostile or unsuitable URLs', () => {
     for (const bad of ['javascript:alert(1)', 'data:text/html,x', 'http://demo.example.com', 'https://u:p@demo.example.com',
       'https://localhost:3000', 'https://127.0.0.1', 'https://[::1]/', 'https://intranet', '//demo.example.com', ' ', 'https://' + 'a'.repeat(500) + '.com',
-      'https://foo.local', 'https://foo.internal', null, 42])
+      'https://foo.local', 'https://foo.internal', 'https://localhost.', 'https://intranet.', 'https://foo.local.', 'https://foo.internal.', 'https://a..b', null, 42])
       expect(parseDemoUrl(bad)).toBeNull()
   })
 })

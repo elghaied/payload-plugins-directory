@@ -1,5 +1,6 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
 import { isMaintainersOnlyChange } from '@/collections/hooks/revalidatePlugin'
+import { isUnchangedMaintainerTemplateEdit } from '@/collections/hooks/restrictMaintainerTemplateEdits'
 import { TEMPLATES_TAG, templateCategoryTag, templateRevalidationTagsFor } from '@/lib/cacheTags'
 import { QUEUES } from '@/sync/queues'
 
@@ -29,6 +30,8 @@ export const revalidateTemplateCategoryDelete: CollectionAfterDeleteHook = async
 
 export const revalidateTemplateChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req, context }) => {
   if (skip(context)) return doc
+  // A maintainer save that changed none of the owner fields is a no-op. Decided per document (never via the shared context).
+  if (isUnchangedMaintainerTemplateEdit(req, previousDoc, doc)) return doc
   // `maintainers` is not rendered on any public page or cached query: approving a claim needs no purge.
   if (isMaintainersOnlyChange(previousDoc, doc)) return doc
   const slugs = [doc.slug]

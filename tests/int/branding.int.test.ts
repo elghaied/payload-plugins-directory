@@ -222,4 +222,21 @@ describe('sweepOrphanMedia', () => {
       await payload.delete({ collection: 'media', id: created[i], overrideAccess: true })
     }
   }, 120_000)
+  it('deleting a media row removes the original and every variant file from MEDIA_DIR', async () => {
+    const big = await sharp({ create: { width: 2000, height: 1200, channels: 3, background: '#aa3366' } }).png().toBuffer()
+    const media = await payload.create({
+      collection: 'media', overrideAccess: true, data: { alt: 'variants' },
+      file: { data: big, mimetype: 'image/png', name: 'variants.png', size: big.length },
+    })
+    const dir = process.env.MEDIA_DIR || 'media'
+    const variants = (media as unknown as { variants?: Record<string, { filename?: string | null }> }).variants ?? {}
+    const names = [media.filename, variants.gallery?.filename, variants.card?.filename].filter((n): n is string => Boolean(n))
+    expect(names.length).toBe(3)
+    const fs = await import('node:fs/promises')
+    const path = await import('node:path')
+    const exists = async (n: string) => fs.stat(path.join(dir, n)).then(() => true, () => false)
+    for (const n of names) expect(await exists(n)).toBe(true)
+    await payload.delete({ collection: 'media', id: media.id, overrideAccess: true })
+    for (const n of names) expect(await exists(n)).toBe(false)
+  })
 })
