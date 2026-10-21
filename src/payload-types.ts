@@ -137,6 +137,7 @@ export interface Config {
       enrich: TaskEnrich;
       'enrich-all': TaskEnrichAll;
       'enrich-batch': TaskEnrichBatch;
+      'search-resync': TaskSearchResync;
       inline: {
         input: unknown;
         output: unknown;
@@ -646,7 +647,8 @@ export interface PayloadJob {
           | 'revalidate'
           | 'enrich'
           | 'enrich-all'
-          | 'enrich-batch';
+          | 'enrich-batch'
+          | 'search-resync';
         taskID: string;
         input:
           | {
@@ -688,6 +690,7 @@ export interface PayloadJob {
                 | 'enrich'
                 | 'enrich-all'
                 | 'enrich-batch'
+                | 'search-resync'
               )
             | null;
           taskID?: string | null;
@@ -706,6 +709,7 @@ export interface PayloadJob {
         | 'enrich'
         | 'enrich-all'
         | 'enrich-batch'
+        | 'search-resync'
       )
     | null;
   queue?: string | null;
@@ -1605,6 +1609,23 @@ export interface TaskEnrichBatch {
     inputTokens?: number | null;
     outputTokens?: number | null;
     cacheReadTokens?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSearch-resync".
+ */
+export interface TaskSearchResync {
+  input: {
+    collection: 'categories' | 'tags';
+    id: number;
+    pluginIds?: number[] | null;
+    afterId?: number | null;
+  };
+  output: {
+    synced?: number | null;
+    failed?: number | null;
+    continued?: boolean | null;
   };
 }
 /**

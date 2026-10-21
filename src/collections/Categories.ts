@@ -1,6 +1,12 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
 import { adminOnlyAuthorship } from '@/fields/authorship'
+import {
+  forgetSyncedDoc,
+  rememberPluginsBeforeTaxonomyDelete,
+  resyncPluginsAfterTaxonomyDelete,
+  resyncPluginsOnTaxonomyChange,
+} from '@/lib/search/hooks'
 import { CATEGORIES_LLM_INSTRUCTIONS } from '@/mcp/instructions'
 import { markTaxonomyEdited, revalidateCategoryChange, revalidateCategoryDelete } from '@/taxonomy/hooks'
 import { validateTaxonomySlug } from '@/taxonomy/slugs'
@@ -13,7 +19,12 @@ export const Categories: CollectionConfig = {
   // stay stable when an admin retitles a category.
   hierarchy: { parentFieldName: 'parent', slugField: 'slug' },
   llmInstructions: CATEGORIES_LLM_INSTRUCTIONS,
-  hooks: { afterChange: [revalidateCategoryChange], afterDelete: [markTaxonomyEdited, revalidateCategoryDelete] },
+  hooks: {
+    // plugin-search's own afterChange runs after these, so forgetting the synced-doc key here makes every edit sync.
+    afterChange: [revalidateCategoryChange, forgetSyncedDoc('categories'), resyncPluginsOnTaxonomyChange('categories')],
+    beforeDelete: [rememberPluginsBeforeTaxonomyDelete('categories')],
+    afterDelete: [markTaxonomyEdited, revalidateCategoryDelete, resyncPluginsAfterTaxonomyDelete('categories')],
+  },
   fields: [
     { name: 'title', type: 'text', required: true },
     { name: 'slug', type: 'text', required: true, unique: true, index: true, validate: (value: unknown) => validateTaxonomySlug(value) },

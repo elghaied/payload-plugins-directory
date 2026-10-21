@@ -12,6 +12,7 @@ import * as migration_20261019_101513_maintainers from './20261019_101513_mainta
 import * as migration_20261019_110150_submissions_claim_check from './20261019_110150_submissions_claim_check';
 import * as migration_20261021_000259_media_origin from './20261021_000259_media_origin';
 import * as migration_20261021_011329_search_index from './20261021_011329_search_index';
+import * as migration_20261021_013801_search_resync_task from './20261021_013801_search_resync_task';
 
 export const migrations = [
   {
@@ -82,6 +83,11 @@ export const migrations = [
   {
     up: migration_20261021_011329_search_index.up,
     down: migration_20261021_011329_search_index.down,
-    name: '20261021_011329_search_index'
+    name: '20261021_011329_search_index',
+  },
+  {
+    up: migration_20261021_013801_search_resync_task.up,
+    down: migration_20261021_013801_search_resync_task.down,
+    name: '20261021_013801_search_resync_task'
   },
 ];
