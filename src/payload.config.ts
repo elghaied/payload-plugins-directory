@@ -19,6 +19,7 @@ import { healthEndpoint } from './endpoints/health'
 import { DirectorySettings } from './globals/DirectorySettings'
 import { runtimeEnvNotices, runtimeEnvWarnings } from './lib/runtimeEnv'
 import { getServerURL } from './lib/serverUrl'
+import { directorySearchPlugin } from './lib/search/plugin'
 import { jobsConfig } from './sync/tasks'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -55,6 +56,7 @@ export default buildConfig({
   // which includes maintainers once Phase 4 adds their login.
   queryPresets: { access: { read: isAdmin, create: isAdmin, update: isAdmin, delete: isAdmin }, constraints: {} },
   endpoints: [healthEndpoint],
+  plugins: [directorySearchPlugin()],
   jobs: jobsConfig,
   cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand', 'seed-taxonomy': './cli/taxonomy.js#seedTaxonomyCommand', enrich: './cli/enrich.js#enrichCommand' } },
   secret: process.env.PAYLOAD_SECRET || '',

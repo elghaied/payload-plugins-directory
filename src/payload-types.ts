@@ -76,6 +76,7 @@ export interface Config {
     tags: Tag;
     submissions: Submission;
     media: Media;
+    search: Search;
     'payload-kv': PayloadKv;
     'payload-jobs': PayloadJob;
     'payload-locked-documents': PayloadLockedDocument;
@@ -94,6 +95,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    search: SearchSelect<false> | SearchSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-jobs': PayloadJobsSelect<false> | PayloadJobsSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -521,6 +523,43 @@ export interface Submission {
   createdAt: string;
 }
 /**
+ * This is a collection of automatically created search results. These results are used by the global site search and will be updated automatically as documents in the CMS are created or updated.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search".
+ */
+export interface Search {
+  id: number;
+  title?: string | null;
+  priority?: number | null;
+  doc:
+    | {
+        relationTo: 'plugins';
+        value: number | Plugin;
+      }
+    | {
+        relationTo: 'categories';
+        value: number | Category;
+      }
+    | {
+        relationTo: 'tags';
+        value: number | Tag;
+      };
+  kind: 'plugin' | 'category' | 'tag';
+  slug: string;
+  tagline?: string | null;
+  summary?: string | null;
+  categoryText?: string | null;
+  tagsText?: string | null;
+  /**
+   * First 50,000 characters; used only for full-text matching.
+   */
+  readme?: string | null;
+  path?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -718,6 +757,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'search';
+        value: number | Search;
       } | null);
   globalSlug?: string | null;
   user:
@@ -1074,6 +1117,25 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "search_select".
+ */
+export interface SearchSelect<T extends boolean = true> {
+  title?: T;
+  priority?: T;
+  doc?: T;
+  kind?: T;
+  slug?: T;
+  tagline?: T;
+  summary?: T;
+  categoryText?: T;
+  tagsText?: T;
+  readme?: T;
+  path?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -1353,6 +1415,7 @@ export interface CollectionQueryWidget {
       | 'tags'
       | 'submissions'
       | 'media'
+      | 'search'
       | 'payload-jobs';
     where?:
       | {
@@ -1385,6 +1448,7 @@ export interface ActivityWidget {
           | 'tags'
           | 'submissions'
           | 'media'
+          | 'search'
           | 'payload-jobs'
         )[]
       | null;

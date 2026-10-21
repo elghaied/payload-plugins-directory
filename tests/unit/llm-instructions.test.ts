@@ -1,0 +1,23 @@
+import { describe, expect, it } from 'vitest'
+import {
+  CATEGORIES_LLM_INSTRUCTIONS,
+  PLUGINS_LLM_INSTRUCTIONS,
+  SERVER_INSTRUCTIONS,
+  UNTRUSTED_NOTICE,
+} from '@/mcp/instructions'
+
+describe('LLM instructions', () => {
+  it('explain health score, version ranges and AI fields for plugins', () => {
+    for (const term of ['healthScore', 'payloadMajors', 'payloadVersionRange', 'ai', 'untrusted']) {
+      expect(PLUGINS_LLM_INSTRUCTIONS).toContain(term)
+    }
+  })
+  it('explain the category tree', () => {
+    expect(CATEGORIES_LLM_INSTRUCTIONS).toContain('other')
+    expect(CATEGORIES_LLM_INSTRUCTIONS).toContain('Uncategorized')
+  })
+  it('server instructions carry the untrusted-content warning and list the tools', () => {
+    expect(SERVER_INSTRUCTIONS).toContain(UNTRUSTED_NOTICE)
+    for (const tool of ['searchPlugins', 'getPlugin', 'listCategories', 'comparePlugins']) expect(SERVER_INSTRUCTIONS).toContain(tool)
+  })
+})

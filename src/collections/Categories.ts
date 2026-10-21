@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 import { anyone, isAdmin } from '@/access'
 import { adminOnlyAuthorship } from '@/fields/authorship'
+import { CATEGORIES_LLM_INSTRUCTIONS } from '@/mcp/instructions'
 import { markTaxonomyEdited, revalidateCategoryChange, revalidateCategoryDelete } from '@/taxonomy/hooks'
 import { validateTaxonomySlug } from '@/taxonomy/slugs'
 
@@ -11,6 +12,7 @@ export const Categories: CollectionConfig = {
   // slugField: `_h_slugPath` is built from our slugs (default: slugified titles), so /categories/<path> URLs
   // stay stable when an admin retitles a category.
   hierarchy: { parentFieldName: 'parent', slugField: 'slug' },
+  llmInstructions: CATEGORIES_LLM_INSTRUCTIONS,
   hooks: { afterChange: [revalidateCategoryChange], afterDelete: [markTaxonomyEdited, revalidateCategoryDelete] },
   fields: [
     { name: 'title', type: 'text', required: true },

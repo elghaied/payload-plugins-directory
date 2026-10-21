@@ -658,7 +658,9 @@ describe('plugins (maintainer edits)', () => {
       expect(await jobTags()).toHaveLength(before)
       await payload.update({ collection: 'plugins', id: bulkA, overrideAccess: false, user: maintainerA, data: { customTagline: 'Changed line' }, depth: 0, context: ctx })
       expect((await jobTags()).slice(before)).toEqual([['plugins', 'plugin:bulk-a']])
-      expect(ctx).toEqual({ maintainerBranding: true })
+      // plugin-search records synced documents in the caller's context; the maintainer flag must be the only other key.
+      expect(ctx).toMatchObject({ maintainerBranding: true })
+      expect(Object.keys(ctx).filter((k) => k !== 'syncedDocsSet')).toEqual(['maintainerBranding'])
     })
   })
 

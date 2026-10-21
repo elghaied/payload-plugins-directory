@@ -11,6 +11,7 @@ import * as migration_20261019_094206_maintainer_revocation from './20261019_094
 import * as migration_20261019_101513_maintainers from './20261019_101513_maintainers';
 import * as migration_20261019_110150_submissions_claim_check from './20261019_110150_submissions_claim_check';
 import * as migration_20261021_000259_media_origin from './20261021_000259_media_origin';
+import * as migration_20261021_011329_search_index from './20261021_011329_search_index';
 
 export const migrations = [
   {
@@ -76,6 +77,11 @@ export const migrations = [
   {
     up: migration_20261021_000259_media_origin.up,
     down: migration_20261021_000259_media_origin.down,
-    name: '20261021_000259_media_origin'
+    name: '20261021_000259_media_origin',
+  },
+  {
+    up: migration_20261021_011329_search_index.up,
+    down: migration_20261021_011329_search_index.down,
+    name: '20261021_011329_search_index'
   },
 ];

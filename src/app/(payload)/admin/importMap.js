@@ -2,6 +2,8 @@ import { LLMInstructionsMenuItem as LLMInstructionsMenuItem_3817bf644402e67bfe65
 import { HierarchyField as HierarchyField_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { NullField as NullField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { HierarchyButton as HierarchyButton_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
+import { LinkToDoc as LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
+import { ReindexButton as ReindexButton_aead06e4cbf6b2620c5c51c9ab283634 } from '@payloadcms/plugin-search/client'
 import { QueryPresetsHeading as QueryPresetsHeading_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsGroupByCell as QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { QueryPresetsGroupByField as QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
@@ -31,6 +33,8 @@ export const importMap = {
   "@payloadcms/ui/rsc#HierarchyField": HierarchyField_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui#NullField": NullField_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui/rsc#HierarchyButton": HierarchyButton_ab83ff7e88da8d3530831f296ec4756a,
+  "@payloadcms/plugin-search/client#LinkToDoc": LinkToDoc_aead06e4cbf6b2620c5c51c9ab283634,
+  "@payloadcms/plugin-search/client#ReindexButton": ReindexButton_aead06e4cbf6b2620c5c51c9ab283634,
   "@payloadcms/ui#QueryPresetsHeading": QueryPresetsHeading_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsGroupByCell": QueryPresetsGroupByCell_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui#QueryPresetsGroupByField": QueryPresetsGroupByField_3817bf644402e67bfe6577f60ef982de,

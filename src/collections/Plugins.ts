@@ -5,7 +5,9 @@ import { linkApprovedSubmissions } from '@/collections/hooks/linkApprovedSubmiss
 import { restrictMaintainerPluginEdits } from '@/collections/hooks/restrictMaintainerPluginEdits'
 import { revalidatePluginChange, revalidatePluginDelete } from '@/collections/hooks/revalidatePlugin'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
+import { forgetSyncedDoc, removeUnlistedPluginFromSearch } from '@/lib/search/hooks'
 import { normalizeTagline } from '@/lib/maintainers/tagline'
+import { PLUGINS_LLM_INSTRUCTIONS } from '@/mcp/instructions'
 import { DESCRIPTION_MAX_CHARS, README_MAX_CHARS } from '@/sync/limits'
 
 export const listedPluginsWhere: Where = {
@@ -24,6 +26,7 @@ export const Plugins: CollectionConfig = {
   versions: false,
   authorship: false, // system-synced; no per-user attribution to track (or leak)
   trash: true,
+  llmInstructions: PLUGINS_LLM_INSTRUCTIONS,
   enableQueryPresets: true,
   access: {
     read: ({ req }) => (isAdminUser(req.user) ? true : listedPluginsWhere),
@@ -50,7 +53,7 @@ export const Plugins: CollectionConfig = {
       },
       lockAdminEditedAiFields,
     ],
-    afterChange: [revalidatePluginChange, linkApprovedSubmissions],
+    afterChange: [revalidatePluginChange, linkApprovedSubmissions, removeUnlistedPluginFromSearch, forgetSyncedDoc('plugins')],
     afterDelete: [revalidatePluginDelete],
   },
   fields: [
