@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Github, Rss, Search } from "lucide-react"
 import { PayloadIcon } from "./PayloadIcon"
+import { BrandMark } from "./BrandMark"
 import { AccountMenu } from "./AccountMenu"
 import { ModeToggle } from "./mode-toggler"
 import { NAV_LINKS, isActiveLink } from "./navLinks"
@@ -14,14 +15,15 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/60 bg-background/80 backdrop-blur-lg supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto max-w-7xl flex h-14 items-center justify-between px-4 gap-2 sm:gap-4">
-        {/* Left: Logo + text nav links */}
+        {/* Left: logo mark + wordmark + text nav links */}
         <div className="flex items-center gap-2 sm:gap-6">
           <Link
             href="/"
+            aria-label="Payload Plugin Directory, home"
             className="flex items-center gap-2 font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity"
           >
-            <PayloadIcon className="h-5 w-5" />
-            <span className="hidden sm:inline">Plugins</span>
+            <BrandMark />
+            <span className="hidden md:inline whitespace-nowrap">Plugin Directory</span>
           </Link>
 
           <div className="flex items-center gap-0.5 sm:gap-1">
