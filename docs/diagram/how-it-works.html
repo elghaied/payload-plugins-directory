@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How Payload Directory works</title>
+<!--
+  Source of docs/diagram/how-it-works.gif and .png (see docs/diagram/README.md).
+  Open it in a browser to watch the steps cycle. ?step=0 shows everything; ?step=N&f=K is one frame of step N
+  (the capture script uses it).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc; --card: #ffffff; --line: #cbd5e1; --ink: #0f172a; --muted: #64748b;
+    --src: #475569; --worker: #4f46e5; --db: #0d9488; --web: #ea580c; --people: #0369a1;
+  }
+  html, body { margin: 0; background: var(--bg); }
+  body { font-family: Inter, "Liberation Sans", Arial, sans-serif; color: var(--ink); }
+  svg { display: block; width: 1200px; height: 800px; }
+  text { font-family: inherit; }
+  .t { font-size: 15px; font-weight: 600; fill: var(--ink); }
+  .s { font-size: 12px; fill: var(--muted); }
+  .col { font-size: 11px; font-weight: 700; letter-spacing: .12em; fill: var(--muted); }
+  .box { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
+  .group { fill: none; stroke-width: 1.5; stroke-dasharray: 5 5; }
+  .wire { fill: none; stroke: #94a3b8; stroke-width: 2; }
+  .wire.on { stroke-width: 3; stroke-dasharray: 9 7; }
+  .lbl { font-size: 11px; fill: var(--muted); }
+  [data-steps] { transition: opacity .35s; }
+  .dim { opacity: .22; }
+  .accent-src .box, .accent-src.box { stroke: var(--src); }
+  .lit .box, .box.lit { stroke-width: 3; }
+  #caption { font-size: 16px; font-weight: 600; fill: var(--ink); }
+  #stepno { font-size: 13px; font-weight: 700; fill: #fff; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title">
+  <title id="title">How Payload Directory works</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-on" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="context-stroke"/>
+    </marker>
+  </defs>
+
+  <!-- Header -->
+  <text x="30" y="46" style="font-size:26px;font-weight:700">How Payload Directory works</text>
+  <text x="30" y="72" class="s" style="font-size:14px">One Docker image runs as two processes: a web server and a background worker. Postgres sits between them.</text>
+
+  <text x="30" y="110" class="col">SOURCES</text>
+  <text x="290" y="110" class="col">WORKER</text>
+  <text x="680" y="110" class="col">DATABASE</text>
+  <text x="920" y="110" class="col">WEB</text>
+  <text x="30" y="592" class="col">PEOPLE AND AGENTS</text>
+
+  <!-- ===== Wires (drawn first, under the boxes) ===== -->
+  <g id="wires">
+    <path data-steps="1" data-color="--src" class="wire" d="M250,160 C275,160 280,186 305,186" marker-end="url(#arrow)"/>
+    <path data-steps="1" data-color="--src" class="wire" d="M250,200 C275,200 280,248 305,248" marker-end="url(#arrow)"/>
+    <path data-steps="3" data-color="--src" class="wire" d="M250,285 C275,285 280,310 305,310" marker-end="url(#arrow)"/>
+    <path data-steps="4" data-color="--src" class="wire" d="M305,372 C280,372 275,375 250,375" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <path data-steps="2 3 4" data-color="--worker" class="wire" d="M630,300 L680,300" marker-end="url(#arrow)"/>
+    <text data-steps="2 3 4" x="634" y="292" class="lbl">writes</text>
+    <path data-steps="7" data-color="--db" class="wire" d="M680,250 L630,250" marker-end="url(#arrow)"/>
+    <text data-steps="7" x="634" y="242" class="lbl">jobs</text>
+    <path data-steps="6" data-color="--db" class="wire" d="M870,280 L920,280" marker-end="url(#arrow)"/>
+    <text data-steps="6" x="874" y="272" class="lbl">reads</text>
+    <path data-steps="7" data-color="--web" class="wire" d="M920,340 L870,340" marker-end="url(#arrow)"/>
+    <text data-steps="7" x="873" y="332" class="lbl">saves</text>
+    <path data-steps="5" data-color="--worker" class="wire" d="M615,496 L648,496 L648,560 L900,560 L900,505 L920,505" marker-end="url(#arrow)"/>
+    <text data-steps="5" x="664" y="553" class="lbl">refresh the cache of changed pages</text>
+    <!-- people -> web -->
+    <path data-steps="6" data-color="--people" class="wire" d="M145,640 C145,600 940,620 950,545" marker-end="url(#arrow)"/>
+    <path data-steps="6" data-color="--people" class="wire" d="M425,640 C425,610 1000,625 1005,545" marker-end="url(#arrow)"/>
+    <path data-steps="7" data-color="--people" class="wire" d="M745,640 C745,615 1060,630 1062,545" marker-end="url(#arrow)"/>
+    <path data-steps="7" data-color="--people" class="wire" d="M1055,640 L1120,545" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- ===== Sources ===== -->
+  <g data-steps="1" data-color="--src">
+    <rect class="box" x="30" y="120" width="220" height="110" rx="12"/>
+    <text x="48" y="148" class="t">GitHub</text>
+    <text x="48" y="172" class="s">payload-plugin topic repos</text>
+    <text x="48" y="190" class="s">payloadcms/payload: official</text>
+    <text x="48" y="208" class="s">plugins and templates/</text>
+  </g>
+  <g data-steps="3" data-color="--src">
+    <rect class="box" x="30" y="250" width="220" height="70" rx="12"/>
+    <text x="48" y="278" class="t">npm registry</text>
+    <text x="48" y="300" class="s">downloads, versions, size</text>
+  </g>
+  <g data-steps="4" data-color="--src">
+    <rect class="box" x="30" y="340" width="220" height="70" rx="12"/>
+    <text x="48" y="368" class="t">Anthropic API</text>
+    <text x="48" y="390" class="s">Claude reads READMEs</text>
+  </g>
+
+  <!-- ===== Worker ===== -->
+  <rect class="group" x="290" y="120" width="340" height="420" rx="16" style="stroke:var(--worker)"/>
+  <text x="305" y="143" class="s" style="fill:var(--worker);font-weight:600">payload worker · ticks every minute</text>
+  <g data-steps="1 2" data-color="--worker">
+    <rect class="box" x="305" y="160" width="310" height="52" rx="10"/>
+    <text x="320" y="182" class="t">discover → sync-repository</text>
+    <text x="320" y="201" class="s">every 6 h · plugins</text>
+  </g>
+  <g data-steps="1 2 7" data-color="--worker">
+    <rect class="box" x="305" y="222" width="310" height="52" rx="10"/>
+    <text x="320" y="244" class="t">discover-templates → sync-template</text>
+    <text x="320" y="263" class="s">every 6 h · templates</text>
+  </g>
+  <g data-steps="3" data-color="--worker">
+    <rect class="box" x="305" y="284" width="310" height="52" rx="10"/>
+    <text x="320" y="306" class="t">npm-stats · snapshot</text>
+    <text x="320" y="325" class="s">daily · downloads, health score, trends</text>
+  </g>
+  <g data-steps="4" data-color="--worker">
+    <rect class="box" x="305" y="346" width="310" height="52" rx="10"/>
+    <text x="320" y="368" class="t">enrich-all → enrich</text>
+    <text x="320" y="387" class="s">hourly · summary, category, tags</text>
+  </g>
+  <g data-steps="2" data-color="--worker">
+    <rect class="box" x="305" y="408" width="310" height="52" rx="10"/>
+    <text x="320" y="430" class="t">render-readmes</text>
+    <text x="320" y="449" class="s">README → sanitized HTML</text>
+  </g>
+  <g data-steps="5" data-color="--worker">
+    <rect class="box" x="305" y="470" width="310" height="52" rx="10"/>
+    <text x="320" y="492" class="t">revalidate</text>
+    <text x="320" y="511" class="s">after every data change</text>
+  </g>
+
+  <!-- ===== Database ===== -->
+  <g data-steps="2 3 4 6 7" data-color="--db">
+    <rect class="box" x="680" y="190" width="190" height="260" rx="12"/>
+    <text x="698" y="218" class="t">Postgres</text>
+    <text x="698" y="237" class="s">Payload v4 collections</text>
+    <text x="698" y="266" class="s">• plugins · templates</text>
+    <text x="698" y="286" class="s">• repositories</text>
+    <text x="698" y="306" class="s">• categories · tags</text>
+    <text x="698" y="326" class="s">• maintainers</text>
+    <text x="698" y="346" class="s">• submissions</text>
+    <text x="698" y="366" class="s">• search index</text>
+    <text x="698" y="386" class="s">• job queue</text>
+    <text x="698" y="406" class="s">• daily snapshots</text>
+  </g>
+  <g data-steps="7" data-color="--db">
+    <rect class="box" x="680" y="470" width="190" height="60" rx="12"/>
+    <text x="698" y="495" class="t">media volume</text>
+    <text x="698" y="514" class="s">logos and screenshots</text>
+  </g>
+
+  <!-- ===== Web ===== -->
+  <rect class="group" x="920" y="120" width="250" height="420" rx="16" style="stroke:var(--web)"/>
+  <text x="935" y="143" class="s" style="fill:var(--web);font-weight:600">Next.js 16 + Payload admin</text>
+  <g data-steps="5 6" data-color="--web">
+    <rect class="box" x="935" y="160" width="220" height="62" rx="10"/>
+    <text x="950" y="183" class="t">Site</text>
+    <text x="950" y="203" class="s">plugins · templates · search</text>
+    <text x="950" y="217" class="s" style="font-size:11px">trending · stats · categories</text>
+  </g>
+  <g data-steps="6" data-color="--web">
+    <rect class="box" x="935" y="232" width="220" height="52" rx="10"/>
+    <text x="950" y="254" class="t">/api/mcp</text>
+    <text x="950" y="273" class="s">read-only MCP server</text>
+  </g>
+  <g data-steps="7" data-color="--web">
+    <rect class="box" x="935" y="294" width="220" height="62" rx="10"/>
+    <text x="950" y="317" class="t">Owner area</text>
+    <text x="950" y="337" class="s">GitHub sign-in · /submit</text>
+    <text x="950" y="351" class="s" style="font-size:11px">claim · /me edits, screenshots</text>
+  </g>
+  <g data-steps="7" data-color="--web">
+    <rect class="box" x="935" y="366" width="220" height="62" rx="10"/>
+    <text x="950" y="389" class="t">Admin dashboard</text>
+    <text x="950" y="409" class="s">approve submissions</text>
+    <text x="950" y="423" class="s" style="font-size:11px">Run now · job health · AI</text>
+  </g>
+  <g data-steps="5 6" data-color="--web">
+    <rect class="box" x="935" y="438" width="220" height="52" rx="10"/>
+    <text x="950" y="460" class="t">Badges · RSS · sitemap</text>
+    <text x="950" y="479" class="s">cached, tag-revalidated</text>
+  </g>
+
+  <!-- ===== People ===== -->
+  <g data-steps="6" data-color="--people">
+    <rect class="box" x="30" y="640" width="230" height="70" rx="12"/>
+    <text x="48" y="668" class="t">Visitors</text>
+    <text x="48" y="690" class="s">browse through Cloudflare</text>
+  </g>
+  <g data-steps="6" data-color="--people">
+    <rect class="box" x="310" y="640" width="230" height="70" rx="12"/>
+    <text x="328" y="668" class="t">AI agents</text>
+    <text x="328" y="690" class="s">Claude, Cursor, VS Code via MCP</text>
+  </g>
+  <g data-steps="7" data-color="--people">
+    <rect class="box" x="630" y="640" width="230" height="70" rx="12"/>
+    <text x="648" y="668" class="t">Authors</text>
+    <text x="648" y="690" class="s">submit, claim and edit listings</text>
+  </g>
+  <g data-steps="7" data-color="--people">
+    <rect class="box" x="940" y="640" width="230" height="70" rx="12"/>
+    <text x="958" y="668" class="t">Admin</text>
+    <text x="958" y="690" class="s">reviews and curates</text>
+  </g>
+
+  <!-- ===== Caption ===== -->
+  <g id="captionbar">
+    <circle id="stepdot" cx="44" cy="757" r="14" fill="var(--ink)"/>
+    <text id="stepno" x="44" y="762" text-anchor="middle">•</text>
+    <text id="caption" x="68" y="763"></text>
+  </g>
+</svg>
+
+<script>
+  const STEPS = [
+    'The worker runs in the background: GitHub and npm in, Postgres out. Visitors only ever read from the web server.',
+    'Every 6 hours the worker finds plugins and templates on GitHub and queues one sync job per repository.',
+    'Sync jobs read package.json and the README, save the listing and render the README to safe HTML.',
+    'Every day: npm downloads, a 0–100 health score and the snapshots behind Trending and Stats.',
+    'Every hour Claude writes summaries, categories and tags for new or changed listings. Admin edits lock a field.',
+    'After each change the worker tells the web server which cached pages to refresh. Nothing is fetched per request.',
+    'Visitors browse through Cloudflare; AI agents search the same data through the MCP endpoint.',
+    'Authors sign in with GitHub to submit, claim and edit. The admin approves on the dashboard, which queues a sync.',
+  ]
+  const params = new URLSearchParams(location.search)
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim()
+
+  function show(step, frame) {
+    document.querySelectorAll('[data-steps]').forEach((el) => {
+      const on = step === 0 || el.dataset.steps.split(' ').includes(String(step))
+      el.classList.toggle('dim', !on)
+      const color = css(el.dataset.color || '--line')
+      const lit = on && step !== 0
+      if (el.classList.contains('wire')) {
+        el.classList.toggle('on', lit)
+        el.style.stroke = lit ? color : ''
+        el.style.strokeDashoffset = lit ? String(-frame * 4) : ''
+        const m = lit ? 'url(#arrow-on)' : 'url(#arrow)'
+        if (el.hasAttribute('marker-end')) el.setAttribute('marker-end', m)
+        if (el.hasAttribute('marker-start')) el.setAttribute('marker-start', m)
+      } else {
+        el.querySelectorAll('.box').forEach((b) => { b.style.stroke = lit ? color : ''; b.style.strokeWidth = lit ? '3' : '' })
+      }
+    })
+    document.getElementById('caption').textContent = STEPS[step]
+    document.getElementById('stepno').textContent = step === 0 ? '•' : String(step)
+  }
+
+  if (params.has('step')) {
+    show(Number(params.get('step')), Number(params.get('f') || 0))
+  } else {
+    // Live view: cycle through the steps with moving dashes.
+    let step = 1, frame = 0
+    setInterval(() => { frame++; if (frame % 40 === 0) step = (step + 1) % STEPS.length; show(step, frame) }, 75)
+    show(step, frame)
+  }
+</script>
+</body>
+</html>

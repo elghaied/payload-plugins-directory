@@ -46,7 +46,8 @@ AGENTS.md
 .superpowers/
 .worktrees/
 
-/docs/
+/docs/*
+!/docs/diagram/
 # uploads
 /media/
 
