@@ -32,7 +32,7 @@ describe('seedDirectory', () => {
 
   it('is idempotent on re-run', async () => {
     const result = await seedDirectory(payload, input)
-    expect(result).toEqual({ repositoriesCreated: 0, repositoriesUpdated: 3, pluginsCreated: 0, pluginsUpdated: 4 })
+    expect(result).toEqual({ repositoriesCreated: 0, repositoriesUpdated: 3, pluginsCreated: 0, pluginsUpdated: 3 })
     const count = await payload.count({ collection: 'plugins', overrideAccess: true })
     expect(count.totalDocs).toBe(4)
   })
@@ -44,7 +44,7 @@ describe('seedDirectory', () => {
     await payload.update({ collection: 'plugins', id, overrideAccess: true, data: { deletedAt: new Date().toISOString() } })
 
     const result = await seedDirectory(payload, input)
-    expect(result).toEqual({ repositoriesCreated: 0, repositoriesUpdated: 3, pluginsCreated: 0, pluginsUpdated: 4 })
+    expect(result).toEqual({ repositoriesCreated: 0, repositoriesUpdated: 3, pluginsCreated: 0, pluginsUpdated: 3 })
 
     const matches = await payload.find({ collection: 'plugins', overrideAccess: true, trash: true, where: { slug: { equals: slug } } })
     expect(matches.docs.map((d) => d.id)).toEqual([id])
@@ -129,7 +129,10 @@ describe('seed revalidation', () => {
     await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, []))
     await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, ['684372049-translator']))
     expect(await revalidates()).toEqual([{ tags: ['plugins', 'plugin:684372049-translator'] }])
-    // The forced-hidden plugin is now hidden; the next identical re-seed still tightens (and re-queues) rather than going stale.
+    // Already hidden: an identical re-seed skips the plugin, so no further revalidate job is queued.
+    const second = await seedDirectory(payload, mapLegacy(fixture as LegacyPluginsData, ['684372049-translator']))
+    expect(await revalidates()).toEqual([{ tags: ['plugins', 'plugin:684372049-translator'] }])
+    expect(second.pluginsUpdated).toBe(3)
     const doc = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: '684372049-translator' } } })
     expect(doc.docs[0].visibility).toBe('hidden')
   })

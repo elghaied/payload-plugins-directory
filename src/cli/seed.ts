@@ -53,6 +53,8 @@ export async function seedDirectory(payload: Payload, input: ReturnType<typeof m
       // New plugins (create branch) take visibility from the blocklist as mapped.
       const { visibility, ...rest } = data
       const forcedHidden = visibility === 'hidden'
+      // Already hidden: nothing to tighten, and writing again would only queue another revalidate job.
+      if (forcedHidden && existing.docs[0].visibility === 'hidden') continue
       const updateData = forcedHidden ? data : rest
       // A forced 'hidden' is the one seed write that must reach the public pages: it does not skip the Plugins revalidation hook.
       // trash: true — updateByID otherwise 404s on a trashed plugin. `data` has no deletedAt, so it stays trashed.
