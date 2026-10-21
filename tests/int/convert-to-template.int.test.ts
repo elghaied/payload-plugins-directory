@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { createPayloadRequest, handleEndpoints, initTransaction, killTransaction, type Payload } from 'payload'
 import { getSessionSecret, SESSION_COOKIE, signSessionToken } from '@/lib/auth/session'
 import { listedPluginsWhere } from '@/collections/Plugins'
@@ -82,6 +82,45 @@ describe('convertPluginToTemplate', () => {
     expect((await pluginRow('dup')).deletedAt).toBeFalsy()
   })
 
+  it('finds the same-path template in a multi-template repository (no duplicate)', async () => {
+    const repo = await createRepo(payload)
+    const mk = (slug: string, path: string | null) =>
+      payload.create({ collection: 'templates', overrideAccess: true, context: { skipRevalidate: true }, data: { slug, name: slug, repository: repo.id, path, url: 'https://github.com/a/b', source: 'submission' } as never })
+    await mk('multi-a', 'templates/a')
+    await mk('multi-b', 'templates/b')
+    await mk('multi-root', null)
+    const req = await createPayloadRequest({ payload, user: admin })
+    const sub = await createPlugin(payload, repo.id, { slug: 'multi-plugin-b', path: 'templates/b' })
+    expect(await convertPluginToTemplate(payload, sub.id, req)).toEqual({ status: 'exists', templateSlug: 'multi-b' })
+    const root = await createPlugin(payload, repo.id, { slug: 'multi-plugin-root' })
+    expect(await convertPluginToTemplate(payload, root.id, req)).toEqual({ status: 'exists', templateSlug: 'multi-root' })
+    expect((await pluginRow('multi-plugin-b')).deletedAt).toBeFalsy()
+    expect((await pluginRow('multi-plugin-root')).deletedAt).toBeFalsy()
+    expect((await payload.find({ collection: 'templates', overrideAccess: true, where: { repository: { equals: repo.id } }, limit: 0 })).totalDocs).toBe(3)
+  })
+
+  it('reports a trashed template holding the slug and leaves the plugin untouched', async () => {
+    const repo = await createRepo(payload)
+    await payload.create({
+      collection: 'templates', overrideAccess: true, context: { skipRevalidate: true },
+      data: { slug: 'slug-held', name: 'old', repository: repo.id, path: 'other', url: 'https://github.com/a/b', source: 'submission', deletedAt: new Date().toISOString() } as never,
+    })
+    const p = await createPlugin(payload, repo.id, { slug: 'slug-held' })
+    const req = await createPayloadRequest({ payload, user: admin })
+    expect(await convertPluginToTemplate(payload, p.id, req)).toEqual({ status: 'slug-taken', templateSlug: 'slug-held' })
+    expect((await pluginRow('slug-held')).deletedAt).toBeFalsy()
+    const res = await callEndpoint(admin, p.id)
+    expect(res.status).toBe(409)
+    expect((await res.json()).error).toMatch(/Restore or delete/)
+  })
+
+  it('propagates database errors instead of reporting missing', async () => {
+    const req = await createPayloadRequest({ payload, user: admin })
+    const spy = vi.spyOn(payload, 'findByID').mockRejectedValueOnce(new Error('connection lost'))
+    await expect(convertPluginToTemplate(payload, pluginId, req)).rejects.toThrow('connection lost')
+    spy.mockRestore()
+  })
+
   it('rolls everything back when a step fails (one transaction)', async () => {
     const repo = await createRepo(payload)
     const p = await createPlugin(payload, repo.id, { slug: 'rollback-me' })
@@ -130,6 +169,27 @@ describe('POST /api/plugins/:id/convert-to-template', () => {
     })
     expect(rest.status).toBe(403)
     expect((await pluginRow('endpoint-plugin')).deletedAt).toBeFalsy()
+  })
+
+  it('ignores a cookie-authenticated admin POST that carries a foreign Origin (CSRF)', async () => {
+    const email = 'csrf-admin@example.test'
+    const password = 'Csrf-admin-1234!'
+    await payload.create({ collection: 'users', overrideAccess: true, data: { email, password } as never })
+    const { token } = await payload.login({ collection: 'users', data: { email, password } })
+    const repo = await createRepo(payload)
+    const p = await createPlugin(payload, repo.id, { slug: 'csrf-plugin' })
+    const post = (origin?: string) =>
+      handleEndpoints({
+        config: payload.config,
+        request: new Request(`http://localhost/api/plugins/${p.id}/convert-to-template`, {
+          method: 'POST',
+          headers: { cookie: `payload-token=${token}`, ...(origin ? { origin } : {}) },
+        }),
+      })
+    const foreign = await post('https://evil.example')
+    expect(foreign.status).toBe(403)
+    expect((await pluginRow('csrf-plugin')).deletedAt).toBeFalsy()
+    expect((await post(payload.config.serverURL)).status).toBe(200) // control: the same cookie from the site's own origin works
   })
 
   it('converts for an admin, 404s for missing', async () => {

@@ -16,6 +16,12 @@ export const convertToTemplateEndpoint: Endpoint = {
       const result = await convertPluginToTemplate(req.payload, Number(id), req)
       if (started) await commitTransaction(req)
       if (result.status === 'missing') return Response.json({ error: 'Not found' }, { status: 404 })
+      if (result.status === 'slug-taken') {
+        return Response.json(
+          { error: 'A template with this slug exists (it may be in Trash). Restore or delete it first.', status: result.status, templateSlug: result.templateSlug },
+          { status: 409 },
+        )
+      }
       return Response.json(result)
     } catch (error) {
       if (started) await killTransaction(req)

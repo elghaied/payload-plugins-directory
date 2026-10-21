@@ -2,7 +2,12 @@ import type { Payload, PayloadRequest } from 'payload'
 import { relationId } from '@/lib/relationId'
 import { QUEUES } from '@/sync/queues'
 
-export type ConvertResult = { status: 'converted'; templateSlug: string } | { status: 'exists'; templateSlug: string } | { status: 'missing' }
+export type ConvertResult =
+  | { status: 'converted'; templateSlug: string }
+  | { status: 'exists'; templateSlug: string }
+  /** A template (trashed or not) already uses the plugin's slug, so the copy cannot be created. */
+  | { status: 'slug-taken'; templateSlug: string }
+  | { status: 'missing' }
 
 /**
  * Admin "Convert to template": the plugin's listing becomes a template listing of the same repository and path.
@@ -12,21 +17,36 @@ export type ConvertResult = { status: 'converted'; templateSlug: string } | { st
  * The Plugins and Templates hooks queue the revalidation of both slugs' tags (one job each) through the same `req`.
  */
 export async function convertPluginToTemplate(payload: Payload, pluginId: number | string, req: PayloadRequest): Promise<ConvertResult> {
-  const plugin = await payload
-    .findByID({ collection: 'plugins', id: pluginId, overrideAccess: true, depth: 0, disableErrors: true, req })
-    .catch(() => null)
+  // disableErrors turns only a genuine not-found into null; any other (database) error propagates.
+  const plugin = await payload.findByID({ collection: 'plugins', id: pluginId, overrideAccess: true, depth: 0, disableErrors: true, req })
   if (!plugin || plugin.deletedAt) return { status: 'missing' }
 
   const repositoryId = relationId(plugin.repository)
   if (repositoryId === undefined) return { status: 'missing' }
   const path = plugin.path ?? ''
 
-  const held = await payload.find({
-    collection: 'templates', overrideAccess: true, depth: 0, limit: 1, pagination: false, req,
-    where: { repository: { equals: repositoryId } }, select: { slug: true, path: true },
-  })
-  const existing = held.docs.find((t) => (t.path ?? '') === path)
+  const existing = (
+    await payload.find({
+      collection: 'templates', overrideAccess: true, depth: 0, limit: 1, pagination: false, req,
+      where: {
+        and: [
+          { repository: { equals: repositoryId } },
+          path ? { path: { equals: path } } : { or: [{ path: { exists: false } }, { path: { equals: '' } }] },
+        ],
+      },
+      select: { slug: true },
+    })
+  ).docs[0]
   if (existing) return { status: 'exists', templateSlug: existing.slug }
+
+  // The slug is unique across trashed templates too: say so up front instead of failing the create.
+  const taken = (
+    await payload.find({
+      collection: 'templates', overrideAccess: true, depth: 0, limit: 1, pagination: false, trash: true, req,
+      where: { slug: { equals: plugin.slug } }, select: { slug: true },
+    })
+  ).docs[0]
+  if (taken) return { status: 'slug-taken', templateSlug: taken.slug }
 
   await payload.update({
     collection: 'plugins', id: plugin.id, overrideAccess: true, depth: 0, req,
