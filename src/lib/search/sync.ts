@@ -67,6 +67,34 @@ export async function searchFieldsFor(
   })
 }
 
+const COMPARED_FIELDS = ['title', 'kind', 'slug', 'tagline', 'summary', 'categoryText', 'tagsText', 'readme', 'path'] as const
+
+/**
+ * True when the plugin has exactly one index row and every indexed field already matches what would be written. Sync jobs
+ * and npm-stats rewrite plugins daily (stars, downloads, health score: none of them indexed, and priority is a fixed
+ * per-kind constant), so skipping the identical write avoids recomputing the stored tsvector and churning the GIN index.
+ * Any doubt (no row, duplicates, a read error) returns false and the normal write proceeds.
+ */
+export async function searchRowUpToDate(payload: Payload, doc: Record<string, unknown>, req?: PayloadRequest): Promise<boolean> {
+  try {
+    const rows = await payload.find({
+      collection: SEARCH_SLUG,
+      overrideAccess: true,
+      depth: 0,
+      pagination: false,
+      limit: 2,
+      where: docRef('plugins', doc.id as number),
+      req,
+    })
+    if (rows.docs.length !== 1) return false
+    const row = rows.docs[0] as unknown as Record<string, unknown>
+    const next = (await searchFieldsFor(payload, 'plugins', doc, req)) as unknown as Record<string, unknown>
+    return COMPARED_FIELDS.every((k) => (row[k] ?? null) === (next[k] ?? null))
+  } catch {
+    return false
+  }
+}
+
 export async function removeSearchDocs(payload: Payload, collection: SearchableCollection, id: number, req?: PayloadRequest) {
   await payload.delete({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, where: docRef(collection, id), req })
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   CATEGORIES_LLM_INSTRUCTIONS,
+  CATEGORIES_TOOL_INSTRUCTIONS,
   mcpUrl,
   PLUGINS_LLM_INSTRUCTIONS,
   SERVER_INSTRUCTIONS,
@@ -16,6 +17,11 @@ describe('LLM instructions', () => {
   it('explain the category tree', () => {
     expect(CATEGORIES_LLM_INSTRUCTIONS).toContain('other')
     expect(CATEGORIES_LLM_INSTRUCTIONS).toContain('Uncategorized')
+  })
+  it('the listCategories tool text names the `path` output field, not the stored _h_slugPath', () => {
+    expect(CATEGORIES_TOOL_INSTRUCTIONS).toContain('`path`')
+    expect(CATEGORIES_TOOL_INSTRUCTIONS).not.toContain('_h_slugPath')
+    expect(CATEGORIES_LLM_INSTRUCTIONS).toContain('_h_slugPath')
   })
   it('server instructions carry the untrusted-content warning and list the tools', () => {
     expect(SERVER_INSTRUCTIONS).toContain(UNTRUSTED_NOTICE)

@@ -14,6 +14,8 @@ jobs:
       COOLIFY_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - id: meta
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
@@ -23,13 +25,15 @@ jobs:
       - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           push: true
+          # Coolify deploys :latest, so only main may publish it. Other branches publish :sha-<short> and :next only.
           tags: |
-            ghcr.io/elghaied/payload-plugins-directory:${{ github.sha }}
-            ghcr.io/elghaied/payload-plugins-directory:latest
+            ghcr.io/elghaied/payload-plugins-directory:sha-${{ steps.meta.outputs.short }}
+            ghcr.io/elghaied/payload-plugins-directory:${{ github.ref_name == 'main' && 'latest' || 'next' }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Trigger Coolify deploy
         # `secrets` is not allowed in `if`; the job-level env exposes it instead
-        if: ${{ env.COOLIFY_DEPLOY_WEBHOOK != '' }}
+        # Only main redeploys production (the webhook deploys :latest, which only main publishes).
+        if: ${{ github.ref == 'refs/heads/main' && env.COOLIFY_DEPLOY_WEBHOOK != '' }}
         run: |
-          curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_DEPLOY_WEBHOOK"
+          curl -fsS -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" "$COOLIFY_DEPLOY_WEBHOOK"

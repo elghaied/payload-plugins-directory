@@ -43,6 +43,14 @@ describe('seedTaxonomy', () => {
     ])
   })
 
+  it('keeps the search index in sync when seeded outside the migration (the CLI path)', async () => {
+    await seedTaxonomy(payload)
+    const seo = (await payload.find({ collection: 'categories', overrideAccess: true, where: { slug: { equals: 'seo' } } })).docs[0]
+    const tag = (await payload.find({ collection: 'tags', overrideAccess: true, where: { slug: { equals: 's3' } } })).docs[0]
+    expect(await searchDocsFor(payload, 'categories', seo.id)).toHaveLength(1)
+    expect(await searchDocsFor(payload, 'tags', tag.id)).toHaveLength(1)
+  })
+
   it('is idempotent and never edits or re-parents what admins changed', async () => {
     await seedTaxonomy(payload)
     const seo = (await payload.find({ collection: 'categories', overrideAccess: true, where: { slug: { equals: 'seo' } } })).docs[0]
@@ -86,9 +94,8 @@ describe('alias tags', () => {
     expect(await unmappedTopics(payload)).toEqual([{ topic: 'some-odd-topic', count: 1 }])
   })
 
-  it('refreshes the search index (tagsText) of plugins it tags, unlike the seed itself', async () => {
+  it('refreshes the search index (tagsText) of plugins it tags', async () => {
     await seedTaxonomy(payload)
-    expect((await payload.count({ collection: 'search', overrideAccess: true })).totalDocs).toBe(0)
     const repo = await createRepo(payload, { topics: ['aws-s3'] })
     const plugin = await createPlugin(payload, repo.id, { slug: 'indexed-by-alias' })
     expect((await searchDocsFor(payload, 'plugins', plugin.id))[0].tagsText ?? null).toBeNull()

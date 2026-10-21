@@ -4,7 +4,7 @@ import type { BeforeSync, SearchPluginConfig } from '@payloadcms/plugin-search/t
 import { isAdmin } from '@/access'
 import { isPubliclyListed, KIND_BY_COLLECTION, SEARCH_FIELD_LIMITS, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
 import { searchSyncSkipped } from './hooks'
-import { resolvePluginDoc, searchFieldsFor } from './sync'
+import { resolvePluginDoc, searchFieldsFor, searchRowUpToDate } from './sync'
 
 const ro = { readOnly: true }
 const searchFields: Field[] = [
@@ -28,7 +28,11 @@ const searchFields: Field[] = [
 const skipSync: NonNullable<SearchPluginConfig['skipSync']> = async ({ collectionSlug, doc, req }) => {
   if (searchSyncSkipped(req.context)) return true
   // A projected hook document (caller passed `select`) is replaced by a full read before deciding.
-  return collectionSlug === 'plugins' && !isPubliclyListed(await resolvePluginDoc(req.payload, doc, req))
+  if (collectionSlug !== 'plugins') return false
+  const full = await resolvePluginDoc(req.payload, doc, req)
+  if (!isPubliclyListed(full)) return true
+  // Nothing indexed changed (a stats or health-score write): keep the existing row as it is.
+  return searchRowUpToDate(req.payload, full, req)
 }
 
 const beforeSync: BeforeSync = async ({ collectionSlug, originalDoc, payload, req, searchDoc }) => {

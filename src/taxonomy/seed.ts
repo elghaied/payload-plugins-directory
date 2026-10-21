@@ -8,8 +8,9 @@ import { flattenStarter } from './tree'
 export type SeedTaxonomyResult = { categoriesCreated: string[]; tagsCreated: string[]; presetsCreated: string[] }
 
 /** Seeding writes must not queue a revalidate job per category (src/taxonomy/hooks.ts honours this flag). */
-// skipSearchSync: the seed migration runs before the `search` table exists; `reindex-search --if-incomplete` backfills the index.
-const seedContext = () => ({ skipRevalidate: true, skipSearchSync: true })
+// skipSearchSync is for the seed migration only (opts.req set): it runs before the `search` table exists, and
+// `reindex-search --if-incomplete` backfills the index. The CLI and other callers leave it off so new rows are indexed.
+const seedContext = (migration: boolean) => ({ skipRevalidate: true, ...(migration ? { skipSearchSync: true } : {}) })
 
 /**
  * Creates the starter categories, alias tags and admin presets that do not exist yet (matched by slug /
@@ -17,7 +18,7 @@ const seedContext = () => ({ skipRevalidate: true, skipSearchSync: true })
  * Rows an admin created with the same slug are left untouched (and used as parents for their starter children).
  */
 export async function seedTaxonomy(payload: Payload, opts: { req?: PayloadRequest } = {}): Promise<SeedTaxonomyResult> {
-  const base = () => ({ overrideAccess: true as const, depth: 0, context: seedContext(), ...(opts.req ? { req: opts.req } : {}) })
+  const base = () => ({ overrideAccess: true as const, depth: 0, context: seedContext(Boolean(opts.req)), ...(opts.req ? { req: opts.req } : {}) })
   const result: SeedTaxonomyResult = { categoriesCreated: [], tagsCreated: [], presetsCreated: [] }
 
   const ids = new Map<string, number>()

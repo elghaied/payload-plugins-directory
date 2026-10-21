@@ -7,7 +7,7 @@ import { getServerURL } from '@/lib/serverUrl'
 import { findListedPlugins, listCategoriesWithCounts } from './data'
 import { toMcpComparisonRow, toMcpPluginDetail, toMcpPluginSummary } from './format'
 import { parseCompareInput, parseSearchPluginsInput, parseSlugInput } from './input'
-import { CATEGORIES_LLM_INSTRUCTIONS, UNTRUSTED_NOTICE } from './instructions'
+import { CATEGORIES_TOOL_INSTRUCTIONS, UNTRUSTED_NOTICE } from './instructions'
 
 // Request-time, from SERVER_URL; empty (path-only URLs) when unset. Never a baked-in host.
 const siteURL = () => getServerURL()
@@ -106,7 +106,7 @@ export const getPluginTool = defineTool({
 )
 
 export const listCategoriesTool = defineTool({
-  description: `The directory's category tree with the number of listed plugins directly in each category. ${CATEGORIES_LLM_INSTRUCTIONS}`,
+  description: `The directory's category tree with the number of listed plugins directly in each category. ${CATEGORIES_TOOL_INSTRUCTIONS}`,
   annotations: readOnly('List categories'),
   access: publicTool,
   input: { type: 'object', properties: {}, additionalProperties: false },

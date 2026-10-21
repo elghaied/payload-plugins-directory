@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPayloadRequest, Forbidden, handleEndpoints, type Payload } from 'payload'
 import { sql } from '@payloadcms/db-postgres/drizzle'
 import { SEARCH_FIELD_LIMITS } from '@/lib/search/searchDoc'
@@ -52,6 +52,23 @@ describe('search index sync', () => {
     const [row] = await searchDocsFor(payload, 'categories', child.id)
     expect(row).toMatchObject({ kind: 'category', slug: 'cloud-storage', path: 'storage-media/cloud-storage' })
     expect(row.categoryText).toContain('Storage & Media')
+  })
+
+  it('writes no search row when a sync changes only fields that are not indexed (stars, downloads, health score)', async () => {
+    const p = await createPlugin(payload, repoId, { slug: 'stats-only', description: 'Stable text', readme: 'Same readme' })
+    expect(await searchDocsFor(payload, 'plugins', p.id)).toHaveLength(1)
+    const searchWrites = () => spy.mock.calls.filter(([a]) => (a as { collection?: string }).collection === 'search')
+    const spy = vi.spyOn(payload, 'update')
+    try {
+      await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { healthScore: 42 } })
+      expect(searchWrites()).toHaveLength(0)
+      // An indexed field does reach the row.
+      await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { description: 'Changed text' } })
+      expect(searchWrites()).toHaveLength(1)
+    } finally {
+      spy.mockRestore()
+    }
+    expect((await searchDocsFor(payload, 'plugins', p.id))[0].summary).toContain('Changed text')
   })
 
   it('never indexes a plugin created hidden', async () => {
