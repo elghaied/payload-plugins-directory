@@ -31,4 +31,9 @@ describe('sitemap', () => {
     expect(urls).toContain('https://payloaddirectory.dev/stats')
     expect(urls.indexOf('https://payloaddirectory.dev/trending')).toBe(urls.indexOf('https://payloaddirectory.dev/stats') - 1)
   })
+  it('never lists a /search URL', async () => {
+    const urls = (await sitemap()).map((e) => e.url)
+    expect(urls.length).toBeGreaterThan(0)
+    expect(urls.filter((u) => new URL(u).pathname.startsWith('/search'))).toEqual([])
+  })
 })

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Github, Rss } from "lucide-react"
+import { Github, Rss, Search } from "lucide-react"
 import { PayloadIcon } from "./PayloadIcon"
 import { AccountMenu } from "./AccountMenu"
 import { ModeToggle } from "./mode-toggler"
@@ -32,7 +32,7 @@ export function Navbar() {
                 <Link
                   key={href}
                   href={href}
-                  className={`px-1.5 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  className={`${href === "/about" ? "hidden min-[440px]:block" : ""} px-1.5 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
@@ -47,11 +47,23 @@ export function Navbar() {
 
         {/* Right: Icon links + theme toggle */}
         <div className="flex items-center gap-1">
+          <Link
+            href="/search"
+            className={`flex items-center justify-center h-8 w-8 shrink-0 rounded-md transition-colors ${
+              isActiveLink("/search", pathname)
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+            }`}
+            aria-label="Search plugins"
+            title="Search"
+          >
+            <Search className="h-4 w-4" aria-hidden="true" />
+          </Link>
           <a
             href="https://github.com/payloadcms/payload"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden md:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="Payload CMS GitHub"
             title="Payload CMS"
           >

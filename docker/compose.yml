@@ -5,7 +5,8 @@
 #   - Optional GITHUB_WEB_TOKEN: fine-grained PAT, public repositories read-only, created on a bot account that is in no
 #     organisation (raises claim ownership checks from 60 to 5,000 requests/hour).
 #   - Cloudflare Cache Rule "Bypass cache" when: URI path starts with /me, /submit, /claim/, /auth/
-#     OR the request cookie contains "pd_session". Badges (/badge/*.svg) stay cacheable: the origin sends
+#     OR the request cookie contains "pd_session"
+#     OR URI path starts with /search (dynamic results, one URL per query: an edge cache rule must never store them). Badges (/badge/*.svg) stay cacheable: the origin sends
 #     s-maxage=3600 (1 h), so a hidden or trashed plugin's badge can linger at the CDN for up to 1 h (+1 h stale-while-revalidate).
 #   - Cloudflare rate-limit rules for /auth/*, /submit, /claim/*, /me and REST writes (POST/PATCH/DELETE on /api/*).
 #     Include /api/payload-preferences* in the REST write limit (the admin uses it; keep the limit low). The app already

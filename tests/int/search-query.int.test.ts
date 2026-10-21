@@ -173,3 +173,29 @@ describe('searchDirectory limits and cost', () => {
     expect(seen).toEqual(['2s'])
   })
 })
+
+describe('toSiteResult', () => {
+  it('maps hits to summaries with the display tagline and categories with their slug path', async () => {
+    const { toSiteResult } = await import('@/lib/search/present')
+    const view = toSiteResult(await searchDirectory(payload, 'seo kit'))!
+    expect(view.status).toBe('ok')
+    expect(view.query).toBe('seo kit')
+    expect(view.plugins[0]).toMatchObject({ slug: 'seo-kit', name: 'SEO Kit', description: 'Meta tags and sitemaps' })
+    const auth = toSiteResult(await searchDirectory(payload, 'oauth'))!
+    expect(auth.categories.find((c) => c.slug === 'oauth')?.path).toBe('auth/oauth')
+    // A categorised hit must not throw (toSummary needs _h_slugPath).
+    const gh = toSiteResult(await searchDirectory(payload, 'github'))!
+    expect(gh.plugins.find((p) => p.slug === 'github-login')?.categoryPath).toBe('auth/oauth')
+  })
+  it('is null for an empty query', async () => {
+    const { toSiteResult } = await import('@/lib/search/present')
+    expect(toSiteResult(await searchDirectory(payload, ''))).toBeNull()
+  })
+  it('passes timeout and busy statuses through', async () => {
+    const { toSiteResult } = await import('@/lib/search/present')
+    const q = { text: 'x', prefix: '', truncated: false }
+    for (const status of ['timeout', 'busy'] as const) {
+      expect(toSiteResult({ status, query: q, plugins: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
+    }
+  })
+})
