@@ -143,7 +143,8 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "templates" CASCADE;
   DROP TABLE "templates_texts" CASCADE;
   DROP TABLE "templates_rels" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_templates_fk";
+  -- DROP TABLE "templates" CASCADE above already removed this foreign key: IF EXISTS keeps the down path working.
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_templates_fk";
   
   ALTER TABLE "media" ALTER COLUMN "origin" SET DATA TYPE text;
   ALTER TABLE "media" ALTER COLUMN "origin" SET DEFAULT 'admin'::text;
@@ -153,7 +154,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "media" ALTER COLUMN "origin" SET DATA TYPE "public"."enum_media_origin" USING "origin"::"public"."enum_media_origin";
   DROP INDEX "media_variants_gallery_variants_gallery_filename_idx";
   DROP INDEX "media_variants_card_variants_card_filename_idx";
-  DROP INDEX "payload_locked_documents_rels_templates_id_idx";
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_templates_id_idx";
   ALTER TABLE "media" DROP COLUMN "variants_gallery_url";
   ALTER TABLE "media" DROP COLUMN "variants_gallery_width";
   ALTER TABLE "media" DROP COLUMN "variants_gallery_height";
@@ -170,7 +171,7 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   ALTER TABLE "media" DROP COLUMN "variants_card_filename";
   ALTER TABLE "media" DROP COLUMN "variants_card_prefix";
   ALTER TABLE "media" DROP COLUMN "variants_card__objectkey";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "templates_id";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "templates_id";
   DROP TYPE "public"."enum_templates_payload_majors";
   DROP TYPE "public"."enum_templates_source";
   DROP TYPE "public"."enum_templates_stack_detected";

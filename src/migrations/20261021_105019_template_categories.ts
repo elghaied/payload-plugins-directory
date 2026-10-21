@@ -90,8 +90,9 @@ export async function down({ db, payload, req }: MigrateDownArgs): Promise<void>
   DROP TABLE "template_categories_rels" CASCADE;
   DROP TABLE "_template_categories_v" CASCADE;
   DROP TABLE "_template_categories_v_rels" CASCADE;
-  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT "payload_locked_documents_rels_template_categories_fk";
+  -- DROP TABLE "template_categories" CASCADE above already removed this foreign key: IF EXISTS keeps the down path working.
+  ALTER TABLE "payload_locked_documents_rels" DROP CONSTRAINT IF EXISTS "payload_locked_documents_rels_template_categories_fk";
   
-  DROP INDEX "payload_locked_documents_rels_template_categories_id_idx";
-  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN "template_categories_id";`)
+  DROP INDEX IF EXISTS "payload_locked_documents_rels_template_categories_id_idx";
+  ALTER TABLE "payload_locked_documents_rels" DROP COLUMN IF EXISTS "template_categories_id";`)
 }
