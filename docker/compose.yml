@@ -1,55 +1,213 @@
-# DEPLOY CHECKLIST (single source of truth for first deploy and for every Cloudflare rule; the README only links here).
+# FIRST-DEPLOY CHECKLIST: Coolify 4.4 on the VPS (kawlya), behind Cloudflare, domain payloaddirectory.dev.
+# The README links here. Follow the numbers in order; the order matters (the first admin account is created while the site
+# is still unreachable from the internet).
 #
-# Application, web service:
-#   1. GitHub OAuth App (maintainer sign-in) owned by the directory's GitHub account, callback
-#      https://payloaddirectory.dev/auth/github/callback -> GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET.
-#      SESSION_SECRET = `openssl rand -hex 32` (rotating it signs everyone out). The worker never needs these.
-#   2. Optional GITHUB_WEB_TOKEN: fine-grained PAT, public repositories read-only, created on a bot account that is in no
-#      organisation (raises claim ownership checks from 60 to 5,000 requests/hour). Not the worker's GITHUB_TOKEN.
-#   3. REVALIDATE_SECRET must be the SAME value on web and worker (the worker's revalidate job POSTs /api/revalidate on
-#      INTERNAL_WEB_URL with it); both services read it from the one environment variable below.
-#   4. One shared `media` volume attached read-write to BOTH web and worker (the daily orphan-media sweep runs on the worker).
-#   5. On start, web runs `payload migrate` and then `payload reindex-search --if-empty`. Check the web log for
-#      `Search reindex complete` (upserted ~ listed plugins + categories + tags). After a bulk data operation (db:push):
-#      docker exec <web> sh -c 'cd /app/cli && npx payload reindex-search'
+# ------------------------------------------------------------------------------------------------------------------------
+# 1. IMAGE
+#    GitHub Actions (.github/workflows/image.yml) builds ghcr.io/elghaied/payload-plugins-directory.
+#      - Only `main` publishes :latest (and triggers the deploy webhook). Other branches publish :sha-<short> and :next only.
+#      - Coolify deploys :latest, so MERGING TO `main` DEPLOYS PRODUCTION.
+#    GHCR packages start private. Pick ONE:
+#      a. Make it public: github.com > your profile > Packages > payload-plugins-directory > Package settings > Change visibility.
+#      b. Keep it private: in Coolify open Registries (sidebar) > Log in, choose the GHCR preset, enter your GitHub username and a
+#         personal access token with read:packages. (Or on the VPS: `docker login ghcr.io -u <user>` as the Coolify server user.)
 #
-# Cloudflare (zone payloaddirectory.dev):
-#   6. TLS: send Strict-Transport-Security with includeSubDomains (SSL/TLS > Edge Certificates, or at the proxy), because
-#      the pd_session cookie is Secure and must never travel over plain HTTP.
-#   7. Cache Rule "Bypass cache" when: URI path starts with /me, /submit, /claim/, /auth/, /search or /api/mcp
-#      OR the request cookie contains "pd_session". (/search and POST /api/mcp are dynamic, one URL per query: an edge cache
-#      rule must never store them.) Badges (/badge/*.svg) stay cacheable: the origin sends s-maxage=3600 (1 h), so a hidden
-#      or trashed plugin's badge can linger at the CDN for up to 1 h (+1 h stale-while-revalidate).
-#   8. Rate-limit rules, per IP. Keep the MCP rule separate from the REST-write rule, or MCP is throttled like an admin write:
-#      a. Auth and maintainer pages: /auth/*, /submit, /claim/*, /me.
-#      b. REST writes: POST/PATCH/DELETE on /api/* EXCLUDING /api/mcp*. Include /api/payload-preferences* (the admin uses it;
-#         keep the limit low). The app already refuses maintainer sessions on every /api path except /api/plugins and
-#         /api/submissions.
-#      c. MCP and search: (http.request.method eq "POST" and starts_with(http.request.uri.path, "/api/mcp"))
-#         or starts_with(http.request.uri.path, "/search"). Suggested 30 requests / 10 s per IP (Pro+: 120 / 1 min), action
-#         Block for 10 s (Pro+: 1 min). One MCP request is at most one tool call. /search is uncached and hits Postgres.
-#      d. /badge/* requests that carry a query string (cache-busting reaches the origin).
-#      On the Free plan (few rate-limit rules) combine a-d into one rule whose expression is the OR of the paths above, but
-#      keep /api/mcp* out of the REST-write branch of that expression.
-#   9. WAF custom rule on /api/mcp*: block when the request body is larger than 16 KB, for example
-#      starts_with(http.request.uri.path, "/api/mcp") and http.request.body.size > 16384
-#      (the app already refuses > 16 KB with 413 and /api/mcp is excluded from Next's 10 MB proxy body buffering, so this
-#      only keeps junk off the origin; use the Content-Length header if your plan does not expose body size).
-#  10. Optional: Request Header Transform Rule that removes X-Payload-HTTP-Method-Override on /api/mcp* (Payload would read
-#      that body with an unbounded request.json() before any handler runs).
-#  11. /api/mcp serves non-browser MCP clients only: no CORS. Do not add Access-Control-Allow-Origin there and never set a
-#      global Payload `cors`.
+# 2. POSTGRES 18
+#    Coolify > your project > New resource > Database > PostgreSQL, version 18. Start it, then copy its "Postgres URL (internal)".
+#    That is DATABASE_URL for BOTH services (step 4). Give the database the label/name described at the bottom of this file only if
+#    you use `pnpm db:push`.
+#    Backups, pick one or both:
+#      - Coolify: Storages > add an S3/R2 bucket; then the database > Backups > + Add (e.g. `daily`), enable S3, "Back up now",
+#        confirm Success. Test a restore into a throwaway database once.
+#      - Local copy: `pnpm db:pull` (needs DB_REMOTE_PRODUCTION_CONTAINER in your local .env and ssh access as `kawlya`; it REPLACES
+#        your local database).
 #
-# Verify after deploy:
-#   - for i in $(seq 1 40); do curl -s -o /dev/null -w '%{http_code}\n' 'https://payloaddirectory.dev/search?q=seo'; done | sort | uniq -c
-#     shows some 429 (rule 8c).
-#   - curl -s https://payloaddirectory.dev/api/mcp -X POST -H 'content-type: application/json' \
-#       -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2025-06-18' \
-#       -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq -r '.result.tools[].name'
-#     lists comparePlugins, getPlugin, listCategories, searchPlugins; and `curl -sI 'https://payloaddirectory.dev/search?q=seo'` is 200.
-#   - repeat a /search or /api/mcp request and confirm no cf-cache-status HIT.
+# 3. SECRETS TO GENERATE (run locally, keep them in a password manager)
+#      openssl rand -hex 32   -> PAYLOAD_SECRET
+#      openssl rand -hex 32   -> REVALIDATE_SECRET (the app ignores values shorter than 32 characters; the SAME value on both services)
+#      openssl rand -hex 32   -> SESSION_SECRET (shorter than 32 characters disables sign-in; rotating it signs everyone out)
+#    GitHub OAuth App (maintainer sign-in): github.com/settings/developers > New OAuth App. Homepage https://payloaddirectory.dev,
+#    callback URL https://payloaddirectory.dev/auth/github/callback. Copy the Client ID and generate a Client secret.
+#    (An OAuth App allows one callback URL: a staging site needs its own app.)
+#    Worker GitHub token: github.com/settings/tokens, fine-grained, public repositories read-only, no other permissions -> GITHUB_TOKEN.
+#    Anthropic: console.anthropic.com > create an API key, AND set a monthly spend limit (Console > Settings > Limits) before you use it.
 #
-# Production stack for Coolify (pasted into a Docker Compose resource; this file is the source of truth).
+# 4. TWO DOCKER IMAGE RESOURCES (same project, same server, same Coolify network)
+#    New resource > Docker Image > ghcr.io/elghaied/payload-plugins-directory, tag `latest`. Create `web` and `worker`.
+#    The image's entrypoint takes the process role as its command: `web` (the default CMD) or `worker`. Leave `web` as it is and set
+#    the worker resource's command to `worker` (look for a Start/Custom command field under Configuration > General; I could not
+#    verify its exact name in Coolify 4.4). If your Coolify has no such field for Docker Image resources, use the one Docker
+#    Compose resource described under "Service definitions" below instead: it solves the command, the shared media volume, the
+#    web-before-worker start order and the restart policy in one file (then skip the bind mount and the INTERNAL_WEB_URL lookup:
+#    INTERNAL_WEB_URL is http://web:3000).
+#
+#    Environment variables (Configuration > Environment Variables). R = required, O = optional, - = do not set.
+#
+#      Variable                       web   worker   Notes
+#      DATABASE_URL                   R     R        Coolify "Postgres URL (internal)" from step 2
+#      PAYLOAD_SECRET                 R     R        same value on both
+#      SERVER_URL                     R     R        https://payloaddirectory.dev (no trailing slash). Any other host serves noindex.
+#      REVALIDATE_SECRET              R     R        same value on both, >= 32 characters
+#      INTERNAL_WEB_URL               -     R        web's internal URL, see below
+#      SESSION_SECRET                 R     -        >= 32 characters
+#      GITHUB_OAUTH_CLIENT_ID         R     -        from the OAuth App
+#      GITHUB_OAUTH_CLIENT_SECRET     R     -        from the OAuth App
+#      GITHUB_WEB_TOKEN               O     -        fine-grained PAT, public repos read-only, on a bot account in no organisation;
+#                                                    raises claim ownership checks from 60 to 5,000 requests/hour. Not the worker's token.
+#      GITHUB_TOKEN                   -     R        step 3. Without it GitHub allows 60 requests/hour and discover/sync starve.
+#      ANTHROPIC_API_KEY              -     O        worker only. Unset = AI enrichment is skipped, plugins stay "Uncategorized".
+#      NODE_ENV, PORT, HOSTNAME, MEDIA_DIR   set by the image (production, 3000, 0.0.0.0, /app/media): do not set.
+#    Optional worker cost knob: ENRICH_MAX_PER_PASS (default 500 plugins per AI pass).
+#    Both processes log warnings at start for any missing or too-short value (never the value itself): read the first log lines.
+#
+#    INTERNAL_WEB_URL: both resources are on the same Docker network, so the worker reaches web by its container/service name:
+#    http://<web-resource-uuid>:3000 (the UUID is in the web resource's URL in Coolify, /application/<uuid>). Confirm from the
+#    worker's Terminal after both are running:  wget -qO- http://<web-resource-uuid>:3000/api/health   (prints {"status":"ok"}).
+#    If that fails use the name shown in the web resource's "Container name"/network settings instead.
+#
+#    Storage: both resources must write to the SAME directory (logo uploads are written by web, the daily orphan sweep runs on the
+#    worker). Two resources do not share a Coolify-managed named volume, so use a bind mount:
+#      on the VPS:  sudo mkdir -p /data/payload-directory/media && sudo chown 1001:1001 /data/payload-directory/media
+#      each resource > Persistent Storage > add a Directory/Bind mount: host /data/payload-directory/media -> container /app/media
+#    (1001:1001 is the image's `nextjs` user.) A per-resource volume would delete rows but leave files, or lose uploads.
+#
+#    Domain (web ONLY): Configuration > General > Ports Exposes `3000`; Domains `https://payloaddirectory.dev`. The worker has NO
+#    domain and no port. BUT do not set the domain yet (step 6). If Coolify pre-fills a generated *.sslip.io domain, clear it.
+#    Healthcheck (web only; the image has no HEALTHCHECK): enable it, GET /api/health on port 3000, start period 120 s
+#    (migrations run before the server answers).
+#    Restart: both should restart on failure. Confirm on the VPS after the first deploy:
+#      docker inspect -f '{{.Name}} {{.HostConfig.RestartPolicy.Name}}' $(docker ps -q --filter ancestor=ghcr.io/elghaied/payload-plugins-directory:latest)
+#    (expect unless-stopped; if not, add `--restart unless-stopped` under Custom Docker Options).
+#
+# 5. FIRST BOOT, BEFORE ANYTHING IS PUBLIC
+#    a. Deploy `web` only. It runs `payload migrate` (blocking), starts the server, and rebuilds the search index in the background
+#       (`reindex-search --if-incomplete`). Wait for the healthcheck to go green. The log line `Search reindex complete` appears with
+#       upserted ~96 (40 categories + 56 tags; plugins come with the data load). On later boots it says skipped: true, upserted: 0: normal.
+#    b. Create the first admin NOW. Payload's /admin "create first user" page is open to anyone until one user exists, so do this
+#       while there is no public route. In web's Terminal (Coolify > web > Terminal; it already has DATABASE_URL and PAYLOAD_SECRET):
+#         cd /app/cli && npx payload createDocuments --slug users \
+#           --documents '[{"data":{"email":"you@example.com","password":"<a long unique password>"}}]'
+#       Expect `"errors": []`. Every user is an admin (the users collection has no roles). The password lands in shell history of that
+#       terminal session only; change it in /admin > Users afterwards if you like.
+#    c. Load the existing plugins (369 in the last export). The legacy file is no longer in this branch: it is in git history of `main`.
+#       Last commit on main that touches it: c3a2b0e8a9a9f75286e647bcafd1113dbecc8fb1 ("chore: update plugins data [skip ci]",
+#       2026-10-18; main's HEAD is the same commit). Path in git: data/plugins.json (534,537 bytes).
+#         # on your laptop, inside the repository:
+#         git show c3a2b0e:data/plugins.json > /tmp/plugins.json
+#         scp /tmp/plugins.json kawlya:/tmp/plugins.json
+#         # on the VPS (ssh kawlya):
+#         docker ps --format '{{.Names}}  {{.Image}}'          # pick the web container (image ...payload-plugins-directory)
+#         docker cp /tmp/plugins.json <web-container-name>:/tmp/plugins.json
+#         # in web's Terminal (this is what runs in the container; takes ~10 s):
+#         cd /app/cli && npx payload seed --file /tmp/plugins.json
+#         cd /app/cli && npx payload seed-taxonomy
+#       `seed` upserts repositories and plugins (slugs preserved, the legacy blocklist hidden; expect pluginsCreated: 369) and queues a
+#       `discover` job. `seed-taxonomy` adds any missing starter categories/tags and applies alias tags to every plugin; both keep the
+#       search index in sync. Afterwards rm /tmp/plugins.json on both machines. It is safe to run `seed` again (admin visibility choices win).
+#    d. Deploy `worker` (after web is green). Within a minute it runs the queued `discover`, which queues a `sync-repository` job per
+#       repository (README, package.json, stats; throttled by the GitHub rate limit, so allow up to an hour or two for ~370 plugins).
+#       Then: npm-stats daily 01:00 UTC, snapshot 00:30 UTC, discover every 6 h.
+#    e. AI enrichment (only with ANTHROPIC_API_KEY): `enrich-all` runs at minute :20 of every hour. With 20 or more stale plugins it
+#       submits ONE Anthropic Message Batch (50% price), polled every 5 minutes; batches complete within 24 h, often sooner. One pass
+#       takes at most 500 plugins. Expect the first full pass (~370-400 plugins, default model claude-sonnet-5-5) to cost roughly
+#       USD 4-5 in total (project estimate, not a quote; check Console usage). Later passes only touch changed plugins.
+#       For an estimate before the key goes in: after `pnpm db:pull`, run  pnpm enrich:preview  locally (no API call, prints the cost).
+#       Known limitation: `reindex-search --if-incomplete` only detects MISSING rows. After bulk SQL edits, or after a log line
+#       `search: could not build index fields`, run a full rebuild in web's Terminal:  cd /app/cli && npx payload reindex-search
+#
+# 6. DNS, DOMAIN, TLS (Cloudflare zone payloaddirectory.dev; do these in order)
+#    a. DNS > add A (and AAAA if the VPS has IPv6) record `payloaddirectory.dev` -> the VPS IP, Proxy status DNS only (grey cloud).
+#    b. In Coolify set the web Domains to https://payloaddirectory.dev and Redeploy. Traefik requests a Let's Encrypt certificate over
+#       HTTP-01 (port 80 must reach the VPS). Check:  curl -vI https://payloaddirectory.dev 2>&1 | grep -i 'issuer\|HTTP/'
+#       If no certificate appears after a few minutes, restart the proxy (Servers > kawlya > Proxy > Restart) rather than retrying
+#       in a loop (Let's Encrypt limits failed validations).
+#    c. Only after HTTPS works: switch the record to Proxied (orange cloud). SSL/TLS > Overview > Full (strict). Edge Certificates:
+#       Always Use HTTPS on. If renewals later fail behind the proxy, install a Cloudflare Origin CA certificate in Traefik instead
+#       (Coolify docs: Cloudflare origin certificate), or go back to DNS only for the renewal.
+#    d. Edge Certificates > HTTP Strict Transport Security > Enable, max-age 6 months or more, includeSubDomains ON, Preload OFF,
+#       and ONLY now that HTTPS works (the pd_session cookie is Secure and must never travel over plain HTTP). With includeSubDomains,
+#       every subdomain must serve HTTPS or becomes unreachable. Avoid switching back to DNS only while HSTS is active.
+#
+# 7. DEPLOY WEBHOOK (so a push to main redeploys)
+#    Coolify: Settings > Advanced > enable API. Keys & Tokens > API Tokens > new token with the Deploy permission -> GitHub secret
+#    COOLIFY_TOKEN. GitHub secret COOLIFY_DEPLOY_WEBHOOK = https://<coolify-host>/api/v1/deploy?uuid=<web-uuid>,<worker-uuid>
+#    (comma-separated uuids deploy both; the workflow POSTs it). Only main runs that step. Web and worker restart together; the worker
+#    may briefly run new code before web finishes migrating, its jobs retry.
+#
+# 8. CLOUDFLARE RULES. Rule limits depend on the plan (Cloudflare docs, rate limiting rules, "Availability"):
+#      Free:     1 rate-limit rule; fields: Path and Verified Bot only (no Method, no Query); counted per IP; period 10 s; block 10 s.
+#      Pro:      2 rules; fields add Host, URI, Full URI, Query (still NO Method); period up to 1 min; block up to 1 h.
+#      Business: 5 rules; adds Method, User Agent; period up to 10 min; block up to 1 day.
+#    Cache Rules exist on every plan (Free: 10). Cloudflare does not cache HTML or JSON by default, so the bypass rule below only
+#    matters if you ever add a "cache everything" rule. Create it first anyway:
+#      Cache Rule "dynamic bypass": Bypass cache when
+#        starts_with(http.request.uri.path, "/api/") or starts_with(http.request.uri.path, "/admin") or
+#        starts_with(http.request.uri.path, "/me") or starts_with(http.request.uri.path, "/submit") or
+#        starts_with(http.request.uri.path, "/claim/") or starts_with(http.request.uri.path, "/auth/") or
+#        starts_with(http.request.uri.path, "/search") or http.cookie contains "pd_session"
+#      Badges (/badge/<slug>.svg) stay cacheable: the origin sends s-maxage=3600, so a hidden plugin's badge can linger up to 1 h.
+#
+#    8a. FREE PLAN: one rate-limit rule, the highest-value target is the MCP endpoint plus the sign-in paths:
+#          (http.request.uri.path eq "/api/mcp") or starts_with(http.request.uri.path, "/auth/")
+#        30 requests per 10 seconds, per IP, action Block, 10 seconds. If the dashboard rejects starts_with for Path on your plan,
+#        use only  http.request.uri.path eq "/api/mcp"  (I could not confirm from the docs which Path operators Free allows).
+#        NOT covered at the edge on Free: /search (uncached, hits Postgres), /submit, /claim/, /me, REST writes, /badge?query. The app
+#        backs these up: /search and every MCP tool share one bounded query budget with a 2 s statement timeout, MCP allows one call
+#        per request and 16 KB bodies (413 above), maintainer sessions are refused on every /api path except /api/plugins and
+#        /api/submissions, and Payload locks an account after repeated failed logins.
+#    8b. PRO (2 rules, no Method):
+#          Rule 1  starts_with(http.request.uri.path, "/api/mcp") or starts_with(http.request.uri.path, "/search")
+#                  120 requests / 1 minute per IP, Block 1 minute.
+#          Rule 2  starts_with(http.request.uri.path, "/auth/") or starts_with(http.request.uri.path, "/submit") or
+#                  starts_with(http.request.uri.path, "/claim/") or starts_with(http.request.uri.path, "/me") or
+#                  http.request.uri.path eq "/api/users/login" or http.request.uri.path eq "/api/users/forgot-password"
+#                  20 requests / 1 minute per IP, Block 10 minutes.
+#    8c. BUSINESS (5 rules): 8b's two rules, plus
+#          Rule 3  REST writes: http.request.method in {"POST" "PATCH" "PUT" "DELETE"} and starts_with(http.request.uri.path, "/api/")
+#                  and not starts_with(http.request.uri.path, "/api/mcp")   (include /api/payload-preferences: the admin uses it)
+#          Rule 4  badge cache-busting: starts_with(http.request.uri.path, "/badge/") and http.request.uri.query ne ""
+#        Keep MCP out of the REST-write rule, or agents are throttled like admin writes.
+#    8d. BOT FEATURES AND MCP: /api/mcp serves non-browser clients. Never put a JS challenge, managed challenge or "Under Attack"
+#        mode on it: every agent call would get an HTML challenge. Bot Fight Mode (Free) CANNOT be exempted per path by a WAF Skip
+#        rule (Cloudflare docs), so leave Bot Fight Mode OFF. On Pro and above, Super Bot Fight Mode supports Skip rules: if you turn
+#        it on, add a WAF custom rule with action Skip for  starts_with(http.request.uri.path, "/api/mcp")  and skip Super Bot Fight Mode.
+#    8e. No body-size rule: http.request.body.size is not available below Enterprise, and the app already refuses MCP bodies over
+#        16 KB (413) and excludes /api/mcp from Next's body buffering.
+#    8f. Optional (all plans): Transform Rule > Modify Request Header that removes X-Payload-HTTP-Method-Override on /api/mcp (Payload
+#        reads that body with an unbounded request.json() before any handler).
+#    8g. /api/mcp has no CORS on purpose. Never add Access-Control-Allow-Origin there and never set a global Payload `cors`.
+#
+# 9. SMOKE TEST (after step 6c; replace the host if testing elsewhere)
+#     1. curl -s https://payloaddirectory.dev/api/health                     -> {"status":"ok"}
+#     2. Open /, a plugin page, /categories, /trending, /stats, /search?q=seo -> all render with real data (no empty states).
+#     3. curl -s https://payloaddirectory.dev/robots.txt        -> "Allow: /" and a `Sitemap: https://payloaddirectory.dev/sitemap.xml` line.
+#        curl -s https://payloaddirectory.dev/sitemap.xml | head -20   -> <loc> entries on payloaddirectory.dev only.
+#        curl -sI https://payloaddirectory.dev/ | grep -i x-robots-tag  -> nothing (no noindex). (/search is noindex by design.)
+#     4. /admin: sign in with the account from 5b. The dashboard shows the "Job health" and "AI enrichment" widgets.
+#     5. Worker ran: "Job health" shows discover and sync-repository with a recent success (give the worker a few minutes).
+#     6. Revalidation: in /admin > Plugins open one, set visibility to hidden, save. Within ~a minute its page 404s, it leaves / and
+#        /search?q=<its name>. Set it back to listed and confirm it returns. (Worker log: no 401/503 from /api/revalidate.)
+#     7. GitHub sign-in: private window > /auth/github > authorize > you land signed in; /me shows your GitHub account; the pd_session
+#        cookie is Secure and HttpOnly (browser dev tools). Sign out works.
+#     8. /submit: submit a throwaway listing (a public repo with the payload-plugin topic), then /admin > Submissions: set it to rejected.
+#     9. Badge: open https://payloaddirectory.dev/badge/<a-listed-slug>.svg -> an SVG.
+#    10. MCP:
+#          curl -s https://payloaddirectory.dev/api/mcp -X POST -H 'content-type: application/json' \
+#            -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2025-06-18' \
+#            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"1"}}}'
+#          curl -s https://payloaddirectory.dev/api/mcp -X POST -H 'content-type: application/json' \
+#            -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2025-06-18' \
+#            -d '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'    # response may be `data: {...}` event-stream text
+#          tools/list names exactly: comparePlugins, getPlugin, listCategories, searchPlugins. No cf-cache-status HIT on /api/mcp or /search.
+#          Rate limit check (rule 8a/8b/8c): seq 1 100 | xargs -P 20 -I{} curl -s -o /dev/null -w '%{http_code}\n' -X POST https://payloaddirectory.dev/api/mcp \
+#            -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -d '{}' | sort | uniq -c   -> some 429.
+#    11. Uploads survive a redeploy: /admin > Plugins > a plugin > upload a logo (or Media), Redeploy web in Coolify, reload: the image
+#        still loads. (If it 404s, the bind mount in step 4 is wrong.)
+#    12. AI enrichment (needs the key): after the next :20 mark the "AI enrichment" widget shows a submitted batch or progress counts;
+#        results arrive when the batch completes. Check the Anthropic Console spend matches the estimate in 5e.
+#
+# Service definitions (reference). The checklist above sets up the same two services as two Docker Image resources; pasting
+# this file into one Docker Compose resource is the alternative (its named `media` volume is then shared natively).
 #
 # `directory.env` labels let `pnpm db:push` verify it is about to overwrite the right environment
 # (Coolify container names are UUIDs). Give the separate Postgres resource the same label
@@ -66,6 +224,7 @@ services:
   web:
     image: ghcr.io/elghaied/payload-plugins-directory:latest
     command: ['web']
+    restart: unless-stopped
     labels:
       directory.env: production
     environment:

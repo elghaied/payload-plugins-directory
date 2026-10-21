@@ -367,8 +367,9 @@ Nothing is fetched at request time. The legacy `data/plugins.json` is only used 
 
 ## Operations: edge rules and deploy checklist
 
-Cache bypass, rate limits (including the separate limit for `/api/mcp` and `/search`), the MCP body-size block, HSTS and the other
-first-deploy steps are kept in one numbered checklist at the top of [`docker/compose.yml`](docker/compose.yml). Agents can connect
+The first-deploy checklist (Coolify resources, environment variables, first admin, legacy data load, Cloudflare DNS/TLS/HSTS,
+cache and rate-limit rules per Cloudflare plan, and the post-deploy smoke test) is one numbered list at the top of
+[`docker/compose.yml`](docker/compose.yml). Merging to `main` publishes `:latest` and deploys. Agents can connect
 to the public MCP endpoint described on `/about#mcp`.
 
 ---
