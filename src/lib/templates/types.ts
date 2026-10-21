@@ -1,7 +1,11 @@
 import type { PayloadMajor } from '@/lib/versions'
 import type { StackValue } from './stack'
 
-export type TemplateImage = { src: string; srcSet?: string; local: boolean }
+/**
+ * A card/gallery image. `panel` (an official template without a screenshot or usable README image) means: render the
+ * local branded panel (name + stack), no image request at all; `src` is then empty.
+ */
+export type TemplateImage = { src: string; srcSet?: string; local: boolean; panel?: true }
 
 export type TemplateSummary = {
   slug: string
@@ -22,7 +26,7 @@ export type TemplateSummary = {
   /** `_h_slugPath` of the template's category; absent = Uncategorized. */
   categoryPath?: string
   tags?: string[]
-  /** Card image: the first screenshot (card size), else the README/GitHub fallback image. */
+  /** Card image: the first screenshot (card size), else the README image, else the branded panel (official) or GitHub's social card. */
   image: TemplateImage
   demoUrl?: string
 }

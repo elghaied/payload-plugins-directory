@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { ChevronLeft, ChevronRight, Expand, Play, X } from "lucide-react";
 import type { TemplateDetail, TemplateImage } from "@/lib/templates/types";
+import type { StackValue } from "@/lib/templates/stack";
+import { TemplatePanel } from "./TemplatePanel";
 import { VideoEmbed } from "./VideoEmbed";
 
 type Screenshot = TemplateDetail["screenshots"][number];
@@ -12,8 +14,9 @@ type Props = {
   name: string;
   screenshots: Screenshot[];
   video?: Video;
-  /** Shown when there are no screenshots: the README image or GitHub's social card (hotlinked, allow-listed). */
+  /** Shown when there are no screenshots: the README image, GitHub's social card (hotlinked, allow-listed) or the branded panel. */
   fallback: TemplateImage;
+  stack: StackValue;
 };
 
 /** An image that swaps to a muted panel with the template's initial when it fails to load (as TemplateCard does). */
@@ -70,7 +73,7 @@ function GalleryImage({
  * video exists, which swaps the main panel to the click-to-load embed), and a native <dialog> full-screen view with
  * ←/→ and on-screen buttons. Esc closes it (native), and focus goes back to the button that opened it.
  */
-export function TemplateGallery({ name, screenshots, video, fallback }: Props) {
+export function TemplateGallery({ name, screenshots, video, fallback, stack }: Props) {
   const count = screenshots.length;
   // Image slots: the screenshots, or the single fallback image. The slot after them is the video.
   const imageSlots = Math.max(count, 1);
@@ -127,6 +130,8 @@ export function TemplateGallery({ name, screenshots, video, fallback }: Props) {
             eager={index === 0}
             className="h-full w-full object-cover object-top"
           />
+        ) : fallback.panel ? (
+          <TemplatePanel name={name} stack={stack} />
         ) : (
           <GalleryImage
             src={fallback.src}
@@ -154,7 +159,11 @@ export function TemplateGallery({ name, screenshots, video, fallback }: Props) {
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Gallery thumbnails">
           {count === 0 && (
             <button type="button" onClick={() => setIndex(0)} aria-label="Show preview image" aria-pressed={!showingVideo} className={thumbClass(!showingVideo)}>
-              <GalleryImage src={fallback.src} alt="" remote={!fallback.local} name={name} className="h-full w-full object-cover object-top" />
+              {fallback.panel ? (
+                <TemplatePanel name={name} stack={stack} className="p-2 sm:p-2 [&_p]:text-[10px]" />
+              ) : (
+                <GalleryImage src={fallback.src} alt="" remote={!fallback.local} name={name} className="h-full w-full object-cover object-top" />
+              )}
             </button>
           )}
           {screenshots.map((s, i) => (

@@ -149,6 +149,12 @@ describe('template page', () => {
     expect(html).toMatch(/aria-label="Show video" aria-pressed="false"/)
   })
 
+  it('shows the local branded panel, and no image request, for an official template without any image', async () => {
+    const html = await render({ ...official, image: { src: '', local: true, panel: true } })
+    expect(html).toContain('data-template-panel')
+    expect(html).not.toContain('opengraph.githubassets.com')
+  })
+
   it('falls back to one allow-listed image without screenshots', async () => {
     const html = await render()
     expect(html).toMatch(/<img[^>]*src="https:\/\/opengraph.githubassets.com\/1\/acme\/shop"[^>]*referrerPolicy="no-referrer"/i)

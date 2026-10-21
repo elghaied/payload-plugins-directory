@@ -123,7 +123,7 @@ export default async function TemplatePage({ params }: Props) {
 
           <div className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,1fr)]">
             <div className="min-w-0">
-              <TemplateGallery name={template.name} screenshots={template.screenshots} video={template.video} fallback={template.image} />
+              <TemplateGallery name={template.name} screenshots={template.screenshots} video={template.video} fallback={template.image} stack={template.stack} />
 
               {template.ai && (
                 <PluginAiOverview

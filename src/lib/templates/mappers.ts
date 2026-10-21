@@ -2,7 +2,7 @@ import { readmePreview } from '@/lib/directory/readme'
 import { authorDescriptionOf } from '@/lib/directory/tagline'
 import type { Media, Repository, Template } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
-import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange } from './links'
+import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange, storedFallbackImage } from './links'
 import { effectiveStack } from './stack'
 import type { TemplateDetail, TemplateImage, TemplateSummary } from './types'
 
@@ -51,6 +51,8 @@ function imageOf(doc: TemplateDoc, fullName: string): TemplateImage {
       local: true,
     }
   }
+  // Official templates share the monorepo: its social image says nothing about one template (Ruling 11).
+  if (doc.isOfficial && !storedFallbackImage(doc.fallbackImageUrl)) return { src: '', local: true, panel: true }
   return { src: fallbackImageFor({ fallbackImageUrl: doc.fallbackImageUrl, fullName }), local: false }
 }
 

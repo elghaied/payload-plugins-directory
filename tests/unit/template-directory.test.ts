@@ -97,6 +97,12 @@ describe('TemplateCard', () => {
     expect(card(tpl())).toContain('referrerPolicy="no-referrer"')
     expect(card(tpl({ image: { src: '/api/media/file/a.webp', local: true } })).toLowerCase()).not.toContain('referrerpolicy')
   })
+  it('renders the local branded panel without any image request for a panel image', () => {
+    const html = card(tpl({ isOfficial: true, stars: null, stack: 'tanstack-start', image: { src: '', local: true, panel: true } }))
+    expect(html).toContain('data-template-panel')
+    expect(html).toContain('TanStack Start')
+    expect(html).not.toContain('<img')
+  })
   it('uses lazy decoding and the image box', () => {
     const html = card(tpl())
     expect(html).toContain('loading="lazy"')

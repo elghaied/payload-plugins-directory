@@ -79,12 +79,12 @@ export function getStartedFor(t: { isOfficial: boolean; slug: string; fullName: 
   return { kind: 'command', value: `git clone https://github.com/${t.fullName}.git` }
 }
 
+/** The stored README fallback image only when https and allow-listed (re-checked on read), else null. */
+export function storedFallbackImage(url: string | null | undefined): string | null {
+  return url && url.startsWith('https://') ? allowedReadmeImageUrl(url) : null
+}
+
 /** The stored fallback image only when https and allow-listed; otherwise GitHub's social card for the repo. */
 export function fallbackImageFor(t: { fallbackImageUrl?: string | null; fullName: string }): string {
-  const stored = t.fallbackImageUrl
-  if (stored && stored.startsWith('https://')) {
-    const ok = allowedReadmeImageUrl(stored)
-    if (ok) return ok
-  }
-  return `https://opengraph.githubassets.com/1/${t.fullName}`
+  return storedFallbackImage(t.fallbackImageUrl) ?? `https://opengraph.githubassets.com/1/${t.fullName}`
 }

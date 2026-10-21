@@ -35,6 +35,15 @@ describe('toTemplateSummary', () => {
     expect(toTemplateDetail({ ...base, payloadVersionRange: 'workspace:*' } as never).payloadVersionRange).toBeNull()
     expect(toTemplateDetail({ ...base, payloadVersionRange: '4.0.0-beta.3' } as never).payloadVersionRange).toBe('4.0.0-beta.3')
   })
+  it('gives an official template without screenshot or README image a local branded panel, never the monorepo social image', () => {
+    const official = { ...base, slug: 'website', isOfficial: true, source: 'official', repository: { ...repo, fullName: 'payloadcms/payload' } }
+    expect(toTemplateSummary(official as never).image).toEqual({ src: '', local: true, panel: true })
+    expect(toTemplateSummary({ ...official, fallbackImageUrl: 'https://evil.example/x.png' } as never).image).toEqual({ src: '', local: true, panel: true })
+    expect(toTemplateSummary({ ...official, fallbackImageUrl: 'https://raw.githubusercontent.com/payloadcms/payload/main/t.png' } as never).image)
+      .toEqual({ src: 'https://raw.githubusercontent.com/payloadcms/payload/main/t.png', local: false })
+    // Community templates keep GitHub's social preview.
+    expect(toTemplateSummary(base as never).image).toEqual({ src: 'https://opengraph.githubassets.com/1/a/b', local: false })
+  })
   it('ignores an unpopulated screenshot id', () => {
     expect(toTemplateSummary({ ...base, screenshots: [3] } as never).image.local).toBe(false)
   })

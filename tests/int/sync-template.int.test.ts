@@ -338,6 +338,25 @@ describe('a transient 404 of a community repository', () => {
   })
 })
 
+describe('README fallback image picking (Ruling 11)', () => {
+  const BUTTON = 'https://vercel.com/button'
+  const SHOT = 'https://raw.githubusercontent.com/a/b/main/home.png'
+  const deployFirst: ReadmeRendering = {
+    version: () => 'v1',
+    render: async () => ({ html: `<p><a href="https://vercel.com/new/clone"><img src="${BUTTON}" alt="Deploy with Vercel"></a></p><p><img src="${SHOT}" alt="Home"></p>` }),
+  }
+
+  it('skips a deploy button, and re-picks from the stored HTML when the README did not change', async () => {
+    await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes(), deployFirst))
+    const doc = (await template('5-root'))!
+    expect(doc.fallbackImageUrl).toBe(SHOT)
+    // A row picked by an older picker: the next sync (README unchanged, so not re-rendered) corrects it.
+    await payload.update({ collection: 'templates', id: doc.id, overrideAccess: true, context: { skipRevalidate: true }, data: { fallbackImageUrl: BUTTON } })
+    await runSyncTemplate(payload, communityInput, ctxFor(communityRoutes(), deployFirst))
+    expect((await template('5-root'))!.fallbackImageUrl).toBe(SHOT)
+  })
+})
+
 describe('the plugin and template guard in runSyncRepository', () => {
   it('creates no plugin at a path a non-trashed template holds', async () => {
     const row = await createRepo(payload, { fullName: 'a/b', owner: 'a', githubId: 5 })

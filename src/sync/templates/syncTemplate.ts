@@ -270,8 +270,10 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
       readmeTruncated: (raw.readme?.length ?? 0) > (t.readme?.length ?? 0),
       ...readmeRender,
       // Only when the README HTML was (re)rendered: otherwise the stored image still matches the stored HTML.
-      // Only when the README HTML was (re)rendered: otherwise the stored image still matches the stored HTML.
-      ...('readmeHtml' in readmeRender ? { fallbackImageUrl: firstReadmeImage(readmeRender.readmeHtml) } : {}),
+      // Recomputed from the stored HTML too, so a stricter picker applies to templates whose README did not change.
+      ...('readmeHtml' in readmeRender
+        ? { fallbackImageUrl: firstReadmeImage(readmeRender.readmeHtml) }
+        : prev ? { fallbackImageUrl: firstReadmeImage(prev.readmeHtml) } : {}),
       contentHash,
       dependencyNames: t.dependencyNames,
       // Official: the resolved monorepo version (or null) is stored in place of `workspace:*`.

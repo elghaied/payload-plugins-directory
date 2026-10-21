@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime, versionColors } from "@/lib/formatters";
 import { stackLabel } from "@/lib/templates/stack";
 import type { TemplateSummary } from "@/lib/templates/types";
+import { TemplatePanel } from "./TemplatePanel";
 
 export function TemplateCard({ template }: { template: TemplateSummary }) {
   const { image } = template;
@@ -20,7 +21,9 @@ export function TemplateCard({ template }: { template: TemplateSummary }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm">
       <div className="aspect-[16/10] w-full overflow-hidden bg-muted">
-        {failed ? (
+        {image.panel ? (
+          <TemplatePanel name={template.name} stack={template.stack} />
+        ) : failed ? (
           <div
             role="img"
             aria-label={`${template.name} screenshot unavailable`}

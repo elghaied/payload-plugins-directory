@@ -66,7 +66,7 @@ describe('template queries', () => {
     expect(bySlug['7-root'].image.src).toMatch(/\/api\/media\/file\//)
     // A stored host that is not allow-listed is never used.
     expect(bySlug['8-root'].image).toEqual({ src: 'https://opengraph.githubassets.com/1/acme/shop', local: false })
-    expect(bySlug.website.image).toEqual({ src: 'https://opengraph.githubassets.com/1/payloadcms/payload', local: false })
+    expect(bySlug.website.image).toEqual({ src: '', local: true, panel: true })
   })
 
   it('returns null for hidden, trashed and unknown details, without per-slug cache entries', async () => {
