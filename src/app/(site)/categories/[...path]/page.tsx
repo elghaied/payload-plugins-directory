@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_IMAGES, TWITTER_IMAGES } from "@/lib/siteOg";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -44,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { node } = await load(params);
   const title = `${node.title} plugins for Payload CMS — Payload Plugin Directory`;
   const description = truncateAtWord(node.intro ?? `Payload CMS plugins in ${node.title}.`, 160);
-  return { title, description, openGraph: { title, description, type: "website" }, twitter: { card: "summary", title, description } };
+  return { title, description, openGraph: { title, description, type: "website", images: OG_IMAGES }, twitter: { card: "summary_large_image", title, description, images: TWITTER_IMAGES } };
 }
 
 export default async function CategoryPage({ params }: Props) {

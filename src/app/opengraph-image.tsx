@@ -16,8 +16,8 @@ export default function OpengraphImage() {
           display: 'flex',
           alignItems: 'center',
           padding: '0 96px',
-          background: '#f4f4f1',
-          color: '#1c1c1a',
+          background: BRAND.og.background,
+          color: BRAND.og.foreground,
         }}
       >
         <svg width="260" height="260" viewBox="0 0 32 32" style={{ flexShrink: 0 }}>
@@ -33,7 +33,7 @@ export default function OpengraphImage() {
         <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 72 }}>
           <div style={{ fontSize: 88, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>Payload Plugin</div>
           <div style={{ fontSize: 88, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>Directory</div>
-          <div style={{ marginTop: 28, fontSize: 32, color: '#4d4d49' }}>Find, compare and trust Payload CMS plugins</div>
+          <div style={{ marginTop: 28, fontSize: 32, color: BRAND.og.muted }}>Find, compare and trust Payload CMS plugins</div>
           <div style={{ marginTop: 12, fontSize: 28, color: light.square }}>payloaddirectory.dev</div>
         </div>
       </div>

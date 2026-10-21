@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_IMAGES } from "@/lib/siteOg";
 import Link from "next/link";
 import { Search as SearchIcon } from "lucide-react";
 import { PluginListCard } from "@/components/PluginListCard";
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   title: "Search — Payload CMS Plugin Directory",
   description: "Full-text search across Payload CMS plugin names, summaries, categories, tags and READMEs.",
   alternates: { canonical: "/search" },
-  openGraph: { url: "/search", title: "Search — Payload CMS Plugin Directory" },
+  openGraph: { url: "/search", title: "Search — Payload CMS Plugin Directory", images: OG_IMAGES },
   robots: { index: false, follow: true },
 };
 

@@ -17,9 +17,9 @@ export function readmePreview(readme: string | null | undefined): string | undef
 export const README_RENDER_MAX = README_MAX_CHARS
 
 /** The README as rendered: capped at README_RENDER_MAX without splitting a surrogate pair. */
-export function capReadme(readme: string): { text: string; truncated: boolean } {
-  if (readme.length <= README_RENDER_MAX) return { text: readme, truncated: false }
-  let end = README_RENDER_MAX
+export function capReadme(readme: string, max: number = README_RENDER_MAX): { text: string; truncated: boolean } {
+  if (readme.length <= max) return { text: readme, truncated: false }
+  let end = max
   const last = readme.charCodeAt(end - 1)
   if (last >= 0xd800 && last <= 0xdbff) end -= 1
   return { text: readme.slice(0, end), truncated: true }

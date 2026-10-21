@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_IMAGES, TWITTER_IMAGES } from "@/lib/siteOg";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -32,9 +33,11 @@ const siteMetadata: Metadata = {
     siteName: "Payload Plugin Directory",
     type: "website",
     locale: "en_US",
+    images: OG_IMAGES,
   },
   twitter: {
     card: "summary_large_image",
+    images: TWITTER_IMAGES,
     title: "Payload CMS Plugin Directory",
     description:
       "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",

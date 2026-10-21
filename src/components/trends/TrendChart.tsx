@@ -8,8 +8,9 @@ import { TrendEmpty } from './TrendEmpty'
 
 export type TrendTone = 'stars' | 'downloads'
 
-// Validated with the dataviz palette validator: light #b45309 (4.56:1 on the #f4f4f1 background; #d97706 fell to 2.89),#7c3aed on #f4f4f1 and
-// dark #d97706,#8b5cf6 on #0a0a0a → ALL CHECKS PASS. Do not swap in the -400 steps (fail dark lightness band).
+// Light: amber-700 #b45309 (4.56:1) and violet-600 #7c3aed (5.17:1) on the #f4f4f1 background; dark: amber-600 and
+// violet-500 on #0a0a0a. Ratios computed with the WCAG formula; the dataviz validator was not re-run for these.
+// (amber-600 #d97706 is only 2.89:1 on the light background, so it is not used there.)
 const TONE_CLASS: Record<TrendTone, string> = {
   stars: 'text-amber-700 dark:text-amber-600',
   downloads: 'text-violet-600 dark:text-violet-500',

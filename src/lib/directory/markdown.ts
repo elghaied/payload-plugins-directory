@@ -22,7 +22,6 @@ const CLOBBER_PREFIX = 'user-content-'
 export const readmeSanitizeSchema: SanitizeOptions = {
   ...defaultSchema,
   clobberPrefix: CLOBBER_PREFIX,
-  clobber: ['name', 'id'],
   // Dropped with their text content (the default only strips <script>).
   strip: [...(defaultSchema.strip ?? []), 'style', 'iframe', 'noscript', 'textarea'],
   tagNames: [...(defaultSchema.tagNames ?? []), 'picture', 'source'],
@@ -30,12 +29,20 @@ export const readmeSanitizeSchema: SanitizeOptions = {
     ...defaultSchema.attributes,
     // srcSet is not covered by the schema's protocol check; rehypeReadme re-validates every candidate.
     source: ['srcSet', 'media', 'type'],
-    img: [...((defaultSchema.attributes?.img as never[]) ?? []), 'srcSet'],
+    img: [...((defaultSchema.attributes?.img ?? []) as never[]).filter((a) => a !== 'longDesc'), 'srcSet'],
   },
 }
 
 const ABSOLUTE_HTTP = /^https?:\/\//i
 const HAS_SCHEME = /^[a-z][a-z0-9+.-]*:/i
+
+function safeDecode(seg: string): string {
+  try {
+    return decodeURIComponent(seg)
+  } catch {
+    return seg
+  }
+}
 
 function cleanSegments(path: string): string[] {
   return path.split('/').filter((s) => s !== '' && s !== '.')
@@ -57,8 +64,10 @@ function resolveInRepo(rel: string, pluginPath: string | null | undefined): { pa
   const rootRelative = pathPart.startsWith('/')
   const stack: string[] = rootRelative ? [] : cleanSegments(pluginPath ?? '')
   for (const seg of cleanSegments(pathPart)) {
-    if (seg === '..') stack.pop()
-    else stack.push(seg)
+    // Dot segments are recognised after percent-decoding: browsers treat %2e%2e as "..".
+    const decoded = safeDecode(seg).trim()
+    if (decoded === '..') stack.pop()
+    else if (decoded !== '.') stack.push(seg)
   }
   return { path: stack.map(encodeSegment).join('/'), suffix }
 }
@@ -91,7 +100,8 @@ function rewriteSrcSet(value: string, repo: RepoRef): string {
     .flatMap((candidate) => {
       const [url, ...descriptor] = candidate.split(/\s+/)
       const rewritten = rewriteReadmeUrl(url, 'image', repo)
-      return isAllowedReadmeImageUrl(rewritten) ? [[rewritten, ...descriptor].join(' ')] : []
+      const allowed = allowedReadmeImageUrl(rewritten)
+      return allowed ? [[allowed, ...descriptor].join(' ')] : []
     })
     .join(', ')
 }
@@ -109,7 +119,10 @@ export const ALLOWED_README_IMAGE_HOSTS: Readonly<Record<string, ((pathname: str
   'camo.githubusercontent.com': null,
   'avatars.githubusercontent.com': null,
   'opengraph.githubassets.com': null,
-  'github.com': (p) => /^\/user-attachments\//i.test(p) || /^\/[^/]+\/[^/]+\/(raw|blob)\//i.test(p),
+  'github.com': (p) =>
+    /^\/user-attachments\//i.test(p) ||
+    /^\/[^/]+\/[^/]+\/(raw|blob|assets)\//i.test(p) ||
+    /^\/[^/]+\/[^/]+\/actions\/workflows\/[^/]+\/badge\.svg$/i.test(p),
   'img.shields.io': null,
   'shields.io': null,
   'badgen.net': null,
@@ -123,24 +136,94 @@ export const ALLOWED_README_IMAGE_HOSTS: Readonly<Record<string, ((pathname: str
   'nodei.co': null,
 }
 
-/** True when an (already rewritten) image URL points at an allow-listed host. Host matching is case-insensitive. */
-export function isAllowedReadmeImageUrl(url: string): boolean {
+/**
+ * An (already rewritten) image URL normalised to https, or null when its host is not allow-listed.
+ * Host matching is case-insensitive; `http:` and protocol-relative URLs are upgraded to https.
+ */
+export function allowedReadmeImageUrl(url: string): string | null {
   let parsed: URL
   try {
     parsed = new URL(url.trim(), 'https://invalid.invalid')
   } catch {
-    return false
+    return null
   }
-  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return false
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return null
   const host = parsed.hostname.toLowerCase()
-  if (!Object.hasOwn(ALLOWED_README_IMAGE_HOSTS, host)) return false
+  if (!Object.hasOwn(ALLOWED_README_IMAGE_HOSTS, host)) return null
   const pathRule = ALLOWED_README_IMAGE_HOSTS[host]
-  return pathRule === null || pathRule(parsed.pathname)
+  if (pathRule !== null && !pathRule(parsed.pathname)) return null
+  parsed.protocol = 'https:'
+  return parsed.href
+}
+
+export function isAllowedReadmeImageUrl(url: string): boolean {
+  return allowedReadmeImageUrl(url) !== null
 }
 
 const EXTERNAL_REL = 'nofollow ugc noopener noreferrer'
 
 const NO_REFERRER = 'no-referrer'
+const BLOCK_TAGS = new Set(['table', 'div', 'ul', 'ol', 'pre', 'blockquote', 'details', 'hr', 'section', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'dl', 'figure'])
+const ID_PREFIX = 'user-content-'
+
+function forEachElement(node: Root | Element, fn: (el: Element) => void): void {
+  for (const child of node.children) {
+    if (child.type === 'element') {
+      fn(child)
+      forEachElement(child, fn)
+    }
+  }
+}
+
+function textContent(node: Root | Element): string {
+  let out = ''
+  for (const child of node.children) {
+    if (child.type === 'text') out += child.value
+    else if (child.type === 'element') out += textContent(child)
+  }
+  return out
+}
+
+/** GitHub-style heading slug: lowercase, punctuation dropped, spaces to hyphens. */
+function slugify(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\p{M}\s_-]/gu, '')
+    .replace(/\s/g, '-')
+}
+
+/**
+ * Sanitize prefixed every author id (`user-content-`). Headings without an id get one like GitHub's, and every
+ * in-page `#anchor` is pointed at the prefixed id it targets (case-insensitively), so tables of contents and
+ * footnotes keep working while README ids can never collide with page ids.
+ */
+function resolveAnchors(tree: Root): void {
+  const ids = new Map<string, string>() // lowercased -> actual
+  forEachElement(tree, (el) => {
+    if (typeof el.properties.id === 'string') ids.set(el.properties.id.toLowerCase(), el.properties.id)
+    // <a name="x"> is a valid fragment target too (the sanitizer prefixes name like id).
+    if (el.tagName === 'a' && typeof el.properties.name === 'string') ids.set(el.properties.name.toLowerCase(), el.properties.name)
+  })
+  const used = new Map<string, number>()
+  forEachElement(tree, (el) => {
+    if (!/^h[1-6]$/.test(el.tagName) || el.properties.id) return
+    const base = slugify(textContent(el))
+    if (!base) return
+    const n = used.get(base) ?? 0
+    used.set(base, n + 1)
+    const id = `${ID_PREFIX}${n === 0 ? base : `${base}-${n}`}`
+    el.properties.id = id
+    ids.set(id.toLowerCase(), id)
+  })
+  forEachElement(tree, (el) => {
+    const href = el.tagName === 'a' ? el.properties.href : undefined
+    if (typeof href !== 'string' || !href.startsWith('#') || href.length < 2) return
+    const frag = safeDecode(href.slice(1))
+    const target = ids.get(`${ID_PREFIX}${frag}`.toLowerCase()) ?? ids.get(frag.toLowerCase()) ?? `${ID_PREFIX}${frag}`
+    el.properties.href = `#${encodeURIComponent(target).replace(/%3A/gi, ':')}`
+  })
+}
 
 function textOf(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -178,11 +261,12 @@ export function rehypeReadme(repo: RepoRef) {
       if (tag === 'img') {
         const original = typeof props.src === 'string' ? props.src : ''
         const src = original ? rewriteReadmeUrl(original, 'image', repo) : ''
-        if (!src || !isAllowedReadmeImageUrl(src)) {
+        const allowedSrc = src ? allowedReadmeImageUrl(src) : null
+        if (!allowedSrc) {
           next.push(blockedImage(child, original, inAnchor))
           continue
         }
-        props.src = src
+        props.src = allowedSrc
         if (typeof props.srcSet === 'string') {
           const srcSet = rewriteSrcSet(props.srcSet, repo)
           if (srcSet) props.srcSet = srcSet
@@ -201,7 +285,7 @@ export function rehypeReadme(repo: RepoRef) {
         if (href && !href.startsWith('#')) {
           props.href = rewriteReadmeUrl(href, 'link', repo)
           props.rel = EXTERNAL_REL
-          if (ABSOLUTE_HTTP.test(String(props.href))) props.target = '_blank'
+          if (ABSOLUTE_HTTP.test(String(props.href)) || String(props.href).startsWith('//')) props.target = '_blank'
         }
       } else if (tag === 'input') {
         props.disabled = true
@@ -209,9 +293,14 @@ export function rehypeReadme(repo: RepoRef) {
         child.tagName = `h${Number(tag[1]) + 1}`
       }
       visit(child, inAnchor || tag === 'a')
+      // Unwrapped foreign content can leave a block inside a <p>; browsers would split it and hydration would differ.
+      if (tag === 'p' && child.children.some((c) => c.type === 'element' && BLOCK_TAGS.has(c.tagName))) child.tagName = 'div'
       next.push(child)
     }
     parent.children = next as typeof parent.children
   }
-  return (tree: Root) => visit(tree, false)
+  return (tree: Root) => {
+    visit(tree, false)
+    resolveAnchors(tree)
+  }
 }

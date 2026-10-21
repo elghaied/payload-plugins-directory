@@ -1,13 +1,14 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { ReadmeMarkdown } from '@/components/ReadmeMarkdown'
+import { ReadmeView } from '@/components/ReadmeMarkdown'
+import { README_MARKDOWN_MAX, isPathologicallyNested, renderReadmeTree } from '@/lib/directory/readmeTree'
 import { ALLOWED_README_IMAGE_HOSTS, isAllowedReadmeImageUrl, rewriteReadmeUrl } from '@/lib/directory/markdown'
 
 const repo = { fullName: 'acme/plugins', defaultBranch: 'main' }
 const mono = { fullName: 'acme/plugins', defaultBranch: 'main', path: 'packages/seo' }
 
-const render = (source: string, r = repo) => renderToStaticMarkup(createElement(ReadmeMarkdown, { source, repo: r }))
+const render = (source: string, r = repo) => renderToStaticMarkup(createElement(ReadmeView, { tree: renderReadmeTree(source, r), source }))
 
 describe('README sanitizer', () => {
   it('removes <script> elements and their content', () => {
@@ -131,9 +132,9 @@ describe('README rendering', () => {
     expect(html).toContain('target="_blank"')
     expect(html).toContain('rel="nofollow ugc noopener noreferrer"')
   })
-  it('leaves anchors alone, without target', () => {
+  it('keeps anchors in-page (pointed at the prefixed id), without target', () => {
     const html = render('[jump](#usage)')
-    expect(html).toContain('href="#usage"')
+    expect(html).toContain('href="#user-content-usage"')
     expect(html).not.toContain('target=')
   })
   it('lazy-loads images', () => {
@@ -143,8 +144,8 @@ describe('README rendering', () => {
   })
   it('demotes headings below the page h1', () => {
     const html = render('# Title\n\n###### Deep')
-    expect(html).toContain('<h2>Title</h2>')
-    expect(html).toContain('<h6>Deep</h6>')
+    expect(html).toContain('<h2 id="user-content-title">Title</h2>')
+    expect(html).toContain('<h6 id="user-content-deep">Deep</h6>')
   })
   it('rewrites relative images and links against the repository', () => {
     const html = render('![shot](docs/shot.png)\n\n[guide](docs/guide.md#x)\n\n<img src="/assets/a.png">')
@@ -174,5 +175,108 @@ describe('rewriteReadmeUrl', () => {
   it('keeps query strings and protocol-relative URLs', () => {
     expect(rewriteReadmeUrl('a.png?raw=true', 'image', repo)).toBe('https://raw.githubusercontent.com/acme/plugins/main/a.png?raw=true')
     expect(rewriteReadmeUrl('//cdn.example.com/a.png', 'image', repo)).toBe('//cdn.example.com/a.png')
+  })
+})
+
+describe('hostile nesting (denial of service)', () => {
+  const payloads: Record<string, string> = {
+    'blockquote x 100k': '>'.repeat(100_000) + ' x',
+    'nested list markers': '- '.repeat(2_000) + 'x',
+    'div x 2000': '<div>'.repeat(2_000),
+    'ordered list markers': '1. '.repeat(500) + 'x',
+    'indented list ladder': Array.from({ length: 60 }, (_, i) => `${'  '.repeat(i)}- item`).join('\n'),
+  }
+  for (const [name, source] of Object.entries(payloads)) {
+    it(`falls back to escaped plain text quickly: ${name}`, () => {
+      const start = performance.now()
+      let html = ''
+      expect(() => {
+        html = renderToStaticMarkup(createElement(ReadmeView, { tree: renderReadmeTree(source, repo), source }))
+      }).not.toThrow()
+      expect(performance.now() - start).toBeLessThan(500)
+      expect(html).toContain('<pre')
+      expect(html).not.toContain('readme-prose')
+    })
+  }
+  it('stays fast on unclosed angle-bracket floods (not nested, rendered as text)', () => {
+    for (const source of ['<a '.repeat(30_000), '<'.repeat(50_000) + '>', '[' .repeat(30_000), '*'.repeat(30_000)]) {
+      const start = performance.now()
+      expect(() => renderToStaticMarkup(createElement(ReadmeView, { tree: renderReadmeTree(source, repo), source }))).not.toThrow()
+      expect(performance.now() - start).toBeLessThan(500)
+    }
+  })
+  it('flags depth only above the limit', () => {
+    expect(isPathologicallyNested('> '.repeat(20) + 'x')).toBe(false)
+    expect(isPathologicallyNested('> '.repeat(21) + 'x')).toBe(true)
+    expect(isPathologicallyNested('<div>'.repeat(20))).toBe(false)
+    expect(isPathologicallyNested('<div>'.repeat(21))).toBe(true)
+    expect(isPathologicallyNested('<div><br><img src=x><p>a</p></div>'.repeat(500))).toBe(false)
+  })
+  it('renders ordinary nested READMEs as Markdown', () => {
+    const html = render('- a\n  - b\n    - c\n\n> quote\n\n<details><summary>s</summary><div><p>x</p></div></details>')
+    expect(html).toContain('readme-prose')
+    expect(html).toContain('<details>')
+  })
+  it('caps the rendered input at README_MARKDOWN_MAX', () => {
+    const html = render('a'.repeat(README_MARKDOWN_MAX + 500))
+    expect(html.match(/a/g)!.length).toBeLessThan(README_MARKDOWN_MAX + 200)
+  })
+  it('never throws on an error inside the pipeline', () => {
+    expect(renderReadmeTree('x'.repeat(10), { fullName: undefined as never })).toBeTypeOf('object')
+  })
+})
+
+describe('anchors, aria and footnotes', () => {
+  it('prefixes aria-describedby and aria-labelledby', () => {
+    const html = render('<table aria-describedby="__next" aria-labelledby="main"><tr><td>x</td></tr></table>')
+    expect(html).not.toMatch(/aria-describedby="__next"|aria-labelledby="main"/)
+    expect(html).toContain('aria-describedby="user-content-__next"')
+  })
+  it('gives headings ids and points #anchors at them', () => {
+    const html = render('[go](#Getting-Started)\n\n## Getting Started\n\n## Getting Started')
+    expect(html).toContain('id="user-content-getting-started"')
+    expect(html).toContain('id="user-content-getting-started-1"')
+    expect(html).toContain('href="#user-content-getting-started"')
+  })
+  it('points #anchors at <a name> targets', () => {
+    const html = render('<a name="top"></a>\n\n[up](#top)')
+    expect(html).toContain('name="user-content-top"')
+    expect(html).toContain('href="#user-content-top"')
+  })
+  it('keeps footnote links and ids consistent', () => {
+    const html = render('text[^1]\n\n[^1]: the note')
+    const ids = [...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1])
+    const hrefs = [...html.matchAll(/href="#([^"]+)"/g)].map((m) => m[1])
+    expect(hrefs.length).toBeGreaterThan(0)
+    for (const h of hrefs) expect(ids).toContain(h)
+    expect(html).not.toContain('user-content-user-content')
+    const labelled = [...html.matchAll(/aria-describedby="([^"]+)"/g)].map((m) => m[1])
+    for (const l of labelled) expect(ids).toContain(l)
+  })
+})
+
+describe('review follow-ups', () => {
+  it('rejects encoded dot segments', () => {
+    for (const rel of ['%2e%2e/%2e%2e/%2e%2e/evil/repo', '.%2E/.%2e/.%2E/evil/repo', '%2E%2E%2f..%2fx']) {
+      const out = rewriteReadmeUrl(rel, 'link', mono)
+      expect(out.startsWith('https://github.com/acme/plugins/blob/main/')).toBe(true)
+      expect(out.toLowerCase()).not.toContain('%2e')
+    }
+    expect(rewriteReadmeUrl('%2e%2e/%2e%2e/x', 'image', mono)).toBe('https://raw.githubusercontent.com/acme/plugins/main/x')
+  })
+  it('opens protocol-relative links in a new tab', () => {
+    expect(render('[x](//example.com/a)')).toContain('target="_blank"')
+  })
+  it('allows GitHub workflow badges and repo assets, upgrades http', () => {
+    expect(isAllowedReadmeImageUrl('https://github.com/o/r/actions/workflows/ci.yml/badge.svg?branch=main')).toBe(true)
+    expect(isAllowedReadmeImageUrl('https://github.com/o/r/assets/123/abc')).toBe(true)
+    expect(isAllowedReadmeImageUrl('https://github.com/o/r/actions/runs/1')).toBe(false)
+    expect(render('<img src="http://img.shields.io/x.svg">')).toContain('src="https://img.shields.io/x.svg"')
+  })
+  it('does not emit longDesc', () => {
+    expect(render('<img src="https://img.shields.io/x.svg" longdesc="https://img.shields.io/y">').toLowerCase()).not.toContain('longdesc')
+  })
+  it('does not leave a table inside a paragraph', () => {
+    expect(render('<math><mtext><table><tr><td>x</td></tr></table></mtext></math>')).not.toMatch(/<p><table/)
   })
 })

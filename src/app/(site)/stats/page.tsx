@@ -1,4 +1,5 @@
 import { computeStats, versionAdoption } from "@/lib/directory/stats";
+import { OG_IMAGES } from "@/lib/siteOg";
 import { getDirectoryMeta, getPluginSummaries } from "@/lib/directory/queries";
 import { Metadata } from "next";
 import { TrendChart } from "@/components/trends/TrendChart";
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/stats" },
   openGraph: {
     url: "/stats",
+    images: OG_IMAGES,
     title: "Ecosystem Stats — Payload CMS Plugin Directory",
     description:
       "Statistics about the Payload CMS plugin ecosystem: growth over time, Payload version adoption, top contributors, licenses and downloads.",

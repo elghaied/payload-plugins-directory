@@ -7,6 +7,8 @@ export const BRAND = {
   /** Square fill: teal-700 (white glyph = 5.5:1) in light, teal-400 (near-black glyph) in dark. */
   light: { square: '#0f766e', glyph: '#ffffff' },
   dark: { square: '#2dd4bf', glyph: '#042f2e' },
+  /** Open Graph card colours (light page tokens: --background, --foreground, --muted-foreground). */
+  og: { background: '#f4f4f1', foreground: '#1c1c1a', muted: '#4d4d49' },
   /** Plug glyph as SVG shapes in the 32x32 box. */
   glyph: [
     { tag: 'rect', x: 11, y: 5, width: 3, height: 7, rx: 1.5 },

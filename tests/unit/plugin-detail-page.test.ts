@@ -9,6 +9,10 @@ vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => createElement('a', { href }, children),
 }))
 vi.mock('@/lib/directory/queries', () => ({ getPluginDetail: async () => state.detail, getSimilarPlugins: async () => [] }))
+vi.mock('@/lib/directory/readmeCache', async () => {
+  const { renderReadmeTree } = await import('@/lib/directory/readmeTree')
+  return { getReadmeTree: async (_slug: string, source: string, repo: never) => ({ tree: renderReadmeTree(source, repo) }) }
+})
 vi.mock('@/lib/trends/queries', () => ({ getPluginTrends: async () => state.trends }))
 vi.mock('@/lib/directory/taxonomy', () => ({
   getCategoryNodes: async () =>

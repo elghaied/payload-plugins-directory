@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_IMAGES } from "@/lib/siteOg";
 import type { ReactNode } from "react";
 import { RankedList, type RankedRow } from "@/components/trends/RankedList";
 import { TrendEmpty } from "@/components/trends/TrendEmpty";
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/trending" },
   openGraph: {
     url: "/trending",
+    images: OG_IMAGES,
     title: "Trending Payload Plugins — Payload CMS Plugin Directory",
     description:
       "The fastest-growing Payload CMS plugins this week by GitHub stars and npm downloads, plus new and recently updated plugins.",

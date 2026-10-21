@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OG_IMAGES, TWITTER_IMAGES } from "@/lib/siteOg";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import { getPluginDetail, getSimilarPlugins } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
+import { README_MARKDOWN_MAX } from "@/lib/directory/readmeTree";
 import { getServerURL } from "@/lib/serverUrl";
 import { BadgeEmbed } from "@/components/BadgeEmbed";
 import { getPluginTrends } from "@/lib/trends/queries";
@@ -32,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
 import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
 import { SimilarPlugins } from "@/components/SimilarPlugins";
-import { ReadmeMarkdown } from "@/components/ReadmeMarkdown";
+import { renderReadme } from "@/components/ReadmeMarkdown";
 import { PluginAiOverview } from "@/components/PluginAiOverview";
 import { getCategoryNodes } from "@/lib/directory/taxonomy";
 import { categoryHref, tagHref } from "@/lib/taxonomy/links";
@@ -68,11 +70,13 @@ export async function generateMetadata({
       title,
       description,
       type: "website",
+      images: OG_IMAGES,
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
+      images: TWITTER_IMAGES,
     },
   };
 }
@@ -104,7 +108,12 @@ export default async function PluginDetailPage({
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
   const trail = plugin.category ? trailFor(await getCategoryNodes(), plugin.category.path) : [];
-  const readmeFull = plugin.readmeFull ? capReadme(plugin.readmeFull) : null;
+  const readmeFull = plugin.readmeFull ? capReadme(plugin.readmeFull, README_MARKDOWN_MAX) : null;
+  const readmePreviewNode = plugin.readme ? await renderReadme(plugin.slug, plugin.readme, plugin.readmeSource) : null;
+  const readmeFullNode =
+    readmeFull && plugin.readme && readmeFull.text.length > plugin.readme.length
+      ? await renderReadme(plugin.slug, readmeFull.text, plugin.readmeSource)
+      : null;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -443,12 +452,12 @@ export default async function PluginDetailPage({
           <Card className="mb-8">
             <CardContent className="p-6">
               <p className="text-xs font-medium text-muted-foreground mb-3">README</p>
-              <ReadmeMarkdown source={plugin.readme} repo={plugin.readmeSource} />
+              {readmePreviewNode}
               {readmeFull && readmeFull.text.length > plugin.readme.length && (
                 <details className="mt-4">
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">Full README</summary>
                   <div className="mt-3">
-                    <ReadmeMarkdown source={readmeFull.text} repo={plugin.readmeSource} />
+                    {readmeFullNode}
                   </div>
                 </details>
               )}

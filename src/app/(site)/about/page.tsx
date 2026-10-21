@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { OG_IMAGES } from "@/lib/siteOg";
 import { ExternalLink } from "lucide-react";
 import { mcpUrl } from "@/mcp/instructions";
 
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
     "Learn how the Payload CMS Plugin Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
   openGraph: {
     url: "/about",
+    images: OG_IMAGES,
     title: "About — Payload CMS Plugin Directory",
     description:
       "Learn how the Payload CMS Plugin Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
