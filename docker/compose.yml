@@ -39,7 +39,7 @@
 #    verify its exact name in Coolify 4.4). If your Coolify has no such field for Docker Image resources, use the one Docker
 #    Compose resource described under "Service definitions" below instead: it solves the command, the shared media volume, the
 #    web-before-worker start order and the restart policy in one file (then skip the bind mount and the INTERNAL_WEB_URL lookup:
-#    INTERNAL_WEB_URL is http://web:3000).
+#    INTERNAL_WEB_URL is http://payload-directory-web:3000).
 #
 #    Environment variables (Configuration > Environment Variables). R = required, O = optional, - = do not set.
 #
@@ -245,8 +245,11 @@ services:
     volumes:
       - media:/app/media
     networks:
-      - default
-      - coolify
+      default:
+        # Unique name for the worker's revalidate calls. Plain `web` is ambiguous on the shared coolify network, where other
+        # stacks also have a `web` service; resolving the wrong one would send REVALIDATE_SECRET to another app.
+        aliases: [payload-directory-web]
+      coolify: {}
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
       interval: 30s
@@ -278,7 +281,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       SERVER_URL: https://payloaddirectory.dev
       # The web service's internal address (revalidate jobs POST /api/revalidate here).
-      INTERNAL_WEB_URL: http://web:3000
+      INTERNAL_WEB_URL: http://payload-directory-web:3000
     # The daily orphan-media sweep runs here and unlinks files under /app/media: this MUST be the same volume as web,
     # read-write, or the rows are deleted but the files stay on disk. In Coolify, attach the one shared volume to BOTH
     # services (a per-service volume with the same name is a different volume).
@@ -290,7 +293,7 @@ services:
 volumes:
   media:
 # Coolify's shared network, where the Postgres resource lives. Named explicitly so the containers join it on every
-# deploy, independent of the "Connect to predefined network" toggle. `default` keeps http://web:3000 working.
+# deploy, independent of the "Connect to predefined network" toggle. The worker calls web by its unique alias on `default`.
 networks:
   coolify:
     external: true
