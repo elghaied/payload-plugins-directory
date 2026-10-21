@@ -1,6 +1,6 @@
 import type { CollectionAfterChangeHook, PayloadRequest } from 'payload'
 import { isPubliclyListed, type SearchableCollection } from './searchDoc'
-import { removeSearchDocs } from './sync'
+import { removeSearchDocs, resolvePluginDoc } from './sync'
 
 /**
  * Never fail the source write because of the search index. Public reads re-check access on the plugin
@@ -27,10 +27,18 @@ export const forgetSyncedDoc =
     return doc
   }
 
+/**
+ * Writes that must leave the index alone set `context.skipSearchSync` (the taxonomy seed migration runs before the
+ * `search` table exists, and a failing insert would abort its transaction). `reindex-search --if-empty` backfills.
+ */
+export const searchSyncSkipped = (context: unknown): boolean => Boolean((context as { skipSearchSync?: boolean } | undefined)?.skipSearchSync)
+
 /** Runs before plugin-search's own afterChange hook (collection hooks first, plugin hooks appended). */
-export const removeUnlistedPluginFromSearch: CollectionAfterChangeHook = async ({ doc, req }) => {
-  if (!isPubliclyListed(doc)) {
-    await guarded(req, `removing plugin ${doc.id} from the index`, () => removeSearchDocs(req.payload, 'plugins', doc.id, req))
-  }
+export const removeUnlistedPluginFromSearch: CollectionAfterChangeHook = async ({ doc, req, context }) => {
+  if (searchSyncSkipped(context) || searchSyncSkipped(req.context)) return doc
+  await guarded(req, `removing plugin ${doc.id} from the index`, async () => {
+    // `doc` is projected when the caller passed `select`: decide from the full document.
+    if (!isPubliclyListed(await resolvePluginDoc(req.payload, doc, req))) await removeSearchDocs(req.payload, 'plugins', doc.id, req)
+  })
   return doc
 }

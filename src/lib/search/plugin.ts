@@ -3,7 +3,8 @@ import { searchPlugin } from '@payloadcms/plugin-search'
 import type { BeforeSync, SearchPluginConfig } from '@payloadcms/plugin-search/types'
 import { isAdmin } from '@/access'
 import { isPubliclyListed, KIND_BY_COLLECTION, SEARCH_FIELD_LIMITS, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
-import { searchFieldsFor } from './sync'
+import { searchSyncSkipped } from './hooks'
+import { resolvePluginDoc, searchFieldsFor } from './sync'
 
 const ro = { readOnly: true }
 const searchFields: Field[] = [
@@ -24,13 +25,17 @@ const searchFields: Field[] = [
 
 // Returning true makes plugin-search return early WITHOUT deleting an existing record —
 // removeUnlistedPluginFromSearch (hooks.ts) handles removal.
-const skipSync: NonNullable<SearchPluginConfig['skipSync']> = ({ collectionSlug, doc }) =>
-  collectionSlug === 'plugins' && !isPubliclyListed(doc)
+const skipSync: NonNullable<SearchPluginConfig['skipSync']> = async ({ collectionSlug, doc, req }) => {
+  if (searchSyncSkipped(req.context)) return true
+  // A projected hook document (caller passed `select`) is replaced by a full read before deciding.
+  return collectionSlug === 'plugins' && !isPubliclyListed(await resolvePluginDoc(req.payload, doc, req))
+}
 
 const beforeSync: BeforeSync = async ({ collectionSlug, originalDoc, payload, req, searchDoc }) => {
   const collection = collectionSlug as SearchableCollection
   try {
-    return { ...searchDoc, ...(await searchFieldsFor(payload, collection, originalDoc, req)) }
+    const source = collection === 'plugins' ? await resolvePluginDoc(payload, originalDoc, req) : originalDoc
+    return { ...searchDoc, ...(await searchFieldsFor(payload, collection, source, req)) }
   } catch (err) {
     // plugin-search does not catch beforeSync errors: a throw would fail the source write (e.g. a sync job).
     payload.logger.error({ err, msg: `search: could not build index fields for ${collection} ${String(originalDoc.id)}` })

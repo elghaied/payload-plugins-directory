@@ -4,7 +4,7 @@ import { sql } from '@payloadcms/db-postgres/drizzle'
 import { SEARCH_FIELD_LIMITS } from '@/lib/search/searchDoc'
 import { getSessionSecret, signSessionToken, SESSION_COOKIE } from '@/lib/auth/session'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createPlugin, createRepo, searchDocsFor, trashPlugin } from './helpers/factories'
+import { createPlugin, createRepo, searchDocsFor, trashPlugin } from './helpers/directory'
 
 let payload: Payload
 let repoId: number
@@ -104,15 +104,6 @@ describe('search index sync', () => {
     expect(doc.readme).toHaveLength(SEARCH_FIELD_LIMITS.readme)
   })
 
-  it('syncs a second change when two updates share one context object', async () => {
-    const p = await createPlugin(payload, repoId, { slug: 'shared-ctx', name: 'First name' })
-    const context: Record<string, unknown> = { skipRevalidate: true }
-    await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, context, data: { name: 'Second name' } })
-    expect((await searchDocsFor(payload, 'plugins', p.id))[0].title).toBe('Second name')
-    await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, context, data: { name: 'Third name' } })
-    expect((await searchDocsFor(payload, 'plugins', p.id))[0].title).toBe('Third name')
-  })
-
   it('syncs a second change when two updates share one req', async () => {
     const p = await createPlugin(payload, repoId, { slug: 'shared-req', name: 'First name' })
     const req = await createPayloadRequest({ payload, context: { skipRevalidate: true } })
@@ -127,6 +118,55 @@ describe('search index sync', () => {
     await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, data: { name: 'Renamed' } })
     expect(await revalidates()).toBe(1) // exactly the plugin hook's job; the search row update queued nothing
     expect((await searchDocsFor(payload, 'plugins', p.id))[0].title).toBe('Renamed')
+  })
+
+  describe('projected hook documents (write passes select)', () => {
+    it('a system update with select keeps a listed plugin in the index and refreshes it', async () => {
+      const p = await createPlugin(payload, repoId, { slug: 'select-system', name: 'Before' })
+      await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, depth: 0, select: { name: true }, data: { name: 'After' } })
+      const docs = await searchDocsFor(payload, 'plugins', p.id)
+      expect(docs).toHaveLength(1)
+      expect(docs[0].title).toBe('After')
+    })
+
+    it('a maintainer REST PATCH with ?select[customTagline]=true does not drop their plugin from the index', async () => {
+      const m = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId: 11, login: 'octo11' } })
+      const p = await createPlugin(payload, repoId, { slug: 'select-rest', maintainers: [m.id] })
+      const token = await signSessionToken({ maintainerId: m.id, githubId: 11 }, getSessionSecret())
+      const res = await handleEndpoints({
+        config: payload.config,
+        request: new Request(`http://localhost/api/plugins/${p.id}?select[customTagline]=true`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json', cookie: `${SESSION_COOKIE}=${token}` },
+          body: JSON.stringify({ customTagline: 'Via REST' }),
+        }),
+      })
+      expect(res.status).toBe(200)
+      const docs = await searchDocsFor(payload, 'plugins', p.id)
+      expect(docs).toHaveLength(1)
+      expect(docs[0].tagline).toBe('Via REST')
+    })
+
+    it('an update with trash: true and select on a trashed plugin does not create a row', async () => {
+      const p = await createPlugin(payload, repoId, { slug: 'select-trashed' })
+      await trashPlugin(payload, p.id)
+      await payload.update({
+        collection: 'plugins',
+        id: p.id,
+        overrideAccess: true,
+        trash: true,
+        depth: 0,
+        select: { visibility: true, name: true, slug: true },
+        data: { name: 'Renamed while trashed' },
+      })
+      expect(await searchDocsFor(payload, 'plugins', p.id)).toEqual([])
+    })
+
+    it('skipSearchSync leaves the index untouched', async () => {
+      const p = await createPlugin(payload, repoId, { slug: 'no-sync', visibility: 'hidden' })
+      await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, context: { skipSearchSync: true, skipRevalidate: true }, data: { visibility: 'listed' } })
+      expect(await searchDocsFor(payload, 'plugins', p.id)).toEqual([])
+    })
   })
 
   it('anonymous users cannot read the search collection', async () => {

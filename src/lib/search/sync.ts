@@ -119,3 +119,15 @@ export async function syncSearchDoc(
   else await payload.create({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, data, req })
   return 'upserted'
 }
+
+const PLUGIN_INDEX_KEYS = ['name', 'slug', 'description', 'readme', 'customTagline', 'ai', 'category', '_h_tags', 'visibility', 'deletedAt'] as const
+
+/**
+ * Hook documents are built with the caller's `select`, so `visibility` / `deletedAt` (or the indexed text) can be
+ * missing. A projected document is replaced by a full read (trashed plugins included) before anything is decided.
+ */
+export async function resolvePluginDoc<T extends Record<string, unknown>>(payload: Payload, doc: T, req?: PayloadRequest): Promise<Record<string, unknown>> {
+  if (PLUGIN_INDEX_KEYS.every((k) => k in doc)) return doc
+  const full = await payload.findByID({ collection: 'plugins', id: doc.id as number, overrideAccess: true, depth: 0, trash: true, disableErrors: true, req })
+  return (full as unknown as Record<string, unknown> | null) ?? doc
+}
