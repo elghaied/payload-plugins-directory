@@ -23,6 +23,15 @@ describe('VideoEmbed', () => {
     expect(loom).toContain('Play video (loads Loom)')
   })
 
+  it('autoplays after the click (Ruling 7): autoplay=1 joins an existing query for Vimeo and Loom', () => {
+    const play = (video: { provider: 'vimeo' | 'loom'; embedUrl: string; watchUrl: string }) =>
+      renderToStaticMarkup(createElement(VideoEmbedView, { video, title: 'v', playing: true, onPlay: () => {} }))
+    expect(play({ provider: 'vimeo', embedUrl: 'https://player.vimeo.com/video/1?dnt=1', watchUrl: 'https://vimeo.com/1' }))
+      .toContain('src="https://player.vimeo.com/video/1?dnt=1&amp;autoplay=1"')
+    expect(play({ provider: 'loom', embedUrl: 'https://www.loom.com/embed/x', watchUrl: 'https://www.loom.com/share/x' }))
+      .toContain('src="https://www.loom.com/embed/x?autoplay=1"')
+  })
+
   it('uses only a local poster, never a remote thumbnail', () => {
     const html = view(false, '/api/media/file/shot.webp')
     expect(html).toContain('src="/api/media/file/shot.webp"')
@@ -32,9 +41,9 @@ describe('VideoEmbed', () => {
 
   it('renders the sandboxed youtube-nocookie iframe once playing', () => {
     const html = view(true)
-    expect(html).toMatch(/<iframe[^>]*src="https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ"/)
+    expect(html).toMatch(/<iframe[^>]*src="https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ\?autoplay=1"/)
     expect(html).toContain('title="Demo video"')
-    expect(html).toContain('allow="fullscreen; picture-in-picture"')
+    expect(html).toContain('allow="autoplay; fullscreen; picture-in-picture"')
     expect(html).toContain('referrerPolicy="strict-origin-when-cross-origin"')
     expect(html).toContain('sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"')
     expect(html).toContain('loading="lazy"')
