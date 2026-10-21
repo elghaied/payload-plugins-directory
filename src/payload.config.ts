@@ -5,6 +5,7 @@ import { postgresAdapter } from '@payloadcms/db-postgres'
 import { sharpTransformer } from '@payloadcms/transformer-sharp'
 
 import { Categories } from './collections/Categories'
+import { TemplateCategories } from './collections/TemplateCategories'
 import { Maintainers } from './collections/Maintainers'
 import { Media } from './collections/Media'
 import { Plugins } from './collections/Plugins'
@@ -51,7 +52,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Users, Maintainers, Repositories, Plugins, Categories, Tags, Submissions, Media],
+  collections: [Users, Maintainers, Repositories, Plugins, Categories, TemplateCategories, Tags, Submissions, Media],
   globals: [DirectorySettings],
   // Admin presets (Low confidence, Uncategorized, Enrichment failed). v4 would allow any authenticated user,
   // which includes maintainers once Phase 4 adds their login.

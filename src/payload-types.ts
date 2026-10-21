@@ -73,6 +73,7 @@ export interface Config {
     repositories: Repository;
     plugins: Plugin;
     categories: Category;
+    'template-categories': TemplateCategory;
     tags: Tag;
     submissions: Submission;
     media: Media;
@@ -92,6 +93,7 @@ export interface Config {
     repositories: RepositoriesSelect<false> | RepositoriesSelect<true>;
     plugins: PluginsSelect<false> | PluginsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    'template-categories': TemplateCategoriesSelect<false> | TemplateCategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     submissions: SubmissionsSelect<false> | SubmissionsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -493,6 +495,46 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "template-categories".
+ */
+export interface TemplateCategory {
+  id: number;
+  parent?: (number | null) | TemplateCategory;
+  title: string;
+  slug: string;
+  /**
+   * SEO paragraph shown on the category page.
+   */
+  intro?: string | null;
+  /**
+   * lucide-react icon name, e.g. "database".
+   */
+  icon?: string | null;
+  createdBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedBy?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'maintainers';
+        value: number | Maintainer;
+      } | null);
+  updatedAt: string;
+  createdAt: string;
+  _h_slugPath?: string | null;
+  _h_titlePath?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "submissions".
  */
 export interface Submission {
@@ -759,6 +801,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'categories';
         value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'template-categories';
+        value: number | TemplateCategory;
       } | null)
     | ({
         relationTo: 'tags';
@@ -1052,6 +1098,23 @@ export interface PluginsSelect<T extends boolean = true> {
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
+  parent?: T;
+  title?: T;
+  slug?: T;
+  intro?: T;
+  icon?: T;
+  createdBy?: T;
+  updatedBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _h_slugPath?: T;
+  _h_titlePath?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "template-categories_select".
+ */
+export interface TemplateCategoriesSelect<T extends boolean = true> {
   parent?: T;
   title?: T;
   slug?: T;
@@ -1429,6 +1492,7 @@ export interface CollectionQueryWidget {
       | 'repositories'
       | 'plugins'
       | 'categories'
+      | 'template-categories'
       | 'tags'
       | 'submissions'
       | 'media'
@@ -1462,6 +1526,7 @@ export interface ActivityWidget {
           | 'repositories'
           | 'plugins'
           | 'categories'
+          | 'template-categories'
           | 'tags'
           | 'submissions'
           | 'media'

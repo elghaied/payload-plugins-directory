@@ -6,7 +6,7 @@ import { SERVER_INSTRUCTIONS } from './instructions'
 import { comparePluginsTool, getPluginTool, listCategoriesTool, searchPluginsTool } from './tools'
 
 /** Every non-`payload-*` collection. Tests fail if a collection is added without being listed here. */
-export const APP_COLLECTIONS = ['users', 'maintainers', 'repositories', 'plugins', 'categories', 'tags', 'submissions', 'media', 'search'] as const
+export const APP_COLLECTIONS = ['users', 'maintainers', 'repositories', 'plugins', 'categories', 'template-categories', 'tags', 'submissions', 'media', 'search'] as const
 
 // All built-ins in plugin-mcp 4.0.0-beta.3 (src: dist/mcp/builtinTools.js). Several write
 // (create, update, delete, duplicate, restoreVersion; update/restoreGlobalVersion on globals).

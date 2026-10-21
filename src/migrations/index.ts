@@ -16,6 +16,8 @@ import * as migration_20261021_013801_search_resync_task from './20261021_013801
 import * as migration_20261021_034401_readme_truncated from './20261021_034401_readme_truncated';
 import * as migration_20261021_070342_readme_html from './20261021_070342_readme_html';
 import * as migration_20261021_073906_render_readmes_task from './20261021_073906_render_readmes_task';
+import * as migration_20261021_105019_template_categories from './20261021_105019_template_categories';
+import * as migration_20261021_105100_seed_template_categories from './20261021_105100_seed_template_categories';
 
 export const migrations = [
   {
@@ -106,6 +108,16 @@ export const migrations = [
   {
     up: migration_20261021_073906_render_readmes_task.up,
     down: migration_20261021_073906_render_readmes_task.down,
-    name: '20261021_073906_render_readmes_task'
+    name: '20261021_073906_render_readmes_task',
+  },
+  {
+    up: migration_20261021_105019_template_categories.up,
+    down: migration_20261021_105019_template_categories.down,
+    name: '20261021_105019_template_categories',
+  },
+  {
+    up: migration_20261021_105100_seed_template_categories.up,
+    down: migration_20261021_105100_seed_template_categories.down,
+    name: '20261021_105100_seed_template_categories'
   },
 ];
