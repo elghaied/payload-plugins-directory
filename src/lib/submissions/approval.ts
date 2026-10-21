@@ -3,10 +3,10 @@ import { ValidationError } from 'payload'
 import { createNpmRepositoryResolver, type NpmRepositoryResolver } from '@/lib/npm/repository'
 import { relationId } from '@/lib/relationId'
 import type { Submission } from '@/payload-types'
-import { findPluginForRepository } from './duplicates'
-import { enqueueRepositorySync } from './enqueueSync'
+import { findPluginForRepository, findTemplateForRepositoryPath } from './duplicates'
+import { enqueueRepositorySync, enqueueTemplateSync } from './enqueueSync'
 import { MESSAGES } from './messages'
-import { parseSubmissionUrl } from './url'
+import { parseSubmissionUrl, parseTemplateSubmissionUrl } from './url'
 
 export function becomesApproved(operation: string, status: unknown, previousStatus: unknown): boolean {
   return status === 'approved' && (operation === 'create' || previousStatus !== 'approved')
@@ -39,6 +39,14 @@ export const resolveApprovedListing: CollectionBeforeChangeHook = async ({ data,
   }
   if (type !== 'listing' || !becomesApproved(operation, data.status ?? originalDoc?.status, originalDoc?.status)) return data
   if (data.repositoryFullName || originalDoc?.repositoryFullName) return data
+
+  if ((data.kind ?? originalDoc?.kind) === 'template') {
+    // Templates are GitHub-only: the repository comes straight from the URL, no registry call.
+    const target = parseTemplateSubmissionUrl(String(data.url ?? originalDoc?.url ?? ''))
+    if (!target) throw invalid('repositoryFullName', MESSAGES.unresolvedRepository)
+    data.repositoryFullName = target.fullName
+    return data
+  }
 
   const target = parseSubmissionUrl(String(data.url ?? originalDoc?.url ?? ''))
   let fullName: string | null = null
@@ -84,6 +92,24 @@ async function addMaintainer(req: PayloadRequest, pluginId: number | undefined, 
   })
 }
 
+/**
+ * An approved template listing links the existing template of that repository + folder, or queues `sync-template`
+ * (which links it once the template is created). Like a plugin listing, it never grants maintainer rights.
+ */
+async function approveTemplateListing(req: PayloadRequest, doc: Submission, fullName: string): Promise<Submission> {
+  if (doc.template) return doc
+  const path = doc.path || null
+  const template = await findTemplateForRepositoryPath(req.payload, fullName, path, req)
+  if (template) {
+    // System write: `template` is admin-only and set here only on the approval transition.
+    await req.payload.update({ collection: 'submissions', id: doc.id, data: { template: template.id }, depth: 0, overrideAccess: true, req })
+    doc.template = template.id
+    return doc
+  }
+  await enqueueTemplateSync(req, fullName, path)
+  return doc
+}
+
 /** Spec §9: approving a claim adds the maintainer; approving a listing links the plugin and enqueues a sync. */
 export const applyApproval: CollectionAfterChangeHook<Submission> = async ({ doc, operation, previousDoc, req }) => {
   if (!becomesApproved(operation, doc.status, previousDoc?.status)) return doc
@@ -95,6 +121,7 @@ export const applyApproval: CollectionAfterChangeHook<Submission> = async ({ doc
 
   const fullName = doc.repositoryFullName
   if (!fullName) return doc
+  if (doc.kind === 'template') return approveTemplateListing(req, doc, fullName)
   if (!doc.plugin) {
     const plugin = await findPluginForRepository(req.payload, fullName, req)
     if (plugin) {

@@ -33,6 +33,38 @@ function decodeSegment(segment: string): string | null {
   }
 }
 
+export const TEMPLATE_PATH_MAX = 300
+const TEMPLATE_PATH_SEGMENT_RE = /^[A-Za-z0-9._-]+$/
+
+/** A repository-relative template folder (`apps/site`): segments `[A-Za-z0-9._-]+`, no dot segments, at most 300 characters. */
+export function validTemplatePath(path: string): boolean {
+  if (!path || path.length > TEMPLATE_PATH_MAX) return false
+  return path.split('/').every((s) => TEMPLATE_PATH_SEGMENT_RE.test(s) && s !== '.' && s !== '..')
+}
+
+export type TemplateSubmissionTarget = { fullName: string; canonicalUrl: string; path: string | null }
+
+/**
+ * Strictly parses a template URL: `https://github.com/o/r` (the repository root) or
+ * `https://github.com/o/r/tree/<ref>/<path…>` (a folder; the ref is dropped). npm and every other GitHub page are
+ * rejected. The canonical URL names the folder at `HEAD` and parses back to the same target.
+ */
+export function parseTemplateSubmissionUrl(input: string): TemplateSubmissionTarget | null {
+  const base = parseSubmissionUrl(input)
+  if (base?.kind !== 'github') return null
+  // parseSubmissionUrl already refused non-ASCII, credentials, ports and dot segments; re-read the path to keep its tail.
+  const raw = input.trim()
+  const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`)
+  const rest = url.pathname.split('/').filter(Boolean).slice(2)
+  if (rest.length === 0) return { fullName: base.fullName, canonicalUrl: base.canonicalUrl, path: null }
+  if (rest[0] !== 'tree' || rest.length < 2) return null
+  if (rest.length === 2) return { fullName: base.fullName, canonicalUrl: base.canonicalUrl, path: null }
+  // Raw segments: an encoded `/`, space or dot never decodes into something the pattern would accept.
+  const path = rest.slice(2).join('/')
+  if (!validTemplatePath(path)) return null
+  return { fullName: base.fullName, canonicalUrl: `${base.canonicalUrl}/tree/HEAD/${path}`, path }
+}
+
 /**
  * Strictly parses a plugin URL typed by a maintainer. Only https GitHub repository URLs and npm package
  * pages are accepted; everything is reduced to an identifier. The URL itself is never fetched.

@@ -19,7 +19,7 @@ export async function submitListingAction(_prev: SubmitState, formData: FormData
     return typeof value === 'string' ? value : ''
   }
   try {
-    return await submitListing({ payload, maintainer, url: field('url'), note: field('note') })
+    return await submitListing({ payload, maintainer, url: field('url'), note: field('note'), kind: field('kind') === 'template' ? 'template' : 'plugin' })
   } catch (err) {
     payload.logger.error({ err }, 'submit: unexpected failure')
     return { status: 'invalid', message: MESSAGES.submitFailed }

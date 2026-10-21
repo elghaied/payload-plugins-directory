@@ -21,6 +21,7 @@ export const linkApprovedSubmissions: CollectionAfterChangeHook<Plugin> = async 
     where: {
       and: [
         { type: { equals: 'listing' } },
+        { kind: { not_equals: 'template' } }, // a template listing is linked to its template, never to a plugin
         { status: { equals: 'approved' } },
         { plugin: { exists: false } },
         // submissions.repositoryFullName is stored lower-case; compare exactly against the lower-cased name.

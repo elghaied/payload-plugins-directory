@@ -65,7 +65,8 @@ async function approvedSubmissionRepos(payload: Payload, npm: NpmClient): Promis
     depth: 0,
     limit: 0,
     pagination: false,
-    where: { and: [{ type: { equals: 'listing' } }, { status: { equals: 'approved' } }] },
+    // Template listings feed discover-templates (approvedTemplateSubmissionInputs), never sync-repository.
+    where: { and: [{ type: { equals: 'listing' } }, { kind: { not_equals: 'template' } }, { status: { equals: 'approved' } }] },
   })
   const names: string[] = []
   for (const sub of subs.docs) {

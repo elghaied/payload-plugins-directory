@@ -142,6 +142,59 @@ describe('approving submissions', () => {
     expect(await queuedSyncs()).toEqual(before)
   })
 
+  describe('template listings', () => {
+    const templateListing = (url: string, path: string | null) =>
+      payload.create({
+        collection: 'submissions', overrideAccess: true, depth: 0,
+        data: { type: 'listing', kind: 'template', url, path, submittedBy: makerId, status: 'pending' },
+      })
+    const templateJobs = async () =>
+      (await payload.find({ collection: 'payload-jobs', overrideAccess: true, limit: 100, where: { taskSlug: { equals: 'sync-template' } } })).docs.map((j) => ({
+        input: j.input as Record<string, unknown>, queue: j.queue,
+      }))
+
+    it('approving a template submission queues one sync-template job with its path, and no sync-repository', async () => {
+      const before = await queuedSyncs()
+      const s = await templateListing('https://github.com/tpl/mono/tree/HEAD/apps/site', 'apps/site')
+      const doc = await approve(s.id)
+      expect(doc.repositoryFullName).toBe('tpl/mono')
+      const jobs = (await templateJobs()).filter((j) => j.input.fullName === 'tpl/mono')
+      expect(jobs).toEqual([{ input: { fullName: 'tpl/mono', path: 'apps/site', source: 'submission' }, queue: 'sync' }])
+      expect(await queuedSyncs()).toEqual(before)
+      const stored = await payload.findByID({ collection: 'submissions', id: s.id, overrideAccess: true, depth: 0 })
+      expect(stored.plugin ?? null).toBeNull()
+    })
+    it('a root template submission queues sync-template with a null path', async () => {
+      const s = await templateListing('https://github.com/tpl/root', null)
+      await approve(s.id)
+      const jobs = (await templateJobs()).filter((j) => j.input.fullName === 'tpl/root')
+      expect(jobs.map((j) => j.input)).toEqual([{ fullName: 'tpl/root', path: null, source: 'submission' }])
+    })
+    it('when the template already exists, approval links it instead of queuing, and grants no maintainer rights', async () => {
+      const repo = await payload.create({
+        collection: 'repositories', overrideAccess: true,
+        data: { fullName: 'Tpl/Existing', owner: 'Tpl', url: 'https://github.com/Tpl/Existing' },
+      })
+      const t = await payload.create({
+        collection: 'templates', overrideAccess: true, depth: 0,
+        data: { slug: '9-web', name: 'Existing', repository: repo.id, path: 'web', url: repo.url, source: 'submission', visibility: 'hidden' },
+      })
+      const s = await templateListing('https://github.com/tpl/existing/tree/HEAD/web', 'web')
+      await approve(s.id)
+      const stored = await payload.findByID({ collection: 'submissions', id: s.id, overrideAccess: true, depth: 0 })
+      expect(relationId(stored.template)).toBe(t.id)
+      expect((await templateJobs()).filter((j) => j.input.fullName === 'tpl/existing')).toEqual([])
+      const after = await payload.findByID({ collection: 'templates', id: t.id, overrideAccess: true, depth: 0 })
+      expect((after.maintainers ?? []).map(relationId)).toEqual([])
+    })
+    it('approving a plugin submission still queues sync-repository (regression)', async () => {
+      const s = await listing('https://github.com/plain/plugin')
+      await approve(s.id)
+      expect(await queuedSyncs()).toContain('plain/plugin')
+      expect((await templateJobs()).filter((j) => j.input.fullName === 'plain/plugin')).toEqual([])
+    })
+  })
+
   describe('claims and finality', () => {
     const makePlugin = async (slug: string) => {
       const repo = await payload.create({

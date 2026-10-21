@@ -3,6 +3,8 @@ import type { Payload, Where } from 'payload'
 import type { Repository, Template } from '@/payload-types'
 import { revalidationTagsFor, templateRevalidationTagsFor } from '@/lib/cacheTags'
 import { relationId } from '@/lib/relationId'
+import { listingPathWhere } from '@/lib/submissions/duplicates'
+import { FULL_NAME_RE, parseTemplateSubmissionUrl, validTemplatePath } from '@/lib/submissions/url'
 import { firstReadmeImage } from '@/lib/templates/fallbackImage'
 import { payloadMajorsFromRange } from '@/lib/versions'
 import type { SyncContext } from '../context'
@@ -72,27 +74,71 @@ async function latestPayloadVersion(ctx: SyncContext, templates: readonly Extrac
 }
 
 /**
- * Seam for Task 10 (`submissions.kind` / `submissions.template` do not exist yet): approved template submissions for
- * this repository and path get their `template` set after sync creates the template, the counterpart of the plugin
- * hook `linkApprovedSubmissions`. A no-op until Task 10 wires it.
+ * After sync creates (or restores) a template: approved template listings of this repository and folder that have no
+ * `template` yet are linked to it. The template counterpart of the plugin hook `linkApprovedSubmissions`.
  */
 export async function linkApprovedTemplateSubmissions(
   payload: Payload,
   template: { id: number; repositoryFullName: string; path: string | null },
 ): Promise<void> {
-  // TODO(Task 10): update approved `kind: 'template'` submissions of this repository + path that have no `template`.
-  void payload
-  void template
+  // System lookups and writes: submissions are admin-managed; `template` is never maintainer-editable.
+  const open = await payload.find({
+    collection: 'submissions',
+    overrideAccess: true,
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: {},
+    where: {
+      and: [
+        { type: { equals: 'listing' } },
+        { kind: { equals: 'template' } },
+        { status: { equals: 'approved' } },
+        { template: { exists: false } },
+        // submissions.repositoryFullName is stored lower-case; compare exactly against the lower-cased name.
+        { repositoryFullName: { equals: template.repositoryFullName.toLowerCase() } },
+        listingPathWhere(template.path || null),
+      ],
+    },
+  })
+  for (const submission of open.docs) {
+    await payload.update({ collection: 'submissions', id: submission.id, data: { template: template.id }, depth: 0, overrideAccess: true })
+  }
 }
 
 /**
- * Seam for Task 10: one input per approved template submission that has no `template` yet. Returns [] until the
- * `submissions.kind` field exists (Task 10 fills it in).
+ * One input per approved template listing without a template yet. A malformed row (bad name or path) is logged and
+ * skipped, never aborting discovery, like `approvedSubmissionRepos` for plugins.
  */
 export async function approvedTemplateSubmissionInputs(payload: Payload): Promise<SyncTemplateInput[]> {
-  // TODO(Task 10): read approved `kind: 'template'` submissions without `template` and map them to inputs.
-  void payload
-  return []
+  const subs = await payload.find({
+    collection: 'submissions',
+    overrideAccess: true,
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'id',
+    select: { url: true, repositoryFullName: true, path: true },
+    where: {
+      and: [
+        { type: { equals: 'listing' } },
+        { kind: { equals: 'template' } },
+        { status: { equals: 'approved' } },
+        { template: { exists: false } },
+      ],
+    },
+  })
+  const out: SyncTemplateInput[] = []
+  for (const sub of subs.docs) {
+    const fullName = sub.repositoryFullName?.trim() || parseTemplateSubmissionUrl(sub.url ?? '')?.fullName || ''
+    const path = sub.path || null
+    if (!FULL_NAME_RE.test(fullName) || (path !== null && !validTemplatePath(path))) {
+      payload.logger.warn({ msg: `Discover templates: skipped approved submission ${sub.id}: invalid repository or path`, submission: sub.id })
+      continue
+    }
+    out.push({ fullName, path, source: 'submission' })
+  }
+  return out
 }
 
 /**
@@ -235,6 +281,7 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
       data: { ...data, ...(restore ? { deletedAt: null, syncTrashReason: null } : {}) },
     })
     result.updated.push(t.slug)
+    if (restore) await linkApprovedTemplateSubmissions(payload, { id: prev.id, repositoryFullName: meta.full_name, path: t.path })
     const active = restore || !prev.deletedAt
     if (active && (prev.ai?.enrichedHash ?? null) !== contentHash) result.contentChanged.push(prev.id)
   }

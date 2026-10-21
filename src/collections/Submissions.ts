@@ -4,13 +4,21 @@ import { adminOnly, isAdmin, isAdminUser } from '@/access'
 import { adminOnlyAuthorship } from '@/fields/authorship'
 import { relationId } from '@/lib/relationId'
 import { applyApproval, resolveApprovedListing } from '@/lib/submissions/approval'
-import { findListingConflict, MAX_PENDING_PER_MAINTAINER } from '@/lib/submissions/duplicates'
+import { findListingConflict, MAX_PENDING_PER_MAINTAINER, type ListingConflict, type ListingKind } from '@/lib/submissions/duplicates'
 import { MESSAGES } from '@/lib/submissions/messages'
-import { FULL_NAME_RE, parseSubmissionUrl } from '@/lib/submissions/url'
+import { FULL_NAME_RE, parseSubmissionUrl, parseTemplateSubmissionUrl, validTemplatePath } from '@/lib/submissions/url'
 import { listedPluginsWhere } from './Plugins'
 
 const invalid = (req: PayloadRequest, path: string, message: string) =>
   new ValidationError({ collection: 'submissions', errors: [{ path, message }], req })
+
+function throwConflict(req: PayloadRequest, conflict: ListingConflict | null, kind: ListingKind): void {
+  if (!conflict) return
+  if (conflict.kind === 'listed') throw invalid(req, 'url', kind === 'template' ? MESSAGES.templateListed(conflict.name) : MESSAGES.listed(conflict.name))
+  if (conflict.kind === 'otherType') throw invalid(req, 'url', MESSAGES.otherType(conflict.existingType, conflict.name))
+  if (conflict.kind === 'pending') throw invalid(req, 'url', kind === 'template' ? MESSAGES.templatePending : MESSAGES.pending)
+  throw invalid(req, 'url', MESSAGES[conflict.kind])
+}
 
 // Field-level access strips client values of admin-only fields for non-admins (beforeValidate field pass);
 // this collection hook runs afterwards, stamps the real owner and enforces the maintainer-side rules.
@@ -28,18 +36,32 @@ const enforceOwnership: CollectionBeforeChangeHook = async ({ data, operation, r
   if (pending.totalDocs >= MAX_PENDING_PER_MAINTAINER) throw invalid(req, 'type', MESSAGES.tooMany)
 
   if (data.type === 'listing') {
-    delete data.plugin // only an admin links the resulting plugin
-    const target = parseSubmissionUrl(typeof data.url === 'string' ? data.url : '')
+    delete data.plugin // only an admin (or sync) links the resulting plugin or template
+    delete data.template
+    const url = typeof data.url === 'string' ? data.url : ''
+    if (data.kind === 'template') {
+      // GitHub only; `path` always comes from the URL, never from the client.
+      const target = parseTemplateSubmissionUrl(url)
+      if (!target) throw invalid(req, 'url', MESSAGES.templateNeedsGitHub)
+      data.url = target.canonicalUrl
+      data.path = target.path
+      throwConflict(req, await findListingConflict(req.payload, target, req, 'template'), 'template')
+      return data
+    }
+    data.kind = 'plugin'
+    delete data.path
+    const target = parseSubmissionUrl(url)
     if (!target) throw invalid(req, 'url', MESSAGES.invalidUrl)
     data.url = target.canonicalUrl
-    const conflict = await findListingConflict(req.payload, target, req)
-    if (conflict?.kind === 'listed') throw invalid(req, 'url', MESSAGES.listed(conflict.name))
-    if (conflict) throw invalid(req, 'url', MESSAGES[conflict.kind])
+    throwConflict(req, await findListingConflict(req.payload, target, req), 'plugin')
     return data
   }
 
-  // claim
+  // claim (claims are for plugins)
   delete data.url
+  delete data.path
+  delete data.template
+  data.kind = 'plugin'
   const pluginId = relationId(data.plugin)
   const found =
     pluginId === undefined
@@ -75,7 +97,7 @@ const enforceOwnership: CollectionBeforeChangeHook = async ({ data, operation, r
 
 export const Submissions: CollectionConfig = {
   slug: 'submissions',
-  admin: { useAsTitle: 'url', group: 'Community', defaultColumns: ['type', 'url', 'status', 'createdAt'] },
+  admin: { useAsTitle: 'url', group: 'Community', defaultColumns: ['type', 'kind', 'url', 'status', 'createdAt'] },
   versions: true,
   access: {
     read: ({ req }) =>
@@ -89,11 +111,41 @@ export const Submissions: CollectionConfig = {
   fields: [
     { name: 'type', type: 'select', required: true, defaultValue: 'listing', options: ['listing', 'claim'] },
     {
+      // What a listing asks for. Maintainers choose it on create; only admins change it afterwards.
+      name: 'kind',
+      type: 'select',
+      required: true,
+      defaultValue: 'plugin',
+      index: true,
+      options: ['plugin', 'template'],
+      admin: { condition: (data) => data?.type === 'listing' },
+      access: { update: adminOnly },
+    },
+    {
       name: 'url',
       type: 'text',
       admin: { condition: (data) => data?.type === 'listing' },
-      validate: (value: unknown, { siblingData }: { siblingData?: { type?: string } }) =>
-        siblingData?.type !== 'listing' || (typeof value === 'string' && parseSubmissionUrl(value) !== null) || MESSAGES.invalidUrl,
+      validate: (value: unknown, { siblingData }: { siblingData?: { type?: string; kind?: string } }) => {
+        if (siblingData?.type !== 'listing') return true
+        if (siblingData.kind === 'template') {
+          return (typeof value === 'string' && parseTemplateSubmissionUrl(value) !== null) || MESSAGES.templateNeedsGitHub
+        }
+        return (typeof value === 'string' && parseSubmissionUrl(value) !== null) || MESSAGES.invalidUrl
+      },
+    },
+    {
+      // Template folder within the repository (null = the repository root). Set from the URL on a maintainer's create.
+      name: 'path',
+      type: 'text',
+      maxLength: 300,
+      admin: {
+        condition: (data) => data?.type === 'listing' && data?.kind === 'template',
+        description: 'Template folder within the repository; empty for the repository root.',
+      },
+      access: { update: adminOnly },
+      hooks: { beforeValidate: [({ value }) => (typeof value === 'string' && value.trim() === '' ? null : value)] },
+      validate: (value: unknown) =>
+        value == null || (typeof value === 'string' && validTemplatePath(value)) || 'Use a folder path such as apps/site (letters, digits, ".", "_", "-").',
     },
     {
       name: 'repositoryFullName',
@@ -110,6 +162,14 @@ export const Submissions: CollectionConfig = {
         value == null || value === '' || (typeof value === 'string' && FULL_NAME_RE.test(value)) || 'Use owner/repo in lower case.',
     },
     { name: 'plugin', type: 'relationship', relationTo: 'plugins' },
+    {
+      // Linked by approval or by template sync; never set by a maintainer.
+      name: 'template',
+      type: 'relationship',
+      relationTo: 'templates',
+      admin: { condition: (data) => data?.type === 'listing' && data?.kind === 'template' },
+      access: { create: adminOnly, update: adminOnly },
+    },
     {
       name: 'submittedBy',
       type: 'relationship',

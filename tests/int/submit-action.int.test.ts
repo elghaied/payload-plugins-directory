@@ -40,6 +40,19 @@ describe('submitListingAction', () => {
     holder.maintainer = maker
     expect(await submitListingAction({ status: 'idle' }, form({ url: 'https://github.com/a/b', note: 'hi' }))).toEqual({ status: 'created' })
   })
+  it('posts kind=template as a template listing; any other kind value is a plugin listing', async () => {
+    const { submitListingAction } = await import('@/app/(site)/submit/actions')
+    holder.maintainer = maker
+    expect(await submitListingAction({ status: 'idle' }, form({ url: 'https://github.com/a/tpl/tree/main/site', kind: 'template' }))).toEqual({ status: 'created' })
+    expect(await submitListingAction({ status: 'idle' }, form({ url: 'https://github.com/a/other', kind: 'templates' }))).toEqual({ status: 'created' })
+    const docs = (await payload.find({ collection: 'submissions', overrideAccess: true, depth: 0, sort: 'id' })).docs
+    expect(docs.map((d) => [d.url, d.kind, d.path ?? null])).toEqual(
+      expect.arrayContaining([
+        ['https://github.com/a/tpl/tree/HEAD/site', 'template', 'site'],
+        ['https://github.com/a/other', 'plugin', null],
+      ]),
+    )
+  })
   it('treats a non-string (File) value as empty and reports an invalid URL', async () => {
     const { submitListingAction } = await import('@/app/(site)/submit/actions')
     holder.maintainer = maker

@@ -652,12 +652,18 @@ export interface TemplateCategory {
 export interface Submission {
   id: number;
   type: 'listing' | 'claim';
+  kind?: ('plugin' | 'template') | null;
   url?: string | null;
+  /**
+   * Template folder within the repository; empty for the repository root.
+   */
+  path?: string | null;
   /**
    * owner/repo (lower-case). Filled on approval; enter it by hand when an npm package cannot be resolved.
    */
   repositoryFullName?: string | null;
   plugin?: (number | null) | Plugin;
+  template?: (number | null) | Template;
   submittedBy: number | Maintainer;
   note?: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'duplicate';
@@ -1341,9 +1347,12 @@ export interface TagsSelect<T extends boolean = true> {
  */
 export interface SubmissionsSelect<T extends boolean = true> {
   type?: T;
+  kind?: T;
   url?: T;
+  path?: T;
   repositoryFullName?: T;
   plugin?: T;
+  template?: T;
   submittedBy?: T;
   note?: T;
   status?: T;

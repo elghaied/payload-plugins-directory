@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { canonicalFullName, parseSubmissionUrl } from '@/lib/submissions/url'
+import { canonicalFullName, parseSubmissionUrl, parseTemplateSubmissionUrl } from '@/lib/submissions/url'
 
 describe('parseSubmissionUrl — GitHub', () => {
   it.each([
@@ -84,5 +84,45 @@ describe('canonicalFullName', () => {
   it('refuses invalid names', () => {
     expect(canonicalFullName('a_b', 'repo')).toBeNull()
     expect(canonicalFullName('acme', '.')).toBeNull()
+  })
+})
+
+describe('parseTemplateSubmissionUrl', () => {
+  it('drops the ref and keeps a subfolder path', () => {
+    expect(parseTemplateSubmissionUrl('https://github.com/a/b/tree/main/apps/site')).toEqual({
+      fullName: 'a/b', canonicalUrl: 'https://github.com/a/b/tree/HEAD/apps/site', path: 'apps/site',
+    })
+  })
+  it.each([
+    ['https://github.com/A/B', 'a/b'],
+    ['github.com/a/b/', 'a/b'],
+    ['https://github.com/a/b.git', 'a/b'],
+    ['https://github.com/a/b/tree/main', 'a/b'],
+    ['https://github.com/a/b?tab=readme#x', 'a/b'],
+  ])('%s is the repository root of %s', (input, fullName) => {
+    expect(parseTemplateSubmissionUrl(input)).toEqual({ fullName, canonicalUrl: `https://github.com/${fullName}`, path: null })
+  })
+  it('keeps the path case and re-parses its canonical URL to the same target', () => {
+    const t = parseTemplateSubmissionUrl('https://github.com/Acme/Mono/tree/v1.2/templates/My_Site.v2/')
+    expect(t).toEqual({ fullName: 'acme/mono', canonicalUrl: 'https://github.com/acme/mono/tree/HEAD/templates/My_Site.v2', path: 'templates/My_Site.v2' })
+    expect(parseTemplateSubmissionUrl(t!.canonicalUrl)).toEqual(t)
+  })
+  it.each([
+    'https://github.com/a/b/tree/main/../x',
+    'https://github.com/a/b/tree/main/./x',
+    'https://github.com/a/b/tree/main/x/%2e%2e/y',
+    'https://github.com/a/b/tree/main/a%20b',
+    'https://github.com/a/b/tree/main/a%2Fb',
+    'https://github.com/a/b/tree/main/x$y',
+    'https://github.com/a/b/blob/main/README.md',
+    'https://github.com/a/b/issues',
+    'https://github.com/a',
+    `https://github.com/a/b/tree/main/${'x'.repeat(301)}`,
+    'https://www.npmjs.com/package/payload-template',
+    'https://gitlab.com/a/b',
+    'http://github.com/a/b',
+    '',
+  ])('rejects %j', (input) => {
+    expect(parseTemplateSubmissionUrl(input)).toBeNull()
   })
 })

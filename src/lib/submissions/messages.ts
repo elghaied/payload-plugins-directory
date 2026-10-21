@@ -3,8 +3,14 @@ import { MAX_PENDING_PER_MAINTAINER } from './limits'
 export const MESSAGES = {
   invalidUrl: 'Enter a GitHub repository (https://github.com/owner/repo) or npm package (https://www.npmjs.com/package/name) URL.',
   listed: (name: string) => `Already listed as "${name}".`,
+  templateListed: (name: string) => `Already listed as the template "${name}".`,
+  otherType: (existingType: 'plugin' | 'template', name: string) =>
+    `Already listed as a ${existingType}: "${name}". A repository can be listed as a plugin or a template, not both.`,
+  templateNeedsGitHub:
+    'Enter a GitHub repository (https://github.com/owner/repo) or folder (https://github.com/owner/repo/tree/main/path) URL. Templates cannot be submitted by npm package.',
   unavailable: 'This repository is already known to the directory and cannot be submitted again.',
   pending: 'This plugin has already been submitted and is awaiting review.',
+  templatePending: 'This template has already been submitted and is awaiting review.',
   tooMany: `You have ${MAX_PENDING_PER_MAINTAINER} requests awaiting review. Please wait until some are reviewed.`,
   submitFailed: 'Something went wrong while saving your submission. Please try again in a moment.',
   claimFailed: 'Something went wrong while processing your claim. Please try again in a moment.',
