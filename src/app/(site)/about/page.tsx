@@ -8,16 +8,16 @@ import { mcpUrl } from "@/mcp/instructions";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "About — Payload CMS Plugin Directory",
+  title: "About — Payload Directory",
   alternates: { canonical: "/about" },
   description:
-    "Learn how the Payload CMS Plugin Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
+    "Learn how the Payload Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
   openGraph: {
     url: "/about",
     images: OG_IMAGES,
-    title: "About — Payload CMS Plugin Directory",
+    title: "About — Payload Directory",
     description:
-      "Learn how the Payload CMS Plugin Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
+      "Learn how the Payload Directory works, how plugins are discovered automatically from GitHub, and how to build and list your own plugin.",
   },
 };
 
@@ -40,7 +40,7 @@ export default function AboutPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">About</h1>
           <p className="text-muted-foreground mt-1">
-            Everything you need to know about the Payload Plugin Directory
+            Everything you need to know about the Payload Directory
           </p>
         </div>
 
@@ -49,7 +49,7 @@ export default function AboutPage() {
           <section className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-3">What is this?</h2>
             <p className="text-muted-foreground leading-relaxed">
-              The Payload Plugin Directory is a community-driven catalog that
+              The Payload Directory is a community-driven catalog that
               automatically discovers and indexes plugins for{" "}
               <a
                 href="https://payloadcms.com"

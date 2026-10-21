@@ -685,7 +685,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         <header className="mb-8">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Payload CMS Plugin Directory
+              Payload Directory
             </h1>
             <p className="text-muted-foreground mt-2">
               Discover {metadata.totalCount} community-made plugins for

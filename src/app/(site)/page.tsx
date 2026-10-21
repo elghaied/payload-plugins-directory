@@ -17,7 +17,7 @@ export default async function Page() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
-    name: "Payload CMS Plugin Directory",
+    name: "Payload Directory",
     description: `Browse and discover ${metadata.totalCount}+ Payload CMS plugins.`,
     url: base,
     mainEntity: {

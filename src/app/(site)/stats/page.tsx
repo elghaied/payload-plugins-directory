@@ -9,14 +9,14 @@ import { getEcosystemGrowth } from "@/lib/trends/queries";
 import type { EcosystemGrowth } from "@/lib/trends/types";
 
 export const metadata: Metadata = {
-  title: "Ecosystem Stats — Payload CMS Plugin Directory",
+  title: "Ecosystem Stats — Payload Directory",
   description:
     "Statistics about the Payload CMS plugin ecosystem: growth over time, Payload version adoption, top contributors, licenses and downloads.",
   alternates: { canonical: "/stats" },
   openGraph: {
     url: "/stats",
     images: OG_IMAGES,
-    title: "Ecosystem Stats — Payload CMS Plugin Directory",
+    title: "Ecosystem Stats — Payload Directory",
     description:
       "Statistics about the Payload CMS plugin ecosystem: growth over time, Payload version adoption, top contributors, licenses and downloads.",
   },

@@ -43,7 +43,7 @@ async function load(params: Props["params"]) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { node } = await load(params);
-  const title = `${node.title} plugins for Payload CMS — Payload Plugin Directory`;
+  const title = `${node.title} plugins for Payload CMS — Payload Directory`;
   const description = truncateAtWord(node.intro ?? `Payload CMS plugins in ${node.title}.`, 160);
   return { title, description, openGraph: { title, description, type: "website", images: OG_IMAGES }, twitter: { card: "summary_large_image", title, description, images: TWITTER_IMAGES } };
 }

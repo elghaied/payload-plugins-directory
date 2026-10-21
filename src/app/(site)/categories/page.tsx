@@ -8,7 +8,7 @@ import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Categories — Payload Plugin Directory",
+  title: "Categories — Payload Directory",
   description:
     "Browse Payload CMS plugins by category: storage, authentication, SEO, ecommerce, forms, search, localization, admin UI, AI and more.",
 };

@@ -40,7 +40,7 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Payload CMS Plugin Directory</title>
+    <title>Payload Directory</title>
     <link>${escapeXml(base)}</link>
     <description>New Payload CMS plugins</description>
     <lastBuildDate>${new Date(metadata.lastUpdated).toUTCString()}</lastBuildDate>

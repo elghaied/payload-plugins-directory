@@ -6,7 +6,7 @@ import { SubmitForm } from './SubmitForm'
 // Per request and signed-in only: never cached or indexed. Absolute URLs come from metadataBase (getServerURL() in the layout).
 export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
-  title: 'Submit a plugin — Payload Plugin Directory',
+  title: 'Submit a plugin — Payload Directory',
   alternates: { canonical: '/submit' },
   robots: { index: false, follow: false },
 }

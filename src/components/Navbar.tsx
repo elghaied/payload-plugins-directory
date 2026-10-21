@@ -19,11 +19,11 @@ export function Navbar() {
         <div className="flex items-center gap-2 sm:gap-6">
           <Link
             href="/"
-            aria-label="Payload Plugin Directory, home"
+            aria-label="Payload Directory home"
             className="flex items-center gap-2 font-semibold tracking-tight text-foreground hover:opacity-80 transition-opacity"
           >
             <BrandMark />
-            <span className="hidden md:inline whitespace-nowrap">Plugin Directory</span>
+            <span className="hidden md:inline whitespace-nowrap">Payload Directory</span>
           </Link>
 
           <div className="flex items-center gap-0.5 sm:gap-1">

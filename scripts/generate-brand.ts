@@ -8,19 +8,21 @@
 import { writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import sharp from 'sharp'
-import { BRAND, glyphMarkup } from '../src/lib/brand'
+import { BRAND } from '../src/lib/brand'
 
 const out = (f: string) => join(process.cwd(), 'src/app', f)
 
-const icon = (square: string, glyph: string, rx: number) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="${rx}" fill="${square}"/>${glyphMarkup(glyph)}</svg>`
+const adaptive = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><style>.f{fill:${BRAND.neutral.light}}.a{fill:${BRAND.amber.light}}@media (prefers-color-scheme:dark){.f{fill:${BRAND.neutral.dark}}.a{fill:${BRAND.amber.dark}}}</style>
+  <path class="f" fill-rule="evenodd" d="${BRAND.blockPath}"/>
+  <path class="a" d="${BRAND.slotPath}"/></svg>
+`
 
-const adaptive = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><style>.s{fill:${BRAND.light.square}}.g{fill:${BRAND.light.glyph}}@media (prefers-color-scheme:dark){.s{fill:${BRAND.dark.square}}.g{fill:${BRAND.dark.glyph}}}</style><rect class="s" width="32" height="32" rx="8"/><g class="g">${glyphMarkup('currentColor')
-  .replace(/ fill="currentColor"/g, '')}</g></svg>\n`
+/** App icon: dark tile, light block, amber slot. The mark is 62.5% of the tile. */
+const appIcon = (rx: number) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><rect width="512" height="512" rx="${rx}" fill="${BRAND.surface}"/><g transform="translate(96 96) scale(10)"><path fill="${BRAND.neutral.dark}" fill-rule="evenodd" d="${BRAND.blockPath}"/><path fill="${BRAND.amber.dark}" d="${BRAND.slotPath}"/></g></svg>`
 
-async function png(size: number, rx: number, scheme: 'light' | 'dark' = 'light') {
-  const c = BRAND[scheme]
-  return sharp(Buffer.from(icon(c.square, c.glyph, rx)), { density: (72 * size) / 32 * 4 }).resize(size, size).png().toBuffer()
+async function png(size: number, rx: number) {
+  return sharp(Buffer.from(appIcon(rx)), { density: 72 * 4 }).resize(size, size).png().toBuffer()
 }
 
 function ico(frames: { size: number; data: Buffer }[]): Buffer {
@@ -47,7 +49,7 @@ async function main() {
   // iOS rounds the corners itself: full-bleed square.
   writeFileSync(out('apple-icon.png'), await png(180, 0))
   const sizes = [16, 32, 48]
-  writeFileSync(out('favicon.ico'), ico(await Promise.all(sizes.map(async (size) => ({ size, data: await png(size, 8) })))))
+  writeFileSync(out('favicon.ico'), ico(await Promise.all(sizes.map(async (size) => ({ size, data: await png(size, 112) })))))
   console.log('brand files written')
 }
 

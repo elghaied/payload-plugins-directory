@@ -11,7 +11,7 @@ import { ClaimForm } from './ClaimForm'
 
 // Per request and signed-in only: never cached or indexed.
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Claim a plugin — Payload Plugin Directory', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'Claim a plugin — Payload Directory', robots: { index: false, follow: false } }
 
 export default async function ClaimPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params

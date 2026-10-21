@@ -13,14 +13,14 @@ import type { DownloadMover, NewPlugin, RecentRepo, StarMover, TrendingData } fr
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Trending Payload Plugins — Payload CMS Plugin Directory",
+  title: "Trending Payload Plugins — Payload Directory",
   description:
     "The fastest-growing Payload CMS plugins this week by GitHub stars and npm downloads, plus new and recently updated plugins.",
   alternates: { canonical: "/trending" },
   openGraph: {
     url: "/trending",
     images: OG_IMAGES,
-    title: "Trending Payload Plugins — Payload CMS Plugin Directory",
+    title: "Trending Payload Plugins — Payload Directory",
     description:
       "The fastest-growing Payload CMS plugins this week by GitHub stars and npm downloads, plus new and recently updated plugins.",
   },

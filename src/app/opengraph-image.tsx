@@ -1,12 +1,21 @@
+import { readFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { ImageResponse } from 'next/og'
 import { BRAND } from '@/lib/brand'
+import { getServerURL } from '@/lib/serverUrl'
 
-export const alt = 'Payload Plugin Directory'
+export const alt = 'Payload Directory'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-export default function OpengraphImage() {
-  const { light } = BRAND
+const TAGLINE = 'Official and community plugins for Payload CMS.'
+
+export default async function OpengraphImage() {
+  const fontPath = (f: string) => join(process.cwd(), 'src/app/og-fonts', f)
+  const [regular, semibold] = await Promise.all([readFile(fontPath('Geist-Regular.ttf')), readFile(fontPath('Geist-SemiBold.ttf'))])
+  const domain = getServerURL().replace(/^https?:\/\//, '') || 'payloaddirectory.dev'
+  const { og } = BRAND
+
   return new ImageResponse(
     (
       <div
@@ -14,30 +23,34 @@ export default function OpengraphImage() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          alignItems: 'center',
-          padding: '0 96px',
-          background: BRAND.og.background,
-          color: BRAND.og.foreground,
+          position: 'relative',
+          padding: '80px 80px',
+          background: og.background,
+          color: og.foreground,
+          fontFamily: 'Geist',
         }}
       >
-        <svg width="260" height="260" viewBox="0 0 32 32" style={{ flexShrink: 0 }}>
-          <rect width="32" height="32" rx="8" fill={light.square} />
-          {BRAND.glyph.map((s, i) =>
-            s.tag === 'rect' ? (
-              <rect key={i} x={s.x} y={s.y} width={s.width} height={s.height} rx={s.rx} fill={light.glyph} />
-            ) : (
-              <path key={i} d={s.d} fill={light.glyph} />
-            ),
-          )}
+        {/* Large faint mark, right */}
+        <svg width="380" height="380" viewBox="0 0 32 32" style={{ position: 'absolute', right: 40, top: 125 }}>
+          <path fill={og.faint} fillRule="evenodd" d={BRAND.blockPath} />
+          <path fill={BRAND.amber.dark} d={BRAND.slotPath} />
         </svg>
-        <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 72 }}>
-          <div style={{ fontSize: 88, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>Payload Plugin</div>
-          <div style={{ fontSize: 88, fontWeight: 700, lineHeight: 1.05, letterSpacing: -2 }}>Directory</div>
-          <div style={{ marginTop: 28, fontSize: 32, color: BRAND.og.muted }}>Find, compare and trust Payload CMS plugins</div>
-          <div style={{ marginTop: 12, fontSize: 28, color: light.square }}>payloaddirectory.dev</div>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' }}>
+          <svg width="64" height="64" viewBox="0 0 32 32">
+            <path fill={BRAND.neutral.dark} fillRule="evenodd" d={BRAND.blockPath} />
+            <path fill={BRAND.amber.dark} d={BRAND.slotPath} />
+          </svg>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 88, fontWeight: 600, lineHeight: 1.05, letterSpacing: -2.5 }}>Payload Directory</div>
+            <div style={{ marginTop: 28, fontSize: 30, color: og.muted }}>{TAGLINE}</div>
+            <div style={{ marginTop: 40, fontSize: 28 }}>{domain}</div>
+          </div>
         </div>
       </div>
     ),
-    size,
+    { ...size, fonts: [
+      { name: 'Geist', data: regular, weight: 400, style: 'normal' },
+      { name: 'Geist', data: semibold, weight: 600, style: 'normal' },
+    ] },
   )
 }

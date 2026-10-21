@@ -18,7 +18,7 @@ const geistMono = localFont({
 });
 
 const siteMetadata: Metadata = {
-  title: "Payload CMS Plugin Directory — Discover Community & Official Plugins",
+  title: "Payload Directory — Discover Community & Official Plugins",
   description:
     "Browse and discover 160+ Payload CMS plugins. Filter by version (v1, v2, v3), sort by stars, forks, or recent updates. Find official and community plugins for your Payload project.",
   alternates: {
@@ -26,11 +26,11 @@ const siteMetadata: Metadata = {
     types: { "application/rss+xml": "/feed.xml" },
   },
   openGraph: {
-    title: "Payload CMS Plugin Directory",
+    title: "Payload Directory",
     description:
       "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",
     url: "/",
-    siteName: "Payload Plugin Directory",
+    siteName: "Payload Directory",
     type: "website",
     locale: "en_US",
     images: OG_IMAGES,
@@ -38,7 +38,7 @@ const siteMetadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: TWITTER_IMAGES,
-    title: "Payload CMS Plugin Directory",
+    title: "Payload Directory",
     description:
       "Browse and discover 160+ Payload CMS plugins. Filter by version, sort by popularity, and find the right plugin for your project.",
   },

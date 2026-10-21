@@ -4,7 +4,7 @@ import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 
-export const metadata: Metadata = { title: 'Sign-in failed — Payload Plugin Directory', robots: { index: false } }
+export const metadata: Metadata = { title: 'Sign-in failed — Payload Directory', robots: { index: false } }
 
 // Blocked accounts, database errors and unknown reasons deliberately share the generic message.
 const MESSAGES: Record<string, string> = {

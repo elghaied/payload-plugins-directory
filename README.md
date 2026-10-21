@@ -1,4 +1,4 @@
-# Payload CMS Plugin Directory
+# Payload Directory
 
 A community-driven discovery platform for [Payload CMS](https://payloadcms.com) plugins. Browse, search, filter, compare, and find the right plugins for your Payload projects — all in one place.
 

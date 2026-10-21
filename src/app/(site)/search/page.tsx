@@ -14,10 +14,10 @@ export const dynamic = "force-dynamic";
 // Result pages are thin, unbounded and query-driven (and a busy/timeout page is transient): never indexed, links still followed.
 // The canonical is /search without the query; absolute URLs come from metadataBase (getServerURL() in the layout).
 export const metadata: Metadata = {
-  title: "Search — Payload CMS Plugin Directory",
+  title: "Search — Payload Directory",
   description: "Full-text search across Payload CMS plugin names, summaries, categories, tags and READMEs.",
   alternates: { canonical: "/search" },
-  openGraph: { url: "/search", title: "Search — Payload CMS Plugin Directory", images: OG_IMAGES },
+  openGraph: { url: "/search", title: "Search — Payload Directory", images: OG_IMAGES },
   robots: { index: false, follow: true },
 };
 

@@ -61,7 +61,7 @@ export async function generateMetadata({
   const plugin = await getPluginDetail(slug);
   if (!plugin) notFound();
 
-  const title = `${plugin.name} — Payload Plugin Directory`;
+  const title = `${plugin.name} — Payload Directory`;
   const description = (plugin.ai?.summary || plugin.description).slice(0, 160);
 
   return {

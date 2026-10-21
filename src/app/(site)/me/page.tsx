@@ -13,7 +13,7 @@ import { BrandingForm } from './BrandingForm'
 
 // Per request and signed-in only: never cached or indexed.
 export const dynamic = 'force-dynamic'
-export const metadata: Metadata = { title: 'Your plugins — Payload Plugin Directory', robots: { index: false, follow: false } }
+export const metadata: Metadata = { title: 'Your plugins — Payload Directory', robots: { index: false, follow: false } }
 
 const STATUS_VARIANT = { pending: 'secondary', approved: 'default', rejected: 'destructive', duplicate: 'outline' } as const
 
