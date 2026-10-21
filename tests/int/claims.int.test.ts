@@ -365,8 +365,12 @@ describe('claimPlugin', () => {
     const second = gh({ owner: user(106) })
     expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-2', note: '', github: second })).toEqual({ status: 'pending' })
     expect(calls(second)).toBe(0)
-    // Once the window has passed the budget is available again.
-    await setLastCheck(m.budget.id, PAST_COOLDOWN)
+    // Once the window has passed for ALL of the maintainer's claims (including the approved one, which spent the budget)
+    // the budget is available again.
+    const all = await payload.find({ collection: 'submissions', overrideAccess: true, depth: 0, where: { submittedBy: { equals: m.budget.id } } })
+    for (const doc of all.docs) {
+      await payload.update({ collection: 'submissions', id: doc.id, overrideAccess: true, depth: 0, data: { lastClaimCheckAt: new Date(Date.now() - PAST_COOLDOWN).toISOString() } })
+    }
     expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-2', note: '', github: second })).toEqual({ status: 'claimed' })
     expect(calls(second)).toBeGreaterThan(0)
   })

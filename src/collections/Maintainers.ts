@@ -1,7 +1,7 @@
 import type { Access, CollectionConfig } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
 import { adminOnlyAuthorship } from '@/fields/authorship'
-import { githubSessionStrategy } from '@/lib/auth/strategy'
+import { githubSessionAuthStrategy } from '@/lib/auth/strategy'
 
 /** Read: admins everything, maintainers their own document only (spec §9.1). */
 const selfOrAdmin: Access = ({ req }) =>
@@ -16,7 +16,7 @@ const adminOnlyField = { access: { create: adminOnly, read: adminOnly, update: a
 export const Maintainers: CollectionConfig = {
   slug: 'maintainers',
   admin: { useAsTitle: 'login', group: 'Community' },
-  auth: { disableLocalStrategy: true, strategies: [githubSessionStrategy] },
+  auth: { disableLocalStrategy: true, strategies: [githubSessionAuthStrategy] },
   versions: false,
   access: {
     read: selfOrAdmin,

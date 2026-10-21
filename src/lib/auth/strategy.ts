@@ -1,4 +1,4 @@
-import type { AuthStrategy } from 'payload'
+import { JWTAuthentication, type AuthStrategy } from 'payload'
 import { getServerURL } from '@/lib/serverUrl'
 import { getSessionSecret, readCookie, SESSION_COOKIE, verifySession } from './session'
 
@@ -98,5 +98,26 @@ export const githubSessionStrategy: AuthStrategy = {
     delete rest.blocked
     delete rest.sessionsValidAfter
     return { user: { ...rest, collection: 'maintainers', _strategy: GITHUB_SESSION_STRATEGY } }
+  },
+}
+
+/**
+ * What the `maintainers` collection registers. Payload runs custom collection strategies BEFORE its built-in JWT one, so
+ * with both an admin `payload-token` and a `pd_session` cookie in one browser the maintainer would win in `payload.auth`
+ * and the admin panel would see a non-admin. An admin session therefore takes precedence here. The product's own
+ * lookups (getCurrentMaintainer, /auth/session) call `githubSessionStrategy` directly and always get the maintainer.
+ */
+export const githubSessionAuthStrategy: AuthStrategy = {
+  name: GITHUB_SESSION_STRATEGY,
+  authenticate: async (args) => {
+    if (readCookie(args.headers, `${args.payload.config.cookiePrefix}-token`)) {
+      try {
+        const admin = await JWTAuthentication(args as never)
+        if (admin.user) return admin
+      } catch {
+        // An unusable admin cookie never blocks the maintainer session.
+      }
+    }
+    return githubSessionStrategy.authenticate(args)
   },
 }

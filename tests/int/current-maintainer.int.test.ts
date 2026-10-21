@@ -28,9 +28,14 @@ afterAll(async () => resetDatabase(payload))
 
 describe('getCurrentMaintainer', () => {
   it('resolves the maintainer when a valid admin payload-token cookie is also present', async () => {
-    holder.headers = new Headers({ cookie: `payload-token=${adminToken}; ${SESSION_COOKIE}=${sessionToken}` })
-    // Sanity: Payload's own resolution returns the admin first, which is what hid the maintainer.
+    holder.headers = new Headers({ cookie: `payload-token=${adminToken}; ${SESSION_COOKIE}=${sessionToken}`, 'sec-fetch-site': 'same-origin' })
+    const both = holder.headers
+    // The admin cookie alone is a valid admin session (proves the token is good).
+    holder.headers = new Headers({ cookie: `payload-token=${adminToken}`, 'sec-fetch-site': 'same-origin' })
     expect((await payload.auth({ headers: holder.headers })).user?.collection).toBe('users')
+    // Payload's own resolution with both cookies still gives the admin, so the admin panel keeps working.
+    expect((await payload.auth({ headers: both })).user?.collection).toBe('users')
+    holder.headers = both
     const { getCurrentMaintainer, requireMaintainer } = await import('@/lib/auth/current')
     expect(await getCurrentMaintainer()).toMatchObject({ login: 'both', collection: 'maintainers' })
     // /me, /submit and /claim all go through requireMaintainer: no redirect to GitHub.
@@ -38,9 +43,12 @@ describe('getCurrentMaintainer', () => {
       await expect(requireMaintainer(path)).resolves.toMatchObject({ login: 'both' })
     }
   })
+  it('payload.auth still resolves the maintainer from pd_session alone', async () => {
+    expect((await payload.auth({ headers: new Headers({ cookie: `${SESSION_COOKIE}=${sessionToken}` }) })).user?.collection).toBe('maintainers')
+  })
   it('is null without the maintainer cookie, and ignores a cross-origin server action', async () => {
     const { getCurrentMaintainer } = await import('@/lib/auth/current')
-    holder.headers = new Headers({ cookie: `payload-token=${adminToken}` })
+    holder.headers = new Headers({ cookie: `payload-token=${adminToken}`, 'sec-fetch-site': 'same-origin' })
     expect(await getCurrentMaintainer()).toBeNull()
     holder.headers = new Headers({ cookie: `${SESSION_COOKIE}=${sessionToken}`, origin: 'https://evil.example', 'next-action': 'abc' })
     expect(await getCurrentMaintainer()).toBeNull()
