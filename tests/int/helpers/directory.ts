@@ -28,7 +28,7 @@ export async function createPlugin(payload: Payload, repository: number, over: P
   })
 }
 
-/** Soft-delete: `payload.delete` hard-deletes in 4.0.0-beta.2, so trash through `deletedAt` (as the admin UI does). */
+/** Soft-delete: `payload.delete` hard-deletes in 4.0.0-beta.3 (re-verified), so trash through `deletedAt` (as the admin UI does). */
 export async function trashPlugin(payload: Payload, id: number) {
   await payload.update({
     collection: 'plugins',

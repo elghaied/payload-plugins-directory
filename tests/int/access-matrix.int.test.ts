@@ -29,7 +29,7 @@ beforeAll(async () => {
     })
   }
   const trashed = await payload.find({ collection: 'plugins', overrideAccess: true, where: { slug: { equals: 'trashed-one' } } })
-  // Soft-delete (move to trash). In 4.0.0-beta.2 `payload.delete` removes the row permanently even on a
+  // Soft-delete (move to trash). In 4.0.0-beta.3 `payload.delete` removes the row permanently even on a
   // trash-enabled collection, so trash is set through `deletedAt`, as the admin UI's "Move to trash" does.
   await payload.update({
     collection: 'plugins',

@@ -8,7 +8,7 @@ import { comparePluginsTool, getPluginTool, listCategoriesTool, searchPluginsToo
 /** Every non-`payload-*` collection. Tests fail if a collection is added without being listed here. */
 export const APP_COLLECTIONS = ['users', 'maintainers', 'repositories', 'plugins', 'categories', 'tags', 'submissions', 'media', 'search'] as const
 
-// All built-ins in plugin-mcp 4.0.0-beta.2 (src: dist/mcp/builtinTools.js). Several write
+// All built-ins in plugin-mcp 4.0.0-beta.3 (src: dist/mcp/builtinTools.js). Several write
 // (create, update, delete, duplicate, restoreVersion; update/restoreGlobalVersion on globals).
 const COLLECTION_BUILTINS = ['count', 'countVersions', 'create', 'delete', 'duplicate', 'find', 'findDistinct', 'findVersionByID', 'findVersions', 'getCollectionSchema', 'getUploadInstructions', 'restoreVersion', 'update'] as const
 const GLOBAL_BUILTINS = ['countGlobalVersions', 'find', 'findGlobalVersionByID', 'findGlobalVersions', 'getGlobalSchema', 'restoreGlobalVersion', 'update'] as const
