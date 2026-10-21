@@ -141,7 +141,7 @@ export function toMcpComparisonRow(doc: Plugin, siteURL: string): McpComparisonR
 }
 
 /** The category must have been read with `_h_slugPath` (context `computeHierarchyPaths`); there is no slug fallback. */
-export function toMcpCategory(doc: Category, parentSlug: string | null, pluginCount: number): McpCategory {
+export function toMcpCategory(doc: Pick<Category, 'slug' | 'title' | 'intro' | '_h_slugPath'>, parentSlug: string | null, pluginCount: number): McpCategory {
   if (!doc._h_slugPath) throw new Error(`Category "${doc.slug}" was loaded without _h_slugPath`)
   return { slug: doc.slug, title: doc.title, path: doc._h_slugPath, parentSlug, intro: doc.intro ?? null, pluginCount }
 }
