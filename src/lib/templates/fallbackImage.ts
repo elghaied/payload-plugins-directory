@@ -5,6 +5,9 @@ const MAX_URL_CHARS = 2_000
 /** Deploy buttons and badges are never a template's picture (Ruling 11). */
 const NOT_A_PICTURE = /deploy|button|badge|shield/i
 const MIN_EXPLICIT_PX = 200
+/** Bounds on hostile README HTML: tags examined, and link text read per link. */
+const MAX_TAGS = 200
+const MAX_LINK_TEXT_CHARS = 500
 
 const decodeAttribute = (value: string) =>
   value
@@ -37,16 +40,21 @@ const textOf = (html: string) => decodeAttribute(html.replace(/<[^>]*>/g, ' '))
  */
 export function firstReadmeImage(html: string | null | undefined): string | null {
   if (!html) return null
+  const lower = html.toLowerCase()
   let link: { href: string; text: string } | null = null
+  let seen = 0
   for (const match of html.matchAll(TAG)) {
+    if (++seen > MAX_TAGS) break
     const [whole, closing, tag, attrs] = match
     if (tag.toLowerCase() === 'a') {
       if (closing) {
         link = null
       } else {
         const start = match.index + whole.length
-        const end = html.toLowerCase().indexOf('</a', start)
-        link = { href: attribute(attrs, 'href') ?? '', text: textOf(html.slice(start, end === -1 ? undefined : end)) }
+        // Bounded: never scan past MAX_LINK_TEXT_CHARS for the closing tag (an unclosed <a> stays O(1)).
+        const window = lower.slice(start, start + MAX_LINK_TEXT_CHARS)
+        const end = window.indexOf('</a')
+        link = { href: attribute(attrs, 'href') ?? '', text: textOf(html.slice(start, start + (end === -1 ? MAX_LINK_TEXT_CHARS : end))) }
       }
       continue
     }

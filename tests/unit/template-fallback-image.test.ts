@@ -36,4 +36,15 @@ describe('firstReadmeImage', () => {
   it('a closed link no longer counts as the enclosing link', () => {
     expect(firstReadmeImage(`<a href="https://vercel.com/new">Deploy</a><img src="${SHOT}">`)).toBe(SHOT)
   })
+
+  it('stays fast on adversarial HTML (20k unclosed links) and gives up after a bounded number of tags', () => {
+    const hostile = '<a href="x">'.repeat(20_000) + `<img src="${SHOT}">`
+    const start = performance.now()
+    expect(firstReadmeImage(hostile)).toBeNull()
+    expect(performance.now() - start).toBeLessThan(500)
+    const longText = `<a href="https://example.com">${'word '.repeat(50_000)}</a><img src="${SHOT}">`
+    const t2 = performance.now()
+    expect(firstReadmeImage(longText)).toBe(SHOT)
+    expect(performance.now() - t2).toBeLessThan(500)
+  })
 })
