@@ -16,6 +16,7 @@ export interface GitHubRepo {
   license: { spdx_id: string } | null
   open_issues_count: number
   archived: boolean
+  is_template?: boolean
 }
 
 export interface GitHubContent {
@@ -67,6 +68,8 @@ export interface GitHubClient {
    * text is truncated (`overflow: 'truncate'`) or the file is treated as missing (`overflow: 'missing'`, null).
    */
   getRawFile(fullName: string, ref: string, path: string, limit?: RawFileLimit): Promise<string | null>
+  /** Committer date of the latest commit touching `path` on `ref`. null = 404 or no commit. */
+  lastCommitDate(fullName: string, path: string, ref: string): Promise<string | null>
   /** Last core-API quota seen in response headers (shown by the job-health widget). */
   readonly quota: GitHubQuota | null
 }
@@ -208,6 +211,20 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
       if (!res) return null
       const body: unknown = await res.json()
       return Array.isArray(body) ? (body as GitHubContent[]) : null
+    },
+
+    async lastCommitDate(fullName, path, ref) {
+      checkFullName(fullName)
+      const url = assertUrl(
+        `${GITHUB_API}/repos/${fullName}/commits?path=${encodePath(path, 'path')}&sha=${encodeRef(ref)}&per_page=1`,
+        GITHUB_API,
+        `/repos/${fullName}/commits`,
+      )
+      const res = await request(url, apiHeaders)
+      if (!res) return null
+      const body: unknown = await res.json()
+      const date = Array.isArray(body) ? (body[0] as { commit?: { committer?: { date?: unknown } } } | undefined)?.commit?.committer?.date : undefined
+      return typeof date === 'string' ? date : null
     },
 
     async getRawFile(fullName, ref, path, limit = DEFAULT_RAW_LIMIT) {

@@ -21,7 +21,7 @@ export type ExtractedPlugin = {
 
 export type Extraction = { plugins: ExtractedPlugin[]; isMonorepo: boolean }
 
-type ReadPackage = { json: PackageJson }
+export type ReadPackage = { json: PackageJson }
 
 const README_NAMES = ['README.md', 'readme.md', 'Readme.md']
 const BATCH = 5
@@ -37,7 +37,7 @@ export const PACKAGE_JSON_LIMIT: RawFileLimit = { maxBytes: 256 * 1024, overflow
 /** Package directories this extraction may still read. */
 type Budget = { left: number }
 
-async function readPackageJson(gh: GitHubClient, fullName: string, ref: string, dir: string): Promise<ReadPackage | null> {
+export async function readPackageJson(gh: GitHubClient, fullName: string, ref: string, dir: string): Promise<ReadPackage | null> {
   const text = await gh.getRawFile(fullName, ref, dir ? `${dir}/package.json` : 'package.json', PACKAGE_JSON_LIMIT)
   if (text === null) return null
   try {
