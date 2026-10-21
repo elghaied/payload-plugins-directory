@@ -15,24 +15,27 @@ const GLOBAL_BUILTINS = ['countGlobalVersions', 'find', 'findGlobalVersionByID',
 const allOff = (keys: readonly string[]) => Object.fromEntries(keys.map((k) => [k, false]))
 
 /** The anonymous, read-only MCP endpoint (POST /api/mcp), wrapped by the one-call/size/no-store guard. */
+/** The only tools an MCP caller sees (the /mcp page documents each one). */
+export const PUBLIC_MCP_TOOLS = {
+  searchPlugins: searchPluginsTool,
+  getPlugin: getPluginTool,
+  listCategories: listCategoriesTool,
+  comparePlugins: comparePluginsTool,
+  getTemplate: getTemplateTool,
+}
+
 export const directoryMcpPlugin = (): Plugin[] => [
   mcpPlugin({
     // Belt: no built-in tool exists for any app collection or the global.
     collections: Object.fromEntries(APP_COLLECTIONS.map((slug) => [slug, { tools: allOff(COLLECTION_BUILTINS) }])) as MCPPluginConfig['collections'],
     globals: { 'directory-settings': { tools: allOff(GLOBAL_BUILTINS) } } as MCPPluginConfig['globals'],
-    tools: {
-      searchPlugins: searchPluginsTool,
-      getPlugin: getPluginTool,
-      listCategories: listCategoriesTool,
-      comparePlugins: comparePluginsTool,
-      getTemplate: getTemplateTool,
-    },
+    tools: PUBLIC_MCP_TOOLS,
     // Braces: every caller is anonymous and sees only the five tools above (also hides payload-* collections).
     overrideGetAuthorizedMCP: publicReadOnlyMCP,
     mcp: {
       maxRequestBodySize: MCP_MAX_BODY_BYTES,
       serverOptions: {
-        serverInfo: { name: 'payload-plugin-directory', version: '1.0.0' },
+        serverInfo: { name: 'payload-directory', version: '1.0.0' },
         options: { instructions: SERVER_INSTRUCTIONS },
       },
     },

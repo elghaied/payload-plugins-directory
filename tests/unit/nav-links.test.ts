@@ -3,7 +3,7 @@ import { isActiveLink, NAV_LINKS } from '@/components/navLinks'
 
 describe('navigation links', () => {
   it('includes Trending between Home and Stats', () => {
-    expect(NAV_LINKS.map((l) => l.href)).toEqual(['/', '/trending', '/stats', '/about'])
+    expect(NAV_LINKS.map((l) => l.href)).toEqual(['/', '/trending', '/stats', '/mcp', '/about'])
   })
   it('marks only the matching section active', () => {
     expect(isActiveLink('/', '/')).toBe(true)

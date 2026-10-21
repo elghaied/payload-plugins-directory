@@ -9,6 +9,9 @@ import { AccountMenu } from "./AccountMenu"
 import { ModeToggle } from "./mode-toggler"
 import { NAV_LINKS, isActiveLink } from "./navLinks"
 
+// Narrow phones: these links move to the footer only, so the bar never scrolls sideways (MCP stays visible).
+const PHONE_HIDDEN: Record<string, string> = { "/stats": "hidden min-[400px]:block", "/about": "hidden min-[440px]:block" }
+
 export function Navbar() {
   const pathname = usePathname()
 
@@ -34,7 +37,7 @@ export function Navbar() {
                 <Link
                   key={href}
                   href={href}
-                  className={`${href === "/about" ? "hidden min-[440px]:block" : ""} px-1.5 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  className={`${PHONE_HIDDEN[href] ?? ""} px-1.5 sm:px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-accent text-accent-foreground"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"

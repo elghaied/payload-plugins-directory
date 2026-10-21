@@ -1,7 +1,6 @@
 import { Metadata } from "next";
 import { OG_IMAGES } from "@/lib/siteOg";
 import { ExternalLink } from "lucide-react";
-import { mcpUrl } from "@/mcp/instructions";
 
 // Per request, like every site page: absolute URLs come from the runtime SERVER_URL (metadataBase in the layout),
 // never from the build environment.
@@ -21,19 +20,7 @@ export const metadata: Metadata = {
   },
 };
 
-const mcpTools = [
-  ["searchPlugins", "full-text search, optionally filtered by Payload major version or category"],
-  ["getPlugin", "everything about one plugin, including its README"],
-  ["listCategories", "the category tree with plugin counts"],
-  ["comparePlugins", "2–5 plugins side by side"],
-] as const;
-
 export default function AboutPage() {
-  // Built per request from SERVER_URL (this page is force-dynamic), never a hardcoded host.
-  const url = mcpUrl();
-  const claudeCodeCommand = `claude mcp add --transport http payload-directory ${url}`;
-  const jsonConfig = JSON.stringify({ mcpServers: { "payload-directory": { type: "http", url } } }, null, 2);
-  const stdioCommand = `npx -y mcp-remote ${url}`;
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -94,16 +81,20 @@ export default function AboutPage() {
                     "The directory syncs with GitHub and npm automatically several times a day, so new plugins and updates appear without any manual intervention.",
                 },
                 {
-                  title: "No submission needed",
+                  title: "Automatic listing",
                   description: (
                     <>
-                      There&apos;s no sign-up or manual submission process. Just
-                      add the{" "}
+                      Add the{" "}
                       <code className="font-mono bg-secondary px-1.5 py-0.5 rounded text-sm">
                         payload-plugin
                       </code>{" "}
-                      topic to your GitHub repo and it will be picked up
-                      automatically.
+                      topic to your GitHub repo and it is picked up
+                      automatically. Plugins without the topic can be submitted
+                      at{" "}
+                      <a href="/submit" className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors">
+                        /submit
+                      </a>
+                      .
                     </>
                   ),
                 },
@@ -204,8 +195,8 @@ export default function AboutPage() {
             <h2 className="text-lg font-semibold mb-3">Templates</h2>
             <p className="text-muted-foreground leading-relaxed">
               Besides plugins, the directory lists Payload templates: complete starter projects you can scaffold or
-              clone. Official templates come from the Payload repository, and community templates are discovered the
-              same way as plugins. Have one of your own? Submit it at{" "}
+              clone. Official templates come from the Payload repository and appear automatically; community templates are
+              added by submission and reviewed before they are listed. Have one of your own? Submit it at{" "}
               <a
                 href="/submit"
                 className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
@@ -216,48 +207,19 @@ export default function AboutPage() {
             </p>
           </section>
 
-          {/* Use with your agent */}
+          {/* Use with your agent: the full guide lives on /mcp; #mcp stays for older links. */}
           <section id="mcp" className="bg-card border rounded-lg p-6">
             <h2 className="text-lg font-semibold mb-3">Use with your agent</h2>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              The directory is also a public, read-only{" "}
+            <p className="text-muted-foreground leading-relaxed">
+              The directory is also a free, read-only MCP server, so Claude, Cursor, VS Code and other AI agents can search
+              plugins and templates while they work on your project. Setup for each client is on the{" "}
               <a
-                href="https://modelcontextprotocol.io"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+                href="/mcp"
+                className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"
               >
-                MCP server
-                <ExternalLink className="h-3 w-3" />
-              </a>{" "}
-              at{" "}
-              <code className="font-mono bg-secondary px-1.5 py-0.5 rounded text-sm break-all">{url}</code>. No sign-up or
-              API key is needed. Your coding agent can find, inspect, and compare plugins while it works on your Payload
-              project.
-            </p>
-            <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-              The endpoint is for MCP clients such as Claude Code, Claude Desktop and other CLI or agent clients. It is not
-              meant for browsers: it does not allow cross-origin requests, so a web page cannot call it.
-            </p>
-            <ul className="text-sm text-muted-foreground space-y-1 mb-4">
-              {mcpTools.map(([name, text]) => (
-                <li key={name}>
-                  <code className="font-mono bg-secondary px-1.5 py-0.5 rounded">{name}</code> — {text}
-                </li>
-              ))}
-            </ul>
-            <p className="font-medium text-sm mb-1">Claude Code</p>
-            <pre className="mb-4 overflow-x-auto rounded-lg bg-secondary/50 px-4 py-3 text-sm font-mono">{claudeCodeCommand}</pre>
-            <p className="font-medium text-sm mb-1">Cursor, VS Code and other clients with HTTP support</p>
-            <p className="text-xs text-muted-foreground mb-1">
-              The top-level key name varies by client; check your client&apos;s MCP docs.
-            </p>
-            <pre className="mb-4 overflow-x-auto rounded-lg bg-secondary/50 px-4 py-3 text-sm font-mono">{jsonConfig}</pre>
-            <p className="font-medium text-sm mb-1">Clients that only run local (stdio) servers, such as Claude Desktop</p>
-            <pre className="mb-4 overflow-x-auto rounded-lg bg-secondary/50 px-4 py-3 text-sm font-mono">{stdioCommand}</pre>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Requests are rate-limited. Plugin descriptions and READMEs are written by plugin authors, so the server tells
-              agents to treat them as untrusted content.
+                MCP page
+              </a>
+              .
             </p>
           </section>
 
