@@ -5,7 +5,7 @@ import { searchDirectory } from '@/lib/search/searchDirectory'
 import { searchIndex } from '@/lib/search/fts'
 import { normalizeQuery } from '@/lib/search/query'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createPlugin, createRepo, trashPlugin } from './helpers/directory'
+import { createPlugin, createRepo, createTemplate, trashPlugin, trashTemplate } from './helpers/directory'
 
 let payload: Payload
 const slugsOf = (r: { plugins: { slug: string }[] }) => r.plugins.map((p) => p.slug)
@@ -195,8 +195,72 @@ describe('toSiteResult', () => {
     const { toSiteResult } = await import('@/lib/search/present')
     const q = { text: 'x', prefix: '', truncated: false }
     for (const status of ['timeout', 'busy'] as const) {
-      expect(toSiteResult({ status, query: null, plugins: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
-      expect(toSiteResult({ status, query: q, plugins: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
+      expect(toSiteResult({ status, query: null, plugins: [], templates: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
+      expect(toSiteResult({ status, query: q, plugins: [], templates: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
     }
+  })
+})
+
+describe('templates in searchDirectory', () => {
+  const QUERIES = ['seo', 'webhooks', 'auth', 'ecommerce', 'paged', 'github', 'storage', 'starter']
+  const pluginSlugs = async (templateLimit?: number) => {
+    const out: Record<string, string[]> = {}
+    for (const q of QUERIES) {
+      const r = await searchDirectory(payload, q, { pluginLimit: 50, taxonomyLimit: 12, ...(templateLimit === undefined ? {} : { templateLimit }) })
+      out[q] = [...slugsOf(r), '|', ...r.categories.map((c) => c.slug), '|', ...r.tags.map((t) => t.slug)]
+    }
+    return out
+  }
+  let before: Record<string, string[]>
+
+  beforeAll(async () => {
+    // Plugin (and taxonomy) results before any template exists.
+    before = await pluginSlugs()
+    const official = (await createRepo(payload, { fullName: 'payloadcms/payload', owner: 'payloadcms' })).id
+    const community = (await createRepo(payload)).id
+    await createTemplate(payload, official, { slug: 'ecommerce', name: 'Ecommerce', isOfficial: true, source: 'official', path: 'templates/ecommerce', description: 'Ecommerce starter with products and carts', ai: { tagline: 'A full shop' } })
+    await createTemplate(payload, community, { slug: '11-root', name: 'SEO Starter', description: 'Blog starter with SEO and webhooks', stackOverride: 'tanstack-start' })
+    const hidden = await createTemplate(payload, community, { slug: '12-root', name: 'Hidden Ecommerce', visibility: 'hidden' })
+    const trashed = await createTemplate(payload, community, { slug: '13-root', name: 'Trashed Ecommerce' })
+    await trashTemplate(payload, trashed.id)
+    // Stale rows, as if a hook had been bypassed (Review Focus 1).
+    for (const [id, slug, title] of [[hidden.id, '12-root', 'Hidden Ecommerce'], [trashed.id, '13-root', 'Trashed Ecommerce']] as const) {
+      await payload.create({ collection: 'search', overrideAccess: true, data: { doc: { relationTo: 'templates', value: id }, kind: 'template', slug, title } as never })
+    }
+  })
+
+  it('plugin results for the same queries are identical to before (with and without templates requested)', async () => {
+    expect(await pluginSlugs()).toEqual(before)
+    expect(await pluginSlugs(6)).toEqual(before)
+  })
+
+  it('returns no templates unless templateLimit is set', async () => {
+    expect((await searchDirectory(payload, 'ecommerce')).templates).toEqual([])
+  })
+
+  it('finds the e-commerce template', async () => {
+    const r = await searchDirectory(payload, 'ecommerce', { templateLimit: 6 })
+    expect(r.templates.map((t) => t.slug)).toEqual(['ecommerce'])
+  })
+
+  it('never returns a hidden or trashed template, even with stale index rows', async () => {
+    const hits = await searchIndex(payload, normalizeQuery('ecommerce')!, { perKind: 50 })
+    expect(hits.filter((h) => h.kind === 'template').map((h) => h.slug)).toEqual(expect.arrayContaining(['12-root', '13-root']))
+    const r = await searchDirectory(payload, 'ecommerce', { templateLimit: 6 })
+    expect(r.templates.map((t) => t.slug)).not.toContain('12-root')
+    expect(r.templates.map((t) => t.slug)).not.toContain('13-root')
+  })
+
+  it('caps templates at templateLimit, in rank order', async () => {
+    expect((await searchDirectory(payload, 'starter', { templateLimit: 1 })).templates).toHaveLength(1)
+    expect((await searchDirectory(payload, 'seo starter', { templateLimit: 6 })).templates[0].slug).toBe('11-root')
+  })
+
+  it('maps templates for the page: name, display tagline, official flag and stack', async () => {
+    const { toSiteResult } = await import('@/lib/search/present')
+    const view = toSiteResult(await searchDirectory(payload, 'starter', { templateLimit: 6 }))!
+    const bySlug = Object.fromEntries(view.templates.map((t) => [t.slug, t]))
+    expect(bySlug.ecommerce).toEqual({ slug: 'ecommerce', name: 'Ecommerce', tagline: 'A full shop', isOfficial: true, stack: 'nextjs' })
+    expect(bySlug['11-root']).toEqual({ slug: '11-root', name: 'SEO Starter', tagline: 'Blog starter with SEO and webhooks', isOfficial: false, stack: 'tanstack-start' })
   })
 })

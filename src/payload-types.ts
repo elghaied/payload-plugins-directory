@@ -712,8 +712,12 @@ export interface Search {
     | {
         relationTo: 'tags';
         value: number | Tag;
+      }
+    | {
+        relationTo: 'templates';
+        value: number | Template;
       };
-  kind: 'plugin' | 'category' | 'tag';
+  kind: 'plugin' | 'category' | 'tag' | 'template';
   slug: string;
   tagline?: string | null;
   summary?: string | null;
@@ -1973,7 +1977,8 @@ export interface TaskEnrichTemplate {
  */
 export interface TaskSearchResync {
   input: {
-    collection: 'categories' | 'tags';
+    collection: 'categories' | 'tags' | 'template-categories';
+    target?: ('plugins' | 'templates') | null;
     id: number;
     pluginIds?: number[] | null;
     afterId?: number | null;

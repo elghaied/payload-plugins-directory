@@ -1,5 +1,5 @@
 import type { Payload } from 'payload'
-import type { Plugin, Repository } from '@/payload-types'
+import type { Plugin, Repository, Template } from '@/payload-types'
 
 let n = 0
 
@@ -39,8 +39,31 @@ export async function trashPlugin(payload: Payload, id: number) {
   })
 }
 
+/** A listed community template of `repository`; override any field. */
+export async function createTemplate(payload: Payload, repository: number, over: Partial<Template> = {}): Promise<Template> {
+  n++
+  return payload.create({
+    collection: 'templates',
+    overrideAccess: true,
+    depth: 0,
+    context: { skipRevalidate: true },
+    data: { slug: `${n}-root`, name: `Template ${n}`, repository, url: `https://github.com/acme/template-${n}`, source: 'submission', stackDetected: 'nextjs', ...over } as never,
+  })
+}
+
+/** Soft-delete a template through `deletedAt` (see trashPlugin). */
+export async function trashTemplate(payload: Payload, id: number) {
+  await payload.update({
+    collection: 'templates',
+    id,
+    overrideAccess: true,
+    context: { skipRevalidate: true },
+    data: { deletedAt: new Date().toISOString() },
+  })
+}
+
 /** The `search` rows that point at one source document. */
-export async function searchDocsFor(payload: Payload, collection: 'plugins' | 'categories' | 'tags', id: number) {
+export async function searchDocsFor(payload: Payload, collection: 'plugins' | 'categories' | 'tags' | 'templates', id: number) {
   const res = await payload.find({
     collection: 'search',
     overrideAccess: true,

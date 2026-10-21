@@ -22,6 +22,7 @@ import * as migration_20261021_111206_templates from './20261021_111206_template
 import * as migration_20261021_113614_template_tasks from './20261021_113614_template_tasks';
 import * as migration_20261021_120037_enrich_template_task from './20261021_120037_enrich_template_task';
 import * as migration_20261021_124916_submission_kind from './20261021_124916_submission_kind';
+import * as migration_20261021_133322_search_templates from './20261021_133322_search_templates';
 
 export const migrations = [
   {
@@ -142,6 +143,11 @@ export const migrations = [
   {
     up: migration_20261021_124916_submission_kind.up,
     down: migration_20261021_124916_submission_kind.down,
-    name: '20261021_124916_submission_kind'
+    name: '20261021_124916_submission_kind',
+  },
+  {
+    up: migration_20261021_133322_search_templates.up,
+    down: migration_20261021_133322_search_templates.down,
+    name: '20261021_133322_search_templates'
   },
 ];

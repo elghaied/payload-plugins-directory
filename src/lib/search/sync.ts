@@ -4,13 +4,17 @@ import {
   buildCategorySearchFields,
   buildPluginSearchFields,
   buildTagSearchFields,
+  buildTemplateSearchFields,
+  isListedOnly,
   isPubliclyListed,
   SEARCH_SLUG,
   type CategorySource,
+  type ListedOnlyCollection,
   type PluginSource,
   type SearchableCollection,
   type SearchFields,
   type TagSource,
+  type TemplateSource,
 } from './searchDoc'
 
 const DEDUPE_PASSES = 3
@@ -25,9 +29,9 @@ const docRef = (collection: SearchableCollection, id: number): Where => ({
  */
 const CATEGORY_SELECT = { title: true, slug: true, intro: true, _h_slugPath: true, _h_titlePath: true } as const
 
-async function readCategory(payload: Payload, id: number, req?: PayloadRequest) {
+async function readCategory(payload: Payload, id: number, req?: PayloadRequest, collection: 'categories' | 'template-categories' = 'categories') {
   return payload.findByID({
-    collection: 'categories',
+    collection,
     id,
     overrideAccess: true,
     depth: 0,
@@ -53,31 +57,38 @@ export async function searchFieldsFor(
     return buildCategorySearchFields(category as unknown as CategorySource)
   }
 
+  // Plugins and templates: the category comes from their own tree (template-categories for templates).
   const categoryId = relationId(doc.category)
   const tagIds = ((doc._h_tags as unknown[] | null | undefined) ?? []).map(relationId).filter((v): v is number => v !== undefined)
+  const categoryCollection = collection === 'templates' ? 'template-categories' : 'categories'
   // Sequential on purpose: hooks share the caller's transaction connection.
-  const category = categoryId === undefined ? null : await readCategory(payload, categoryId, req)
+  const category = categoryId === undefined ? null : await readCategory(payload, categoryId, req, categoryCollection)
   if (categoryId !== undefined && category && !category._h_titlePath) {
     throw new Error(`Category ${categoryId} has no _h_titlePath: request the hierarchy paths explicitly when reading it`)
   }
   const tags = tagIds.length
     ? (await payload.find({ collection: 'tags', overrideAccess: true, depth: 0, pagination: false, limit: 0, where: { id: { in: tagIds } }, req })).docs
     : []
-  return buildPluginSearchFields(doc as unknown as PluginSource, {
-    categoryText: category?._h_titlePath ?? null,
-    tagTitles: tags.map((t) => t.title),
-  })
+  const taxonomy = { categoryText: category?._h_titlePath ?? null, tagTitles: tags.map((t) => t.title) }
+  return collection === 'templates'
+    ? buildTemplateSearchFields(doc as unknown as TemplateSource, taxonomy)
+    : buildPluginSearchFields(doc as unknown as PluginSource, taxonomy)
 }
 
 const COMPARED_FIELDS = ['title', 'kind', 'slug', 'tagline', 'summary', 'categoryText', 'tagsText', 'readme', 'path'] as const
 
 /**
- * True when the plugin has exactly one index row and every indexed field already matches what would be written. Sync jobs
+ * True when the plugin (or template) has exactly one index row and every indexed field already matches what would be written. Sync jobs
  * and npm-stats rewrite plugins daily (stars, downloads, health score: none of them indexed, and priority is a fixed
  * per-kind constant), so skipping the identical write avoids recomputing the stored tsvector and churning the GIN index.
  * Any doubt (no row, duplicates, a read error) returns false and the normal write proceeds.
  */
-export async function searchRowUpToDate(payload: Payload, doc: Record<string, unknown>, req?: PayloadRequest): Promise<boolean> {
+export async function searchRowUpToDate(
+  payload: Payload,
+  doc: Record<string, unknown>,
+  req?: PayloadRequest,
+  collection: ListedOnlyCollection = 'plugins',
+): Promise<boolean> {
   try {
     const rows = await payload.find({
       collection: SEARCH_SLUG,
@@ -85,12 +96,12 @@ export async function searchRowUpToDate(payload: Payload, doc: Record<string, un
       depth: 0,
       pagination: false,
       limit: 2,
-      where: docRef('plugins', doc.id as number),
+      where: docRef(collection, doc.id as number),
       req,
     })
     if (rows.docs.length !== 1) return false
     const row = rows.docs[0] as unknown as Record<string, unknown>
-    const next = (await searchFieldsFor(payload, 'plugins', doc, req)) as unknown as Record<string, unknown>
+    const next = (await searchFieldsFor(payload, collection, doc, req)) as unknown as Record<string, unknown>
     return COMPARED_FIELDS.every((k) => (row[k] ?? null) === (next[k] ?? null))
   } catch {
     return false
@@ -109,12 +120,14 @@ async function loadSource(payload: Payload, collection: SearchableCollection, id
       return payload.findByID({ collection: 'categories', id, overrideAccess: true, depth: 0, disableErrors: true, req })
     case 'tags':
       return payload.findByID({ collection: 'tags', id, overrideAccess: true, depth: 0, disableErrors: true, req })
+    case 'templates':
+      return payload.findByID({ collection: 'templates', id, overrideAccess: true, depth: 0, trash: true, disableErrors: true, req })
   }
 }
 
 /**
  * Brings the index entry for one document in line with the source: upsert when it should be
- * searchable, delete otherwise (missing, hidden or trashed plugin). Used by reindex and taxonomy hooks;
+ * searchable, delete otherwise (missing, hidden or trashed plugin or template). Used by reindex and taxonomy hooks;
  * routine creates/updates go through plugin-search's own hooks.
  */
 export async function syncSearchDoc(
@@ -124,7 +137,7 @@ export async function syncSearchDoc(
   req?: PayloadRequest,
 ): Promise<'upserted' | 'removed'> {
   const source = await loadSource(payload, collection, id, req)
-  if (!source || (collection === 'plugins' && !isPubliclyListed(source as { visibility?: string; deletedAt?: string | null }))) {
+  if (!source || (isListedOnly(collection) && !isPubliclyListed(source as { visibility?: string; deletedAt?: string | null }))) {
     await removeSearchDocs(payload, collection, id, req)
     return 'removed'
   }
@@ -161,21 +174,32 @@ export async function syncSearchDoc(
   return 'upserted'
 }
 
-const PLUGIN_INDEX_KEYS = ['name', 'slug', 'description', 'readme', 'customTagline', 'ai', 'category', '_h_tags', 'visibility', 'deletedAt'] as const
+/** The same keys for plugins and templates. */
+const INDEX_KEYS = ['name', 'slug', 'description', 'readme', 'customTagline', 'ai', 'category', '_h_tags', 'visibility', 'deletedAt'] as const
 
 /**
  * Hook documents are built with the caller's `select`, so `visibility` / `deletedAt` (or the indexed text) can be
- * missing. A projected document is replaced by a full read (trashed plugins included) before anything is decided.
+ * missing. A projected document is replaced by a full read (trashed documents included) before anything is decided.
  */
-export async function resolvePluginDoc<T extends Record<string, unknown>>(payload: Payload, doc: T, req?: PayloadRequest): Promise<Record<string, unknown>> {
-  if (PLUGIN_INDEX_KEYS.every((k) => k in doc)) return doc
-  const full = await payload.findByID({ collection: 'plugins', id: doc.id as number, overrideAccess: true, depth: 0, trash: true, disableErrors: true, req })
+export async function resolveListedOnlyDoc<T extends Record<string, unknown>>(
+  payload: Payload,
+  collection: ListedOnlyCollection,
+  doc: T,
+  req?: PayloadRequest,
+): Promise<Record<string, unknown>> {
+  if (INDEX_KEYS.every((k) => k in doc)) return doc
+  const full = await payload.findByID({ collection, id: doc.id as number, overrideAccess: true, depth: 0, trash: true, disableErrors: true, req })
   return (full as unknown as Record<string, unknown> | null) ?? doc
 }
 
-/** Whether the source exists now and belongs in the index (a listed, untrashed plugin; any category or tag). */
+export const resolvePluginDoc = <T extends Record<string, unknown>>(payload: Payload, doc: T, req?: PayloadRequest) =>
+  resolveListedOnlyDoc(payload, 'plugins', doc, req)
+export const resolveTemplateDoc = <T extends Record<string, unknown>>(payload: Payload, doc: T, req?: PayloadRequest) =>
+  resolveListedOnlyDoc(payload, 'templates', doc, req)
+
+/** Whether the source exists now and belongs in the index (a listed, untrashed plugin or template; any category or tag). */
 export async function isIndexable(payload: Payload, collection: SearchableCollection, id: number): Promise<boolean> {
   const source = await loadSource(payload, collection, id)
   if (!source) return false
-  return collection !== 'plugins' || isPubliclyListed(source as { visibility?: string; deletedAt?: string | null })
+  return !isListedOnly(collection) || isPubliclyListed(source as { visibility?: string; deletedAt?: string | null })
 }

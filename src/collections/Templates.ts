@@ -5,6 +5,7 @@ import { queueReadmeRender } from '@/collections/hooks/queueReadmeRender'
 import { restrictMaintainerTemplateEdits } from '@/collections/hooks/restrictMaintainerTemplateEdits'
 import { revalidateTemplateChange, revalidateTemplateDelete } from '@/collections/hooks/revalidateTemplate'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
+import { forgetSyncedDoc, removeUnlistedTemplateFromSearch } from '@/lib/search/hooks'
 import { canonicalVideoUrl, parseDemoUrl, parseVideoUrl } from '@/lib/templates/links'
 import { STACKS } from '@/lib/templates/stack'
 import { normalizeTagline } from '@/lib/maintainers/tagline'
@@ -55,7 +56,8 @@ export const Templates: CollectionConfig = {
       // Reads only category, _h_tags, ai.* and locks, which templates share with plugins.
       lockAdminEditedAiFields as unknown as CollectionBeforeChangeHook,
     ],
-    afterChange: [revalidateTemplateChange, queueReadmeRender],
+    // plugin-search's own afterChange runs after these: unlisted templates are removed, every edit syncs.
+    afterChange: [revalidateTemplateChange, queueReadmeRender, removeUnlistedTemplateFromSearch, forgetSyncedDoc('templates')],
     afterDelete: [revalidateTemplateDelete],
   },
   fields: [

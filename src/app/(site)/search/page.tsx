@@ -3,6 +3,7 @@ import { OG_IMAGES } from "@/lib/siteOg";
 import Link from "next/link";
 import { Search as SearchIcon } from "lucide-react";
 import { PluginListCard } from "@/components/PluginListCard";
+import { TemplateMiniCard } from "@/components/templates/TemplateMiniCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MAX_QUERY_LENGTH } from "@/lib/search/query";
@@ -112,6 +113,19 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                   <PluginListCard key={plugin.slug} plugin={plugin} />
                 ))}
               </div>
+            )}
+
+            {result.templates.length > 0 && (
+              <section aria-labelledby="search-templates" className="space-y-3">
+                <h2 id="search-templates" className="text-lg font-semibold tracking-tight">
+                  Templates
+                </h2>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {result.templates.map((template) => (
+                    <TemplateMiniCard key={template.slug} template={template} />
+                  ))}
+                </div>
+              </section>
             )}
           </div>
         )}

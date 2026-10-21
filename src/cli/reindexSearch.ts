@@ -12,7 +12,7 @@ export async function runReindexSearch(payload: Payload, args: { ifIncomplete: b
 }
 
 export const reindexSearchCommand = defineCLICommand({
-  description: 'Rebuild the search index from plugins, categories and tags. --if-incomplete only runs when the index has fewer rows than there are sources.',
+  description: 'Rebuild the search index from plugins, templates, categories and tags. --if-incomplete only runs when the index has fewer rows than there are sources.',
   input: strictObject({ ifIncomplete: z._default(z.boolean(), false) }),
   handler: async ({ args, getPayload }) => ({ result: await runReindexSearch(await getPayload(), args) }),
 })

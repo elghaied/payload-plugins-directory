@@ -2,14 +2,20 @@ import { authorDescriptionOf, pluginTagline } from '@/lib/directory/tagline'
 import { clampChars, NAME_MAX_CHARS, PATH_MAX_CHARS } from '@/sync/limits'
 
 export const SEARCH_SLUG = 'search' as const
-export const SEARCHABLE_COLLECTIONS = ['plugins', 'categories', 'tags'] as const
+export const SEARCHABLE_COLLECTIONS = ['plugins', 'categories', 'tags', 'templates'] as const
 export type SearchableCollection = (typeof SEARCHABLE_COLLECTIONS)[number]
-export type SearchKind = 'plugin' | 'category' | 'tag'
+export type SearchKind = 'plugin' | 'category' | 'tag' | 'template'
 export const KIND_BY_COLLECTION: Record<SearchableCollection, SearchKind> = {
   plugins: 'plugin',
   categories: 'category',
   tags: 'tag',
+  templates: 'template',
 }
+/** Collections whose rows exist only while the source is publicly listed (visibility + trash). */
+export const LISTED_ONLY_COLLECTIONS = ['plugins', 'templates'] as const
+export type ListedOnlyCollection = (typeof LISTED_ONLY_COLLECTIONS)[number]
+export const isListedOnly = (collection: string): collection is ListedOnlyCollection =>
+  (LISTED_ONLY_COLLECTIONS as readonly string[]).includes(collection)
 /** README characters indexed per plugin; keeps each tsvector far below Postgres' 1 MB limit. */
 export const README_INDEX_LIMIT = 50_000
 
@@ -51,6 +57,8 @@ export type PluginSource = {
   customTagline?: Maybe<string>
   ai?: Maybe<{ tagline?: Maybe<string>; summary?: Maybe<string> }>
 }
+/** Templates index the same text as plugins (name, taglines, summary, description, taxonomy, README). */
+export type TemplateSource = PluginSource
 /** `_h_slugPath` / `_h_titlePath` are virtual: the caller reads the category with them requested explicitly. */
 export type CategorySource = { title: string; slug: string; intro?: Maybe<string>; _h_slugPath?: Maybe<string>; _h_titlePath?: Maybe<string> }
 export type TagSource = { title: string; slug: string; aliases?: Maybe<string[]> }
@@ -90,6 +98,14 @@ export function buildPluginSearchFields(
     readme: doc.readme ? clampChars(doc.readme, SEARCH_FIELD_LIMITS.readme) : null,
     path: null,
   }
+}
+
+/** The plugin builder with `kind: 'template'`; `categoryText` is the template category's full title path. */
+export function buildTemplateSearchFields(
+  doc: TemplateSource,
+  taxonomy: { categoryText: string | null; tagTitles: string[] },
+): SearchFields {
+  return { ...buildPluginSearchFields(doc, taxonomy), kind: 'template' }
 }
 
 export function buildCategorySearchFields(doc: CategorySource): SearchFields {

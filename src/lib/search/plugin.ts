@@ -2,13 +2,13 @@ import type { Field } from 'payload'
 import { searchPlugin } from '@payloadcms/plugin-search'
 import type { BeforeSync, SearchPluginConfig } from '@payloadcms/plugin-search/types'
 import { isAdmin } from '@/access'
-import { isPubliclyListed, KIND_BY_COLLECTION, SEARCH_FIELD_LIMITS, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
+import { isListedOnly, isPubliclyListed, KIND_BY_COLLECTION, SEARCH_FIELD_LIMITS, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
 import { searchSyncSkipped } from './hooks'
-import { resolvePluginDoc, searchFieldsFor, searchRowUpToDate } from './sync'
+import { resolveListedOnlyDoc, searchFieldsFor, searchRowUpToDate } from './sync'
 
 const ro = { readOnly: true }
 const searchFields: Field[] = [
-  { name: 'kind', type: 'select', required: true, index: true, options: ['plugin', 'category', 'tag'], admin: { ...ro, position: 'sidebar' } },
+  { name: 'kind', type: 'select', required: true, index: true, options: ['plugin', 'category', 'tag', 'template'], admin: { ...ro, position: 'sidebar' } },
   { name: 'slug', type: 'text', required: true, index: true, maxLength: SEARCH_FIELD_LIMITS.slug, admin: ro },
   { name: 'tagline', type: 'text', maxLength: SEARCH_FIELD_LIMITS.tagline, admin: ro },
   { name: 'summary', type: 'textarea', maxLength: SEARCH_FIELD_LIMITS.summary, admin: ro },
@@ -24,21 +24,21 @@ const searchFields: Field[] = [
 ]
 
 // Returning true makes plugin-search return early WITHOUT deleting an existing record —
-// removeUnlistedPluginFromSearch (hooks.ts) handles removal.
+// removeUnlistedPluginFromSearch / removeUnlistedTemplateFromSearch (hooks.ts) handle removal.
 const skipSync: NonNullable<SearchPluginConfig['skipSync']> = async ({ collectionSlug, doc, req }) => {
   if (searchSyncSkipped(req.context)) return true
   // A projected hook document (caller passed `select`) is replaced by a full read before deciding.
-  if (collectionSlug !== 'plugins') return false
-  const full = await resolvePluginDoc(req.payload, doc, req)
+  if (!isListedOnly(collectionSlug)) return false
+  const full = await resolveListedOnlyDoc(req.payload, collectionSlug, doc, req)
   if (!isPubliclyListed(full)) return true
   // Nothing indexed changed (a stats or health-score write): keep the existing row as it is.
-  return searchRowUpToDate(req.payload, full, req)
+  return searchRowUpToDate(req.payload, full, req, collectionSlug)
 }
 
 const beforeSync: BeforeSync = async ({ collectionSlug, originalDoc, payload, req, searchDoc }) => {
   const collection = collectionSlug as SearchableCollection
   try {
-    const source = collection === 'plugins' ? await resolvePluginDoc(payload, originalDoc, req) : originalDoc
+    const source = isListedOnly(collection) ? await resolveListedOnlyDoc(payload, collection, originalDoc, req) : originalDoc
     return { ...searchDoc, ...(await searchFieldsFor(payload, collection, source, req)) }
   } catch (err) {
     // plugin-search does not catch beforeSync errors: a throw would fail the source write (e.g. a sync job).
@@ -55,7 +55,7 @@ const beforeSync: BeforeSync = async ({ collectionSlug, originalDoc, payload, re
 export const directorySearchPlugin = () =>
   searchPlugin({
     collections: [...SEARCHABLE_COLLECTIONS],
-    defaultPriorities: { plugins: 30, categories: 20, tags: 10 },
+    defaultPriorities: { plugins: 30, templates: 25, categories: 20, tags: 10 },
     beforeSync,
     skipSync,
     reindexBatchSize: 100,

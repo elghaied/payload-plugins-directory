@@ -1,5 +1,5 @@
 import type { Payload, Where } from 'payload'
-import type { Category, Plugin, Tag } from '@/payload-types'
+import type { Category, Plugin, Tag, Template } from '@/payload-types'
 import { SUMMARY_SELECT } from '@/lib/directory/mappers'
 import { isInSubtree } from '@/taxonomy/tree'
 import { SearchBusyError, withSearchBudget } from './budget'
@@ -14,6 +14,20 @@ export const PLUGIN_SEARCH_SELECT = {
   _h_tags: true,
 } as const
 
+/** What the /search template cards show (name, display tagline, official badge, stack). Public fields only. */
+export const TEMPLATE_SEARCH_SELECT = {
+  slug: true,
+  name: true,
+  description: true,
+  customTagline: true,
+  ai: { tagline: true },
+  isOfficial: true,
+  stackDetected: true,
+  stackOverride: true,
+} as const
+/** Extra ranked template candidates read per query, so stale rows (hidden or trashed templates) cannot starve the list. */
+const TEMPLATE_CANDIDATE_SLACK = 25
+
 /** `_h_slugPath` / `_h_titlePath` are virtual: they exist only when a read names them. */
 const CATEGORY_SELECT = { title: true, slug: true, intro: true, parent: true, _h_slugPath: true, _h_titlePath: true } as const
 
@@ -23,6 +37,8 @@ export type DirectorySearch = {
   status: 'ok' | 'timeout' | 'busy'
   query: NormalizedQuery | null
   plugins: Plugin[]
+  /** Listed templates in rank order (only when `templateLimit` > 0 and no plugin filter is active). */
+  templates: Template[]
   categories: Category[]
   tags: Tag[]
   unknownCategory?: true
@@ -48,7 +64,16 @@ const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(mi
 // A fresh context object per read (a shared one would accumulate hook state across calls).
 const displayContext = () => ({ computeHierarchyPaths: true })
 
-const empty = (query: NormalizedQuery | null, page: number): DirectorySearch => ({ status: 'ok', query, plugins: [], categories: [], tags: [], page, hasMore: false })
+const empty = (query: NormalizedQuery | null, page: number): DirectorySearch => ({
+  status: 'ok',
+  query,
+  plugins: [],
+  templates: [],
+  categories: [],
+  tags: [],
+  page,
+  hasMore: false,
+})
 
 async function filterWhere(payload: Payload, filter?: PluginFilter): Promise<Where | null | 'unknown-category'> {
   const and: Where[] = []
@@ -74,10 +99,12 @@ function inRankOrder<T extends { slug: string }>(docs: T[], slugs: string[]): T[
 export async function searchDirectory(
   payload: Payload,
   raw: unknown,
-  opts: { pluginLimit?: number; taxonomyLimit?: number; page?: number; filter?: PluginFilter } = {},
+  opts: { pluginLimit?: number; taxonomyLimit?: number; templateLimit?: number; page?: number; filter?: PluginFilter } = {},
 ): Promise<DirectorySearch> {
   const pluginLimit = clamp(opts.pluginLimit ?? 50, 1, SEARCH_LIMITS.maxPluginLimit)
   const taxonomyLimit = clamp(opts.taxonomyLimit ?? 10, 0, SEARCH_LIMITS.maxTaxonomyLimit)
+  // Default 0: callers that predate templates get none (and the same queries as before).
+  const templateLimit = clamp(opts.templateLimit ?? 0, 0, SEARCH_LIMITS.maxTaxonomyLimit)
   // page x limit never exceeds the candidate pool, so a page is never silently short because the pool ran out.
   const page = clamp(opts.page ?? 1, 1, Math.min(SEARCH_LIMITS.maxPage, Math.floor(SEARCH_LIMITS.maxPool / pluginLimit)))
   const normalized = normalizeQuery(raw)
@@ -110,7 +137,9 @@ export async function searchDirectory(
 
     const offset = (page - 1) * pluginLimit
     const pool = hasFilter ? SEARCH_LIMITS.maxPool : Math.min(SEARCH_LIMITS.maxPool, offset + pluginLimit + 25)
-    const hits = await searchIndex(payload, query, { perKind: Math.max(pool, taxonomyLimit, 1) })
+    // Hits are ranked per kind and plugin candidates are cut at `pool`, so a larger perKind never changes plugin results.
+    const templatePool = !hasFilter && templateLimit > 0 ? templateLimit + TEMPLATE_CANDIDATE_SLACK : 0
+    const hits = await searchIndex(payload, query, { perKind: Math.max(pool, taxonomyLimit, templatePool, 1) })
     const slugsOf = (kind: string, n: number) => hits.filter((h) => h.kind === kind).map((h) => h.slug).slice(0, n)
     // The index has no package name: an exact package-name match (e.g. "@acme/payload-seo") is ranked first.
     const byPackage = await payload.find({
@@ -123,6 +152,7 @@ export async function searchDirectory(
       where: { packageName: { in: [...new Set([query.text, query.text.toLowerCase()])] } },
     })
     const candidates = [...new Set([...byPackage.docs.map((d) => d.slug), ...slugsOf('plugin', pool)])].slice(0, pool)
+    const templateCandidates = slugsOf('template', templatePool)
     const categorySlugs = slugsOf('category', taxonomyLimit)
     const tagSlugs = slugsOf('tag', taxonomyLimit)
 
@@ -162,6 +192,23 @@ export async function searchDirectory(
     const categories = categorySlugs.length
       ? (await payload.find({ collection: 'categories', ...anon, depth: 0, pagination: false, limit: 0, select: CATEGORY_SELECT, where: { slug: { in: categorySlugs } } })).docs
       : []
+    // Anonymous, access-controlled: a stale row for a hidden or trashed template is dropped here.
+    const templates = templateCandidates.length
+      ? inRankOrder(
+          (
+            await payload.find({
+              collection: 'templates',
+              ...anon,
+              depth: 0,
+              pagination: false,
+              limit: 0,
+              select: TEMPLATE_SEARCH_SELECT,
+              where: { slug: { in: templateCandidates } },
+            })
+          ).docs as unknown as Template[],
+          templateCandidates,
+        ).slice(0, templateLimit)
+      : []
     const tags = tagSlugs.length
       ? (await payload.find({ collection: 'tags', ...anon, depth: 0, pagination: false, limit: 0, select: { title: true, slug: true, aliases: true }, where: { slug: { in: tagSlugs } } })).docs
       : []
@@ -169,6 +216,7 @@ export async function searchDirectory(
     return {
       query,
       plugins: inRankOrder(plugins as unknown as Plugin[], pageSlugs),
+      templates,
       categories: inRankOrder(categories as unknown as Category[], categorySlugs),
       tags: inRankOrder(tags as unknown as Tag[], tagSlugs),
       page,

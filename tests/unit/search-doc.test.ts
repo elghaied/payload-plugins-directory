@@ -4,6 +4,7 @@ import {
   buildCategorySearchFields,
   buildPluginSearchFields,
   buildTagSearchFields,
+  buildTemplateSearchFields,
   isPubliclyListed,
   README_INDEX_LIMIT,
   SEARCH_FIELD_LIMITS,
@@ -100,5 +101,37 @@ describe('taxonomy builders', () => {
       slug: 's3',
       tagsText: 'aws-s3 amazon-s3',
     })
+  })
+})
+
+describe('buildTemplateSearchFields', () => {
+  const base = { name: 'Ecommerce', slug: 'ecommerce', description: 'A shop starter', readme: '# Ecommerce' }
+  it('maps like a plugin, with kind template', () => {
+    expect(
+      buildTemplateSearchFields(
+        { ...base, ai: { tagline: 'Sell online', summary: 'Products and carts.' } },
+        { categoryText: 'E-commerce', tagTitles: ['Stripe'] },
+      ),
+    ).toEqual({
+      title: 'Ecommerce',
+      kind: 'template',
+      slug: 'ecommerce',
+      tagline: 'Sell online',
+      summary: 'Products and carts.\nA shop starter',
+      categoryText: 'E-commerce',
+      tagsText: 'Stripe',
+      readme: '# Ecommerce',
+      path: null,
+    })
+  })
+  it('uses the tagline precedence customTagline, ai.tagline, author description', () => {
+    expect(buildTemplateSearchFields({ ...base, customTagline: 'Mine', ai: { tagline: 'AI' } }, none).tagline).toBe('Mine')
+    expect(buildTemplateSearchFields({ ...base, ai: { tagline: 'AI' } }, none).tagline).toBe('AI')
+    expect(buildTemplateSearchFields(base, none).tagline).toBe('A shop starter')
+    expect(buildTemplateSearchFields({ ...base, description: NO_DESCRIPTION }, none).tagline).toBeNull()
+  })
+  it('clamps the README to 50,000 characters', () => {
+    const f = buildTemplateSearchFields({ ...base, readme: 'r'.repeat(README_MAX_CHARS) }, none)
+    expect(f.readme).toHaveLength(50_000)
   })
 })

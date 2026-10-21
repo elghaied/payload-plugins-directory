@@ -5,7 +5,7 @@ import { runReindexSearch } from '@/cli/reindexSearch'
 import { reindexSearch } from '@/lib/search/reindex'
 import { runTaxonomyResync } from '@/lib/search/resync'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createPlugin, createRepo, searchDocsFor } from './helpers/directory'
+import { createPlugin, createRepo, createTemplate, searchDocsFor } from './helpers/directory'
 
 let payload: Payload
 let repoId: number
@@ -18,7 +18,7 @@ const runResync = () =>
 const mkCat = (title: string, slug: string, parent?: number) =>
   payload.create({ collection: 'categories', overrideAccess: true, data: { title, slug, ...(parent ? { parent } : {}) } })
 const mkTag = (title: string, slug: string) => payload.create({ collection: 'tags', overrideAccess: true, data: { title, slug } })
-const row = async (collection: 'plugins' | 'categories' | 'tags', id: number) => (await searchDocsFor(payload, collection, id))[0]
+const row = async (collection: 'plugins' | 'categories' | 'tags' | 'templates', id: number) => (await searchDocsFor(payload, collection, id))[0]
 
 beforeAll(async () => {
   payload = await getTestPayload()
@@ -125,6 +125,71 @@ describe('taxonomy changes', () => {
   })
 })
 
+describe('taxonomy changes (templates)', () => {
+  const mkTplCat = (title: string, slug: string, parent?: number) =>
+    payload.create({ collection: 'template-categories', overrideAccess: true, data: { title, slug, ...(parent ? { parent } : {}) } })
+
+  it('a tag rename queues a plugin and a template resync; the jobs update tagsText of both', async () => {
+    const tag = await mkTag('Mail', 'mail')
+    const p = await createPlugin(payload, repoId, { slug: 'tag-plugin', _h_tags: [tag.id] })
+    const t = await createTemplate(payload, repoId, { slug: 'tag-template', _h_tags: [tag.id] })
+    await payload.update({ collection: 'tags', id: tag.id, overrideAccess: true, data: { title: 'Email' } })
+    const jobs = await resyncJobs()
+    expect(jobs.map((j) => (j.input as { target?: string }).target ?? 'plugins').sort()).toEqual(['plugins', 'templates'])
+    await runResync()
+    expect((await row('plugins', p.id)).tagsText).toBe('Email')
+    expect((await row('templates', t.id)).tagsText).toBe('Email')
+  })
+
+  it('a template-category rename (or a parent rename) refreshes categoryText of its templates', async () => {
+    const parent = await mkTplCat('Shops', 'shops')
+    const child = await mkTplCat('Stores', 'stores', parent.id)
+    const t = await createTemplate(payload, repoId, { slug: 'in-child', category: child.id })
+    expect((await row('templates', t.id)).categoryText).toContain('Shops')
+    await payload.update({ collection: 'template-categories', id: parent.id, overrideAccess: true, data: { title: 'Commerce' } })
+    const jobs = await resyncJobs()
+    expect(jobs).toHaveLength(1)
+    expect(jobs[0].input).toMatchObject({ collection: 'template-categories', target: 'templates', id: parent.id })
+    await runResync()
+    expect((await row('templates', t.id)).categoryText).toContain('Commerce')
+  })
+
+  it('deleting a template category or a tag clears it from its templates', async () => {
+    const cat = await mkTplCat('Temp', 'temp')
+    const tag = await mkTag('Gone', 'gone')
+    const t = await createTemplate(payload, repoId, { slug: 'tpl-delete', category: cat.id, _h_tags: [tag.id] })
+    await payload.delete({ collection: 'template-categories', id: cat.id, overrideAccess: true })
+    await payload.delete({ collection: 'tags', id: tag.id, overrideAccess: true })
+    await runResync()
+    const r = await row('templates', t.id)
+    expect(r.categoryText ?? null).toBeNull()
+    expect(r.tagsText ?? null).toBeNull()
+  })
+
+  it('a template resync never touches plugin rows, and keeps plugin job keys unchanged', async () => {
+    const { resyncKey } = await import('@/lib/search/resync')
+    expect(resyncKey({ collection: 'tags', id: 5 })).toBe('search-resync:tags:5')
+    expect(resyncKey({ collection: 'tags', id: 5, target: 'plugins' })).toBe('search-resync:tags:5')
+    expect(resyncKey({ collection: 'tags', id: 5, target: 'templates' })).not.toBe(resyncKey({ collection: 'tags', id: 5 }))
+    expect(resyncKey({ collection: 'tags', id: 5, target: 'templates', afterId: 3 })).not.toBe(resyncKey({ collection: 'tags', id: 5, afterId: 3 }))
+    const tag = await mkTag('Shared', 'shared')
+    const t = await createTemplate(payload, repoId, { slug: 'only-template', _h_tags: [tag.id] })
+    const queued: unknown[] = []
+    const r = await runTaxonomyResync(payload, { collection: 'tags', target: 'templates', id: tag.id }, async (n) => void queued.push(n))
+    expect(r).toMatchObject({ synced: 1, failed: 0, continued: false })
+    expect((await row('templates', t.id)).tagsText).toBe('Shared')
+  })
+
+  it('continues a template fan-out in a follow-up job that keeps the templates target', async () => {
+    const tag = await mkTag('Many', 'many')
+    for (let i = 0; i < 3; i++) await createTemplate(payload, repoId, { slug: `many-${i}`, _h_tags: [tag.id] })
+    const queued: unknown[] = []
+    const first = await runTaxonomyResync(payload, { collection: 'tags', target: 'templates', id: tag.id }, async (n) => void queued.push(n), { batch: 2, cap: 2 })
+    expect(first.continued).toBe(true)
+    expect(queued[0]).toMatchObject({ collection: 'tags', target: 'templates', id: tag.id })
+  })
+})
+
 describe('reindexSearch', () => {
   it('rebuilds the index from scratch, skipping hidden plugins and dropping stale and orphan records', async () => {
     const cat = await mkCat('Cat', 'cat')
@@ -153,6 +218,31 @@ describe('reindexSearch', () => {
     const cats = await payload.count({ collection: 'categories', overrideAccess: true })
     const tags = await payload.count({ collection: 'tags', overrideAccess: true })
     expect(total.totalDocs).toBe(listed.totalDocs + cats.totalDocs + tags.totalDocs)
+  })
+
+  it('restores a deleted template row, removes a hidden template stale row and counts templates', async () => {
+    const t = await createTemplate(payload, repoId, { slug: 'tpl-visible' })
+    const hidden = await createTemplate(payload, repoId, { slug: 'tpl-hidden', visibility: 'hidden' })
+    await payload.create({
+      collection: 'search',
+      overrideAccess: true,
+      data: { doc: { relationTo: 'templates', value: hidden.id }, kind: 'template', slug: 'tpl-hidden', title: 'stale' } as never,
+    })
+    await payload.delete({ collection: 'search', overrideAccess: true, where: { kind: { equals: 'template' }, slug: { equals: 'tpl-visible' } } })
+    expect(await searchDocsFor(payload, 'templates', t.id)).toEqual([])
+    const result = await reindexSearch(payload)
+    expect(result).toMatchObject({ skipped: false, failed: 0 })
+    expect(await searchDocsFor(payload, 'templates', t.id)).toHaveLength(1)
+    expect(await searchDocsFor(payload, 'templates', hidden.id)).toEqual([])
+  })
+
+  it('with ifIncomplete, repairs a missing template row (and skips once complete)', async () => {
+    await createPlugin(payload, repoId, { slug: 'plugin-ok' })
+    const t = await createTemplate(payload, repoId, { slug: 'tpl-missing' })
+    expect(await reindexSearch(payload, { ifIncomplete: true })).toMatchObject({ skipped: true })
+    await payload.delete({ collection: 'search', overrideAccess: true, where: { kind: { equals: 'template' } } })
+    expect(await reindexSearch(payload, { ifIncomplete: true })).toMatchObject({ skipped: false, failed: 0 })
+    expect(await searchDocsFor(payload, 'templates', t.id)).toHaveLength(1)
   })
 
   it('isolates failures per document, counts them and keeps the rest', async () => {

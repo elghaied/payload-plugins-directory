@@ -3,10 +3,30 @@ import { relationId } from '@/lib/relationId'
 import { QUEUES } from '@/sync/queues'
 import { syncSearchDoc } from './sync'
 
-export type Taxonomy = 'categories' | 'tags'
-export type ResyncInput = { collection: Taxonomy; id: number; pluginIds?: number[] | null; afterId?: number | null }
+export type Taxonomy = 'categories' | 'tags' | 'template-categories'
+/** The collection whose rows embed the taxonomy text. */
+export type ResyncTarget = 'plugins' | 'templates'
+/**
+ * `target` defaults to 'plugins' (jobs queued before templates existed carry none). `pluginIds` holds ids of the target
+ * collection (the name predates templates; kept so queued inputs stay valid).
+ */
+export type ResyncInput = {
+  collection: Taxonomy
+  target?: ResyncTarget | null
+  id: number
+  pluginIds?: number[] | null
+  afterId?: number | null
+}
 
-/** Plugins read per query. */
+/** The targets whose rows embed this taxonomy's text: tags reach both, each category tree only its own kind. */
+export const RESYNC_TARGETS: Record<Taxonomy, readonly ResyncTarget[]> = {
+  categories: ['plugins'],
+  tags: ['plugins', 'templates'],
+  'template-categories': ['templates'],
+}
+export const targetOf = (input: Pick<ResyncInput, 'target'>): ResyncTarget => input.target ?? 'plugins'
+
+/** Documents read per query. */
 export const RESYNC_BATCH = 100
 /** Plugins refreshed per job run; a longer fan-out continues in a follow-up job. */
 export const RESYNC_JOB_CAP = 500
@@ -15,8 +35,8 @@ export const RESYNC_IDS_PER_JOB = 200
 export const RESYNC_IDS_CAP = 5_000
 
 /** The category and all of its descendants (a rename or move changes every descendant's title path). */
-async function categoryAndDescendants(payload: Payload, id: number): Promise<number[]> {
-  const all = (await payload.find({ collection: 'categories', overrideAccess: true, depth: 0, pagination: false, limit: 0, select: { parent: true } })).docs
+async function categoryAndDescendants(payload: Payload, collection: 'categories' | 'template-categories', id: number): Promise<number[]> {
+  const all = (await payload.find({ collection, overrideAccess: true, depth: 0, pagination: false, limit: 0, select: { parent: true } })).docs
   const children = new Map<number, number[]>()
   for (const c of all) {
     const parent = relationId(c.parent)
@@ -28,11 +48,11 @@ async function categoryAndDescendants(payload: Payload, id: number): Promise<num
 }
 
 const pluginsWhere = (collection: Taxonomy, ids: number[], afterId?: number | null): Where => {
-  const base: Where = collection === 'categories' ? { category: { in: ids } } : { _h_tags: { in: ids } }
+  const base: Where = collection === 'tags' ? { _h_tags: { in: ids } } : { category: { in: ids } }
   return afterId ? { and: [base, { id: { greater_than: afterId } }] } : base
 }
 
-async function syncOne(payload: Payload, collection: 'plugins' | 'categories', id: number, tally: { synced: number; failed: number }) {
+async function syncOne(payload: Payload, collection: ResyncTarget | 'categories', id: number, tally: { synced: number; failed: number }) {
   try {
     await syncSearchDoc(payload, collection, id)
     tally.synced++
@@ -43,8 +63,8 @@ async function syncOne(payload: Payload, collection: 'plugins' | 'categories', i
 }
 
 /**
- * Refreshes the search rows that embed a category or tag title: the plugins in it (and, for a category, its
- * descendants' own rows). Runs as a job so a rename never fans out inside the admin request. System writes without `req`,
+ * Refreshes the search rows that embed a category or tag title: the plugins (or templates, per `target`) in it (and, for
+ * a plugin category, its descendants' own rows; template categories are not indexed). Runs as a job so a rename never fans out inside the admin request. System writes without `req`,
  * so every document is its own transaction and context. `reindex-search` repairs anything this misses.
  */
 export async function runTaxonomyResync(
@@ -56,12 +76,13 @@ export async function runTaxonomyResync(
   const batch = limits.batch ?? RESYNC_BATCH
   const cap = limits.cap ?? RESYNC_JOB_CAP
   const tally = { synced: 0, failed: 0 }
+  const target = input.collection === 'template-categories' ? 'templates' : targetOf(input)
   if (input.pluginIds?.length) {
-    for (const id of input.pluginIds) await syncOne(payload, 'plugins', id, tally)
+    for (const id of input.pluginIds) await syncOne(payload, target, id, tally)
     return { ...tally, continued: false }
   }
 
-  const ids = input.collection === 'categories' ? await categoryAndDescendants(payload, input.id) : [input.id]
+  const ids = input.collection === 'tags' ? [input.id] : await categoryAndDescendants(payload, input.collection, input.id)
   if (input.collection === 'categories' && !input.afterId) {
     for (const id of ids) await syncOne(payload, 'categories', id, tally)
   }
@@ -69,7 +90,7 @@ export async function runTaxonomyResync(
   let handled = 0
   while (handled < cap) {
     const res = await payload.find({
-      collection: 'plugins',
+      collection: target,
       overrideAccess: true,
       depth: 0,
       limit: batch,
@@ -79,7 +100,7 @@ export async function runTaxonomyResync(
       where: pluginsWhere(input.collection, ids, last || null),
     })
     for (const { id } of res.docs) {
-      await syncOne(payload, 'plugins', id, tally)
+      await syncOne(payload, target, id, tally)
       last = id
       handled++
     }
@@ -87,7 +108,7 @@ export async function runTaxonomyResync(
   }
   // Exactly `cap` plugins may have been the last ones: peek before queueing an empty continuation.
   const more = await payload.find({
-    collection: 'plugins',
+    collection: target,
     overrideAccess: true,
     depth: 0,
     limit: 1,
@@ -96,12 +117,13 @@ export async function runTaxonomyResync(
     where: pluginsWhere(input.collection, ids, last),
   })
   if (!more.docs.length) return { ...tally, continued: false }
-  await queueMore({ collection: input.collection, id: input.id, afterId: last })
+  await queueMore({ collection: input.collection, ...(target === 'plugins' ? {} : { target }), id: input.id, afterId: last })
   return { ...tally, continued: true }
 }
 
 export const resyncKey = (input: ResyncInput): string => {
-  const base = `search-resync:${input.collection}:${input.id}`
+  // Plugin keys are unchanged from before templates; a template fan-out of the same tag gets its own key.
+  const base = targetOf(input) === 'templates' ? `search-resync:templates:${input.collection}:${input.id}` : `search-resync:${input.collection}:${input.id}`
   if (input.pluginIds?.length) return `${base}:ids:${input.pluginIds[0]}:${input.pluginIds.length}`
   return input.afterId ? `${base}:after:${input.afterId}` : base
 }
@@ -115,7 +137,8 @@ export const searchResyncTask: TaskConfig<'search-resync'> = {
   // job (or each other).
   concurrency: { key: ({ input }) => resyncKey(input as ResyncInput), supersedes: true },
   inputSchema: [
-    { name: 'collection', type: 'select', required: true, options: ['categories', 'tags'] },
+    { name: 'collection', type: 'select', required: true, options: ['categories', 'tags', 'template-categories'] },
+    { name: 'target', type: 'select', options: ['plugins', 'templates'] },
     { name: 'id', type: 'number', required: true },
     { name: 'pluginIds', type: 'number', hasMany: true },
     { name: 'afterId', type: 'number' },

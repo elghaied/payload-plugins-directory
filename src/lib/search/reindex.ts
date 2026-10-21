@@ -1,14 +1,15 @@
 import type { Payload, Where } from 'payload'
 import { listedPluginsWhere } from '@/collections/Plugins'
-import { SEARCH_SLUG, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
+import { listedTemplatesWhere } from '@/collections/Templates'
+import { isListedOnly, SEARCH_SLUG, SEARCHABLE_COLLECTIONS, type SearchableCollection } from './searchDoc'
 import { isIndexable, syncSearchDoc } from './sync'
 
 export type ReindexResult = { skipped: boolean; upserted: number; removed: number; failed: number }
 export type ReindexOptions = {
   /**
-   * Skip unless the index is short of its sources: fewer plugin rows than listed plugins, or fewer category / tag rows
-   * than categories / tags. A shortfall (a failed or crashed first build, a seed that skipped the index) triggers a full
-   * rebuild; extra rows are not a shortfall (the rebuild removes them, a later manual run too). Three cheap counts per
+   * Skip unless the index is short of its sources: fewer plugin / template rows than listed plugins / templates, or fewer
+   * category / tag rows than categories / tags. A shortfall (a failed or crashed first build, a seed that skipped the index) triggers a full
+   * rebuild; extra rows are not a shortfall (the rebuild removes them, a later manual run too). Four cheap counts per
    * boot and no tolerance: any missing row repairs.
    */
   ifIncomplete?: boolean
@@ -19,7 +20,7 @@ export type ReindexOptions = {
 const PAGE = 200
 const key = (collection: string, id: number | string) => `${collection}:${String(id)}`
 
-/** Ids of every source document (trashed and hidden plugins included: `syncSearchDoc` decides what stays indexed). */
+/** Ids of every source document (trashed and hidden plugins / templates included: `syncSearchDoc` decides what stays indexed). */
 async function sourceIds(payload: Payload, collection: SearchableCollection): Promise<number[]> {
   const ids: number[] = []
   for (let page = 1; ; page++) {
@@ -31,7 +32,7 @@ async function sourceIds(payload: Payload, collection: SearchableCollection): Pr
       limit: PAGE,
       sort: 'id',
       select: { slug: true },
-      ...(collection === 'plugins' ? { trash: true } : {}),
+      ...(isListedOnly(collection) ? { trash: true } : {}),
     } as never)
     ids.push(...(res.docs as { id: number }[]).map((d) => d.id))
     if (!res.hasNextPage) return ids
@@ -77,14 +78,19 @@ async function indexIsShort(payload: Payload): Promise<boolean> {
     (await payload.count({ collection, overrideAccess: true, ...(where ? { where } : {}) })).totalDocs
   const indexed = async (collection: SearchableCollection) =>
     (await payload.count({ collection: SEARCH_SLUG, overrideAccess: true, where: { 'doc.relationTo': { equals: collection } } })).totalDocs
-  for (const [collection, where] of [['plugins', listedPluginsWhere], ['categories'], ['tags']] as [SearchableCollection, Where?][]) {
+  for (const [collection, where] of [
+    ['plugins', listedPluginsWhere],
+    ['categories'],
+    ['tags'],
+    ['templates', listedTemplatesWhere],
+  ] as [SearchableCollection, Where?][]) {
     if ((await indexed(collection)) < (await count(collection, where))) return true
   }
   return false
 }
 
 /**
- * Rebuilds every index record from the source collections (system reads; only listed plugins are indexed). Each document
+ * Rebuilds every index record from the source collections (system reads; only listed plugins and templates are indexed). Each document
  * is isolated: one failure is logged and counted, never aborts the run. Orphan rows are deleted afterwards.
  */
 export async function reindexSearch(payload: Payload, opts: ReindexOptions = {}): Promise<ReindexResult> {

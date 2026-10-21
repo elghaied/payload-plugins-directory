@@ -4,7 +4,7 @@ import { sql } from '@payloadcms/db-postgres/drizzle'
 import { SEARCH_FIELD_LIMITS } from '@/lib/search/searchDoc'
 import { getSessionSecret, signSessionToken, SESSION_COOKIE } from '@/lib/auth/session'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createPlugin, createRepo, searchDocsFor, trashPlugin } from './helpers/directory'
+import { createPlugin, createRepo, createTemplate, searchDocsFor, trashPlugin, trashTemplate } from './helpers/directory'
 
 let payload: Payload
 let repoId: number
@@ -183,6 +183,70 @@ describe('search index sync', () => {
       const p = await createPlugin(payload, repoId, { slug: 'no-sync', visibility: 'hidden' })
       await payload.update({ collection: 'plugins', id: p.id, overrideAccess: true, context: { skipSearchSync: true, skipRevalidate: true }, data: { visibility: 'listed' } })
       expect(await searchDocsFor(payload, 'plugins', p.id)).toEqual([])
+    })
+  })
+
+  describe('templates', () => {
+    it('indexes a listed template with kind template, its template-category title path and tags', async () => {
+      const parent = await payload.create({ collection: 'template-categories', overrideAccess: true, data: { title: 'Commerce', slug: 'commerce' } })
+      const cat = await payload.create({ collection: 'template-categories', overrideAccess: true, data: { title: 'E-commerce', slug: 'ecommerce', parent: parent.id } })
+      const tag = await payload.create({ collection: 'tags', overrideAccess: true, data: { title: 'Stripe', slug: 'stripe' } })
+      const t = await createTemplate(payload, repoId, {
+        slug: 'ecommerce',
+        name: 'Ecommerce',
+        description: 'A shop',
+        readme: '# Shop\nCarts and checkout.',
+        category: cat.id,
+        _h_tags: [tag.id],
+        ai: { tagline: 'Sell online' },
+      })
+      const docs = await searchDocsFor(payload, 'templates', t.id)
+      expect(docs).toHaveLength(1)
+      expect(docs[0]).toMatchObject({ kind: 'template', slug: 'ecommerce', title: 'Ecommerce', tagline: 'Sell online', tagsText: 'Stripe', priority: 25 })
+      expect(docs[0].categoryText).toContain('Commerce')
+      expect(docs[0].categoryText).toContain('E-commerce')
+      expect(docs[0].readme).toContain('checkout')
+      // The hand-added generated fts column covers template rows too (README-only word, weight D).
+      const fts = await payload.db.drizzle.execute(
+        sql`select (fts @@ websearch_to_tsquery('english', 'checkout')) as hit from "search" where id = ${docs[0].id}`,
+      )
+      expect(fts.rows).toEqual([{ hit: true }])
+    })
+
+    it('never indexes a template created hidden', async () => {
+      const t = await createTemplate(payload, repoId, { visibility: 'hidden' })
+      expect(await searchDocsFor(payload, 'templates', t.id)).toEqual([])
+    })
+
+    it('removes the row when a template is hidden (system write) and re-adds it on unhide', async () => {
+      const t = await createTemplate(payload, repoId)
+      expect(await searchDocsFor(payload, 'templates', t.id)).toHaveLength(1)
+      await payload.update({ collection: 'templates', id: t.id, overrideAccess: true, context: { skipRevalidate: true }, data: { visibility: 'hidden' } })
+      expect(await searchDocsFor(payload, 'templates', t.id)).toEqual([])
+      await payload.update({ collection: 'templates', id: t.id, overrideAccess: true, context: { skipRevalidate: true }, data: { visibility: 'listed' } })
+      expect(await searchDocsFor(payload, 'templates', t.id)).toHaveLength(1)
+    })
+
+    it('removes the row on trash and recreates it on restore', async () => {
+      const t = await createTemplate(payload, repoId)
+      await trashTemplate(payload, t.id)
+      expect(await searchDocsFor(payload, 'templates', t.id)).toEqual([])
+      await payload.update({ collection: 'templates', id: t.id, overrideAccess: true, trash: true, context: { skipRevalidate: true }, data: { deletedAt: null } })
+      expect(await searchDocsFor(payload, 'templates', t.id)).toHaveLength(1)
+    })
+
+    it('a system update with select keeps a listed template indexed and refreshes it', async () => {
+      const t = await createTemplate(payload, repoId, { name: 'Before' })
+      await payload.update({ collection: 'templates', id: t.id, overrideAccess: true, depth: 0, select: { name: true }, context: { skipRevalidate: true }, data: { name: 'After' } })
+      const docs = await searchDocsFor(payload, 'templates', t.id)
+      expect(docs).toHaveLength(1)
+      expect(docs[0].title).toBe('After')
+    })
+
+    it('removes the row on hard delete', async () => {
+      const t = await createTemplate(payload, repoId)
+      await payload.delete({ collection: 'templates', id: t.id, overrideAccess: true, context: { skipRevalidate: true } })
+      expect(await searchDocsFor(payload, 'templates', t.id)).toEqual([])
     })
   })
 
