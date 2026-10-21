@@ -13,6 +13,8 @@ import {
   type TagSource,
 } from './searchDoc'
 
+const DEDUPE_PASSES = 3
+
 const docRef = (collection: SearchableCollection, id: number): Where => ({
   and: [{ 'doc.relationTo': { equals: collection } }, { 'doc.value': { equals: id } }],
 })
@@ -147,10 +149,14 @@ export async function syncSearchDoc(
   else {
     await payload.create({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, data, req })
     // `search` has no unique constraint on its doc relation, so two syncs of one document (e.g. a resync job and an
-    // edit) can both find nothing and both create. Both then see the duplicate here and delete the same extra rows.
-    const after = await payload.find({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, pagination: false, limit: 0, sort: 'id', where: docRef(collection, id), req })
-    const extra = after.docs.slice(1).map((d) => d.id)
-    if (extra.length) await payload.delete({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, where: { id: { in: extra } }, req })
+    // edit) can both find nothing and both create. Every syncer removes all but the lowest id it can see; the last one to
+    // commit sees every row, so the set converges on one row. A few passes also absorb a delete that lost a race.
+    for (let pass = 0; pass < DEDUPE_PASSES; pass++) {
+      const after = await payload.find({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, pagination: false, limit: 0, sort: 'id', where: docRef(collection, id), req })
+      const extra = after.docs.slice(1).map((d) => d.id)
+      if (!extra.length) break
+      await payload.delete({ collection: SEARCH_SLUG, overrideAccess: true, depth: 0, where: { id: { in: extra } }, req })
+    }
   }
   return 'upserted'
 }

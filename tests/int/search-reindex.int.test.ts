@@ -246,11 +246,31 @@ describe('search-resync concurrency', () => {
     expect(queued).toEqual([])
   })
 
-  it('two syncs racing to create the same document leave one row', async () => {
-    const p = await createPlugin(payload, repoId, { slug: 'racy' })
-    await payload.delete({ collection: 'search', overrideAccess: true, where: { id: { exists: true } } })
+  it('syncs that all find no row before any of them creates leave one row (forced worst interleaving)', async () => {
     const { syncSearchDoc } = await import('@/lib/search/sync')
-    await Promise.all([syncSearchDoc(payload, 'plugins', p.id), syncSearchDoc(payload, 'plugins', p.id), syncSearchDoc(payload, 'plugins', p.id)])
-    expect(await searchDocsFor(payload, 'plugins', p.id)).toHaveLength(1)
+    for (let round = 0; round < 5; round++) {
+      const p = await createPlugin(payload, repoId, { slug: `racy-${round}` })
+      await payload.delete({ collection: 'search', overrideAccess: true, where: { id: { exists: true } } })
+      const N = 4
+      // Hold every `search` create at a barrier until all N syncs have already read "no row", then release them together.
+      let arrived = 0
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      const realCreate = payload.create.bind(payload)
+      const spy = vi.spyOn(payload, 'create').mockImplementation((async (args: { collection: string }) => {
+        if (args.collection === 'search') {
+          if (++arrived === N) release()
+          await gate
+        }
+        return realCreate(args as never)
+      }) as never)
+      try {
+        await Promise.all(Array.from({ length: N }, () => syncSearchDoc(payload, 'plugins', p.id)))
+      } finally {
+        spy.mockRestore()
+      }
+      expect(arrived).toBe(N)
+      expect(await searchDocsFor(payload, 'plugins', p.id)).toHaveLength(1)
+    }
   })
 })
