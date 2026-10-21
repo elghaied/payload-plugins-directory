@@ -7,6 +7,12 @@ import rehypeSanitize from 'rehype-sanitize'
 import type { Root } from 'hast'
 import { readmeSanitizeSchema, rehypeReadme, type RepoRef } from './markdown'
 
+/**
+ * Request-time Markdown rendering is OFF: hostile input can still exhaust memory or CPU in the parsers (see the
+ * re-review). The detail page shows escaped plain text until READMEs are rendered at sync time (worker, isolated).
+ */
+export const README_MARKDOWN_ENABLED = false
+
 /** Longest README (characters) rendered as Markdown; the page links to GitHub for the rest. */
 export const README_MARKDOWN_MAX = 60_000
 /** Deepest blockquote / list / HTML nesting rendered as Markdown. Deeper input is rendered as plain text. */

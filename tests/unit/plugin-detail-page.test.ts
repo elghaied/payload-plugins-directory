@@ -43,6 +43,15 @@ beforeEach(() => {
 })
 
 describe('plugin detail page', () => {
+  it('shows the README as escaped plain text, never parsed Markdown', async () => {
+    const html = await render({ readme: '# Title\n\n<script>alert(1)</script> [x](javascript:alert(1))' })
+    expect(html).toContain('<pre')
+    expect(html).toContain('# Title')
+    expect(html).toContain('&lt;script&gt;')
+    expect(html).not.toContain('<script>alert')
+    expect(html).not.toContain('readme-prose')
+  })
+
   it('caps a huge README at render time', async () => {
     const huge = 'x'.repeat(README_RENDER_MAX + 5_000)
     const html = await render({ readme: 'short preview', readmeFull: huge })

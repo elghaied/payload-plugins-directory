@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { getPluginDetail, getSimilarPlugins } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
-import { README_MARKDOWN_MAX } from "@/lib/directory/readmeTree";
+import { README_MARKDOWN_ENABLED, README_MARKDOWN_MAX } from "@/lib/directory/readmeTree";
 import { getServerURL } from "@/lib/serverUrl";
 import { BadgeEmbed } from "@/components/BadgeEmbed";
 import { getPluginTrends } from "@/lib/trends/queries";
@@ -34,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
 import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
 import { SimilarPlugins } from "@/components/SimilarPlugins";
-import { renderReadme } from "@/components/ReadmeMarkdown";
+import { ReadmePlain, renderReadme } from "@/components/ReadmeMarkdown";
 import { PluginAiOverview } from "@/components/PluginAiOverview";
 import { getCategoryNodes } from "@/lib/directory/taxonomy";
 import { categoryHref, tagHref } from "@/lib/taxonomy/links";
@@ -108,12 +108,13 @@ export default async function PluginDetailPage({
 
   const filteredTopics = plugin.topics.filter((t) => t !== "payload-plugin");
   const trail = plugin.category ? trailFor(await getCategoryNodes(), plugin.category.path) : [];
-  const readmeFull = plugin.readmeFull ? capReadme(plugin.readmeFull, README_MARKDOWN_MAX) : null;
-  const readmePreviewNode = plugin.readme ? await renderReadme(plugin.slug, plugin.readme, plugin.readmeSource) : null;
-  const readmeFullNode =
-    readmeFull && plugin.readme && readmeFull.text.length > plugin.readme.length
-      ? await renderReadme(plugin.slug, readmeFull.text, plugin.readmeSource)
-      : null;
+  const readmeFull = plugin.readmeFull ? capReadme(plugin.readmeFull) : null;
+  const showFullReadme = Boolean(readmeFull && plugin.readme && readmeFull.text.length > plugin.readme.length);
+  // Markdown is not parsed in the request path (README_MARKDOWN_ENABLED): escaped plain text.
+  const readmeNode = async (text: string) =>
+    README_MARKDOWN_ENABLED ? renderReadme(plugin.slug, text, plugin.readmeSource) : <ReadmePlain source={text} />;
+  const readmePreviewNode = plugin.readme ? await readmeNode(plugin.readme) : null;
+  const readmeFullNode = showFullReadme && readmeFull ? await readmeNode(readmeFull.text) : null;
 
   const jsonLd = {
     "@context": "https://schema.org",
