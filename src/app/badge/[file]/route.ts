@@ -5,7 +5,7 @@ import { getServerURL } from '@/lib/serverUrl'
 
 export const dynamic = 'force-dynamic'
 
-/** GET /badge/<slug>.svg — Cloudflare caches it for ~6 h via Cache-Control. */
+/** GET /badge/<slug>.svg — Cloudflare caches it for 1 h (s-maxage=3600, plus 1 h stale-while-revalidate) via Cache-Control. */
 export async function GET(_request: Request, { params }: { params: Promise<{ file: string }> }) {
   const { file } = await params
   const slug = parseBadgeFile(file)

@@ -4,7 +4,7 @@ import type { CurrentMaintainer } from '@/lib/auth/current'
 import type { GitHubAuthClient } from '@/lib/github/client'
 import { relationId } from '@/lib/relationId'
 import type { Plugin, Repository } from '@/payload-types'
-import { CLAIM_RECHECK_COOLDOWN_MS, MAX_PENDING_PER_MAINTAINER } from './limits'
+import { CLAIM_RECHECK_BUDGET_WINDOW_MS, CLAIM_RECHECK_COOLDOWN_MS, MAX_PENDING_PER_MAINTAINER } from './limits'
 import { MESSAGES } from './messages'
 import { normalizeNote, validationMessage } from './submit'
 
@@ -13,7 +13,7 @@ export type ClaimResult =
   | { status: 'invalid'; message: string }
 
 /** The only GitHub calls a claim needs. All are non-throwing by contract; callers still guard against a misbehaving client. */
-export type ClaimGitHub = Pick<GitHubAuthClient, 'getRepositoryById' | 'getUserById' | 'checkPublicOrgMembership'>
+export type ClaimGitHub = Pick<GitHubAuthClient, 'getRepositoryById' | 'getUserById' | 'checkPublicOrgMembership'> & Partial<Pick<GitHubAuthClient, 'isRateLimited'>>
 
 const OFFICIAL_OWNER = 'payloadcms'
 
@@ -118,6 +118,19 @@ export async function claimPlugin({
     // Cooldown, counted from the last check (or creation, which itself ran one). Inside the window: neutral `pending`, no GitHub call.
     const lastCheck = Date.parse(existing.lastClaimCheckAt ?? existing.createdAt)
     if (!Number.isFinite(lastCheck) || Date.now() - lastCheck < CLAIM_RECHECK_COOLDOWN_MS) return { status: 'pending' }
+    // Per-maintainer budget: one re-check across ALL of this maintainer's claims per window (many pending claims must not
+    // multiply GitHub calls). Skipped re-checks do not consume it.
+    const recent = await payload.count({
+      collection: 'submissions', overrideAccess: false, user: maintainer,
+      where: { and: [
+        { type: { equals: 'claim' } },
+        { submittedBy: { equals: maintainer.id } },
+        { lastClaimCheckAt: { greater_than: new Date(Date.now() - CLAIM_RECHECK_BUDGET_WINDOW_MS).toISOString() } },
+      ] },
+    })
+    if (recent.totalDocs > 0) return { status: 'pending' }
+    // No web token and the shared unauthenticated quota is exhausted: re-checking would only fail. Stay pending, spend nothing.
+    if (github.isRateLimited?.()) return { status: 'pending' }
     // Stamp BEFORE calling GitHub so a slow or failing check still counts (system write: the field is admin-only).
     await payload.update({ collection: 'submissions', id: existing.id, overrideAccess: true, depth: 0, data: { lastClaimCheckAt: new Date().toISOString() } })
     if (!(await isInstantClaim({ github, maintainer, plugin, repository: plugin.repository, onError }))) return { status: 'pending' }

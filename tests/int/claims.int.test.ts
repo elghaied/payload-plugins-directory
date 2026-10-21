@@ -95,6 +95,7 @@ beforeAll(async () => {
   const officialOrg = await mkRepo('payloadcms/plugin-x', 'payloadcms', repoGid.official)
   const noId = await mkRepo('NoId/thing', 'NoId')
   for (const slug of ['org-1', 'org-2', 'org-3', 'org-4', 'org-5', 'org-6', 'org-7', 'org-8', 'org-9', 'org-10', 'org-11', 'org-12', 'org-13', 'org-14', 'org-15', 'org-16', 'org-17', 'org-18', 'org-19']) await makePlugin(slug, orgRepo.id)
+  await makePlugin('limited-plugin', orgRepo.id)
   await makePlugin('solo-tool', userRepo.id)
   await makePlugin('solo-2', userRepo.id)
   await makePlugin('flagged', officialFlag.id, { isOfficial: true })
@@ -113,6 +114,8 @@ beforeAll(async () => {
     ['capped', 103, 'capped'],
     ['other', 104, 'other'],
     ['cooldown', 105, 'cooldown'],
+    ['budget', 106, 'budget'],
+    ['limited', 107, 'limited'],
   ] as const) {
     const doc = await payload.create({ collection: 'maintainers', overrideAccess: true, data: { githubId, login } })
     m[key] = { ...doc, collection: 'maintainers' }
@@ -349,6 +352,34 @@ describe('claimPlugin', () => {
     await setLastCheck(m.cooldown.id, PAST_COOLDOWN)
     expect(await claimPlugin({ payload, maintainer: m.cooldown, slug: 'org-19', note: '', github: ok })).toEqual({ status: 'claimed' })
     expect(await maintainersOf('org-19')).toEqual([m.cooldown.id])
+  })
+  it('allows one re-check per 10 minutes across ALL of a maintainer\'s claims', async () => {
+    const g = gh({ owner: user(1) }) // not the owner: stays queued
+    expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-tool', note: '', github: g })).toEqual({ status: 'queued' })
+    expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-2', note: '', github: g })).toEqual({ status: 'queued' })
+    await setLastCheck(m.budget.id, PAST_COOLDOWN)
+    const first = gh({ owner: user(106) })
+    expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-tool', note: '', github: first })).toEqual({ status: 'claimed' })
+    expect(calls(first)).toBeGreaterThan(0)
+    // The other claim is past its own cooldown, but the maintainer's budget is spent: no GitHub call.
+    const second = gh({ owner: user(106) })
+    expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-2', note: '', github: second })).toEqual({ status: 'pending' })
+    expect(calls(second)).toBe(0)
+    // Once the window has passed the budget is available again.
+    await setLastCheck(m.budget.id, PAST_COOLDOWN)
+    expect(await claimPlugin({ payload, maintainer: m.budget, slug: 'solo-2', note: '', github: second })).toEqual({ status: 'claimed' })
+    expect(calls(second)).toBeGreaterThan(0)
+  })
+  it('skips re-checks while the client reports the unauthenticated quota exhausted, and keeps the budget', async () => {
+    expect(await claimPlugin({ payload, maintainer: m.limited, slug: 'limited-plugin', note: '', github: gh({ owner: org(), userLogin: 'limited' }) })).toEqual({ status: 'queued' })
+    await setLastCheck(m.limited.id, PAST_COOLDOWN)
+    const limited = Object.assign(gh({ owner: org(), userLogin: 'limited', members: ['limited'] }), { isRateLimited: () => true })
+    expect(await claimPlugin({ payload, maintainer: m.limited, slug: 'limited-plugin', note: '', github: limited })).toEqual({ status: 'pending' })
+    expect(calls(limited)).toBe(0)
+    // The skip spent nothing: once the quota is back the check runs and approves.
+    const open = Object.assign(gh({ owner: org(), userLogin: 'limited', members: ['limited'] }), { isRateLimited: () => false })
+    expect(await claimPlugin({ payload, maintainer: m.limited, slug: 'limited-plugin', note: '', github: open })).toEqual({ status: 'claimed' })
+    expect(calls(open)).toBeGreaterThan(0)
   })
   it('a pending claim on an official plugin is never approved by a re-submit and makes no GitHub call', async () => {
     const g = gh({ owner: user(4242) })

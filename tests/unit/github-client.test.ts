@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-import { createGitHubAuthClient } from '@/lib/github/client'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createGitHubAuthClient, resetRateLimitState } from '@/lib/github/client'
 
 const respond = (status: number, body?: unknown) =>
   vi.fn(async () => new Response(body === undefined ? null : JSON.stringify(body), { status }))
@@ -193,5 +193,31 @@ describe('getRepositoryById', () => {
     const fetch = respond(200, body)
     expect(await createGitHubAuthClient({ fetch }).getRepositoryById(0)).toEqual({ ok: false, reason: 'invalid' })
     expect(fetch).not.toHaveBeenCalled()
+  })
+})
+
+describe('isRateLimited (shared unauthenticated quota)', () => {
+  const limitedRes = (headers: Record<string, string>, status = 403) => vi.fn(async () => new Response(null, { status, headers }))
+  beforeEach(() => resetRateLimitState())
+
+  it('turns true after an unauthenticated 403 with no quota left, in any client instance', async () => {
+    expect(createGitHubAuthClient({ fetch: respond(404) }).isRateLimited()).toBe(false)
+    const reset = String(Math.floor(Date.now() / 1000) + 600)
+    await createGitHubAuthClient({ fetch: limitedRes({ 'x-ratelimit-remaining': '0', 'x-ratelimit-reset': reset }), token: '' }).getUserById(5)
+    expect(createGitHubAuthClient({ fetch: respond(404), token: '' }).isRateLimited()).toBe(true)
+  })
+  it('treats 429 as exhausted and a plain 403 as not', async () => {
+    await createGitHubAuthClient({ fetch: limitedRes({}), token: '' }).getUserById(5)
+    expect(createGitHubAuthClient({ fetch: respond(404), token: '' }).isRateLimited()).toBe(false)
+    await createGitHubAuthClient({ fetch: limitedRes({}, 429), token: '' }).getUserById(5)
+    expect(createGitHubAuthClient({ fetch: respond(404), token: '' }).isRateLimited()).toBe(true)
+  })
+  it('is never true for a client with a token', async () => {
+    await createGitHubAuthClient({ fetch: limitedRes({}, 429), token: '' }).getUserById(5)
+    expect(createGitHubAuthClient({ fetch: respond(404), token: 'tok' }).isRateLimited()).toBe(false)
+  })
+  it('does not record limits seen by a token-authenticated client', async () => {
+    await createGitHubAuthClient({ fetch: limitedRes({}, 429), token: 'tok' }).getUserById(5)
+    expect(createGitHubAuthClient({ fetch: respond(404), token: '' }).isRateLimited()).toBe(false)
   })
 })

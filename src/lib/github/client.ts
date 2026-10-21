@@ -28,6 +28,26 @@ export interface GitHubAuthClient {
   getRepositoryById(id: number): Promise<Lookup<{ repository: GitHubRepositoryOwnership }>>
   /** A user's current profile (including login) from the immutable numeric id. */
   getUserById(id: number): Promise<Lookup<{ user: GitHubUser }>>
+  /** True while the shared UNAUTHENTICATED quota is known to be exhausted (always false with a token). Lets callers skip optional checks. */
+  isRateLimited(): boolean
+}
+
+/** Process-wide: the unauthenticated quota is per IP, shared by every client instance (the claim action builds one per request). */
+let unauthenticatedLimitedUntil = 0
+const DEFAULT_LIMIT_BACKOFF_MS = 60_000
+const MAX_LIMIT_BACKOFF_MS = 60 * 60_000
+
+function noteRateLimit(res: Response, now = Date.now()) {
+  const exhausted = res.status === 429 || (res.status === 403 && (res.headers?.get('x-ratelimit-remaining') === '0' || res.headers?.get('retry-after') != null))
+  if (!exhausted) return
+  const reset = Number(res.headers?.get('x-ratelimit-reset'))
+  const wait = Number.isFinite(reset) && reset > 0 ? reset * 1000 - now : DEFAULT_LIMIT_BACKOFF_MS
+  unauthenticatedLimitedUntil = now + Math.min(Math.max(wait, DEFAULT_LIMIT_BACKOFF_MS), MAX_LIMIT_BACKOFF_MS)
+}
+
+/** Test hook. */
+export function resetRateLimitState() {
+  unauthenticatedLimitedUntil = 0
 }
 
 const API = 'https://api.github.com'
@@ -77,10 +97,12 @@ export function createGitHubAuthClient({
 }: { fetch?: FetchFn; token?: string } = {}): GitHubAuthClient {
   const doFetch = withTimeout(baseFetch, TIMEOUT_MS)
   // Redirects are never followed: every URL here is a fixed api.github.com path.
-  const get = (path: string, authorization?: string) => {
+  const get = async (path: string, authorization?: string) => {
     const headers: Record<string, string> = { ...BASE_HEADERS }
     if (authorization) headers.Authorization = authorization
-    return doFetch(`${API}${path}`, { headers, redirect: 'error' })
+    const res = await doFetch(`${API}${path}`, { headers, redirect: 'error' })
+    if (!token && authorization === undefined) noteRateLimit(res)
+    return res
   }
   const appAuth = token ? `Bearer ${token}` : undefined
 
@@ -103,6 +125,8 @@ export function createGitHubAuthClient({
   }
 
   return {
+    isRateLimited: () => !token && Date.now() < unauthenticatedLimitedUntil,
+
     async getAuthenticatedUser(accessToken) {
       const res = await get('/user', `Bearer ${accessToken}`)
       if (res.status !== 200) throw new Error(`GitHub /user returned ${res.status}`)
