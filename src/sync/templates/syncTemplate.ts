@@ -269,8 +269,7 @@ export async function runSyncTemplate(payload: Payload, input: SyncTemplateInput
       readme: t.readme ?? null,
       readmeTruncated: (raw.readme?.length ?? 0) > (t.readme?.length ?? 0),
       ...readmeRender,
-      // Only when the README HTML was (re)rendered: otherwise the stored image still matches the stored HTML.
-      // Recomputed from the stored HTML too, so a stricter picker applies to templates whose README did not change.
+      // From the freshly rendered HTML, else recomputed from the stored HTML too, so a stricter picker applies to templates whose README did not change.
       ...('readmeHtml' in readmeRender
         ? { fallbackImageUrl: firstReadmeImage(readmeRender.readmeHtml) }
         : prev ? { fallbackImageUrl: firstReadmeImage(prev.readmeHtml) } : {}),
