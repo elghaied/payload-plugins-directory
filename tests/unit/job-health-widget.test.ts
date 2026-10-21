@@ -2,6 +2,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { WidgetServerProps } from 'payload'
 import { JobHealthWidget } from '@/components/admin/JobHealthWidget'
+import { MANUAL_JOBS } from '@/sync/manualJobs'
+
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => {} }) }))
 
 function propsWithFailingLoader() {
   const error = vi.fn()
@@ -27,6 +30,14 @@ describe('JobHealthWidget', () => {
     expect(html).toContain('Job health could not be loaded')
     expect(html).not.toContain('job_status') // no internal error text in the UI
     expect(error).toHaveBeenCalledOnce()
+  })
+
+  it('still offers a Run now button for every directory-wide job when the loader throws', async () => {
+    const { props } = propsWithFailingLoader()
+    const html = renderToStaticMarkup((await JobHealthWidget(props))!)
+    expect(html).toContain('Run now')
+    for (const j of MANUAL_JOBS) expect(html).toContain(`>${j.label}</button>`)
+    expect(MANUAL_JOBS.map((j) => j.task)).toEqual(['discover', 'discover-templates', 'npm-stats', 'snapshot', 'render-readmes', 'enrich-all'])
   })
 
   it('renders nothing for a non-admin', async () => {

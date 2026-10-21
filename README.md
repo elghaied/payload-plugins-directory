@@ -273,7 +273,7 @@ The app runs at `http://localhost:3000` by default.
 1. Put `GITHUB_TOKEN`, `REVALIDATE_SECRET` and `INTERNAL_WEB_URL=http://localhost:3000` in `.env` (see `.env.example`).
 2. Start the site with `pnpm dev`, then run `pnpm worker` in a second terminal.
 
-The worker queues the scheduled jobs (discover every 6 hours, npm stats at 01:00 UTC, snapshots at 00:30 UTC) and runs queued jobs every minute. Job health is shown on the admin dashboard.
+The worker queues the scheduled jobs (discover every 6 hours, npm stats at 01:00 UTC, snapshots at 00:30 UTC) and runs queued jobs every minute. Job health is shown on the admin dashboard, with **Run now** buttons that queue discover, discover-templates, npm-stats, snapshot, render-readmes or enrich-all for the next worker tick instead of waiting for the schedule.
 
 ### Taxonomy and AI Enrichment
 

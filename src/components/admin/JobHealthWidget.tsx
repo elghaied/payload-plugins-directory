@@ -1,9 +1,25 @@
 import type { WidgetServerProps } from 'payload'
 import { isAdminUser } from '@/access'
 import { getJobHealth } from '@/sync/jobStatus'
+import { MANUAL_JOBS } from '@/sync/manualJobs'
+import { RunJobButton } from './RunJobButton'
 
 const when = (iso: string | null) => (iso ? `${iso.slice(0, 16).replace('T', ' ')} UTC` : '–')
 const danger = { color: 'var(--theme-error-500)' }
+
+/** Buttons that queue directory-wide jobs now instead of waiting for their schedule (shown even if health fails to load). */
+function RunNow() {
+  return (
+    <div style={{ display: 'grid', gap: '0.5rem' }}>
+      <h4 style={{ margin: 0 }}>Run now</h4>
+      <div style={{ display: 'grid', gap: '0.75rem', gridTemplateColumns: 'repeat(auto-fill, minmax(12rem, 1fr))' }}>
+        {MANUAL_JOBS.map((j) => (
+          <RunJobButton key={j.task} task={j.task} label={j.label} hint={j.hint} confirm={'confirm' in j ? j.confirm : undefined} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 /** Spec §9 job health: last success/failure per task, discover guard warning, GitHub quota, failed and pending jobs. */
 export async function JobHealthWidget({ req }: WidgetServerProps) {
@@ -16,11 +32,12 @@ export async function JobHealthWidget({ req }: WidgetServerProps) {
     // A loader failure (e.g. job_status missing before migrations ran) must not break the whole dashboard.
     req.payload.logger.error({ err, msg: 'Job-health widget: could not load job health' })
     return (
-      <div className="card">
+      <div className="card" style={{ display: 'grid', gap: '0.75rem' }}>
         <h3 style={{ margin: 0 }}>Sync jobs</h3>
-        <p role="alert" style={{ margin: '0.75rem 0 0', ...danger }}>
+        <p role="alert" style={{ margin: 0, ...danger }}>
           Job health could not be loaded. See the server log for details.
         </p>
+        <RunNow />
       </div>
     )
   }
@@ -58,6 +75,7 @@ export async function JobHealthWidget({ req }: WidgetServerProps) {
           ))}
         </tbody>
       </table>
+      <RunNow />
       <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--theme-elevation-600)' }}>
         Pending: {health.pending.default} default, {health.pending.sync} sync, {health.pending.enrich} enrich · Failed in the last 7 days: {health.failedJobs7d}
         {quota && ` · GitHub quota: ${quota.remaining}/${quota.limit}${quota.resetAt ? `, resets ${when(quota.resetAt)}` : ''}`}

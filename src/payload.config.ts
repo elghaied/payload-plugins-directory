@@ -18,6 +18,7 @@ import { isAdmin } from './access'
 import { jobStatus } from './db/jobStatus'
 import { pluginSnapshots, repositorySnapshots } from './db/snapshots'
 import { healthEndpoint } from './endpoints/health'
+import { runJobEndpoint } from './endpoints/runJob'
 import { DirectorySettings } from './globals/DirectorySettings'
 import { runtimeEnvNotices, runtimeEnvWarnings } from './lib/runtimeEnv'
 import { getServerURL } from './lib/serverUrl'
@@ -58,7 +59,7 @@ export default buildConfig({
   // Admin presets (Low confidence, Uncategorized, Enrichment failed). v4 would allow any authenticated user,
   // which includes maintainers once Phase 4 adds their login.
   queryPresets: { access: { read: isAdmin, create: isAdmin, update: isAdmin, delete: isAdmin }, constraints: {} },
-  endpoints: [healthEndpoint],
+  endpoints: [healthEndpoint, runJobEndpoint],
   plugins: [directorySearchPlugin(), ...directoryMcpPlugin()],
   jobs: jobsConfig,
   cli: { commands: { seed: './cli/seed.js#seedCommand', worker: './cli/worker.js#workerCommand', 'seed-taxonomy': './cli/taxonomy.js#seedTaxonomyCommand', enrich: './cli/enrich.js#enrichCommand', 'reindex-search': './cli/reindexSearch.js#reindexSearchCommand', 'render-readmes': './cli/renderReadmes.js#renderReadmesCommand' } },
