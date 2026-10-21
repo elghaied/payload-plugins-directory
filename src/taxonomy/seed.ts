@@ -8,7 +8,7 @@ import { flattenStarter } from './tree'
 export type SeedTaxonomyResult = { categoriesCreated: string[]; tagsCreated: string[]; presetsCreated: string[] }
 
 /** Seeding writes must not queue a revalidate job per category (src/taxonomy/hooks.ts honours this flag). */
-const SEED_CONTEXT = { skipRevalidate: true }
+const seedContext = () => ({ skipRevalidate: true })
 
 /**
  * Creates the starter categories, alias tags and admin presets that do not exist yet (matched by slug /
@@ -16,12 +16,12 @@ const SEED_CONTEXT = { skipRevalidate: true }
  * Rows an admin created with the same slug are left untouched (and used as parents for their starter children).
  */
 export async function seedTaxonomy(payload: Payload, opts: { req?: PayloadRequest } = {}): Promise<SeedTaxonomyResult> {
-  const base = { overrideAccess: true as const, depth: 0, context: SEED_CONTEXT, ...(opts.req ? { req: opts.req } : {}) }
+  const base = () => ({ overrideAccess: true as const, depth: 0, context: seedContext(), ...(opts.req ? { req: opts.req } : {}) })
   const result: SeedTaxonomyResult = { categoriesCreated: [], tagsCreated: [], presetsCreated: [] }
 
   const ids = new Map<string, number>()
   for (const c of flattenStarter(STARTER_CATEGORIES)) {
-    const found = await payload.find({ collection: 'categories', ...base, limit: 1, where: { slug: { equals: c.slug } } })
+    const found = await payload.find({ collection: 'categories', ...base(), limit: 1, where: { slug: { equals: c.slug } } })
     if (found.docs[0]) {
       ids.set(c.slug, found.docs[0].id)
       continue
@@ -29,7 +29,7 @@ export async function seedTaxonomy(payload: Payload, opts: { req?: PayloadReques
     const parent = c.parentSlug ? (ids.get(c.parentSlug) ?? null) : null
     const doc = await payload.create({
       collection: 'categories',
-      ...base,
+      ...base(),
       data: { title: c.title, slug: c.slug, intro: c.intro, icon: c.icon, parent },
     })
     ids.set(c.slug, doc.id)
@@ -37,23 +37,23 @@ export async function seedTaxonomy(payload: Payload, opts: { req?: PayloadReques
   }
 
   for (const t of STARTER_TAGS) {
-    const found = await payload.find({ collection: 'tags', ...base, limit: 1, where: { slug: { equals: t.slug } } })
+    const found = await payload.find({ collection: 'tags', ...base(), limit: 1, where: { slug: { equals: t.slug } } })
     if (found.docs[0]) continue
-    await payload.create({ collection: 'tags', ...base, data: { title: t.title, slug: t.slug, aliases: t.aliases, createdBy: 'alias' } })
+    await payload.create({ collection: 'tags', ...base(), data: { title: t.title, slug: t.slug, aliases: t.aliases, createdBy: 'alias' } })
     result.tagsCreated.push(t.slug)
   }
 
   for (const preset of AI_PRESETS) {
     const found = await payload.find({
       collection: 'payload-query-presets',
-      ...base,
+      ...base(),
       limit: 1,
       where: { and: [{ title: { equals: preset.title } }, { relatedCollection: { equals: 'plugins' } }] },
     })
     if (found.docs[0]) continue
     await payload.create({
       collection: 'payload-query-presets',
-      ...base,
+      ...base(),
       data: {
         title: preset.title,
         relatedCollection: 'plugins',
@@ -86,7 +86,7 @@ export async function applyAliasTagsToAll(payload: Payload): Promise<{ updated: 
       id: p.id,
       overrideAccess: true,
       depth: 0,
-      context: SEED_CONTEXT,
+      context: seedContext(),
       data: { _h_tags: next },
     })
     updated.push(p.slug)

@@ -64,8 +64,11 @@ export function toRepositoryData(meta: GitHubRepo, isMonorepo: boolean, now: Dat
 
 type RepositoryData = ReturnType<typeof toRepositoryData>
 
-/** Sync queues its own revalidation (result.revalidateTags); the Plugins hook must not queue a second job. */
-const SKIP = { skipRevalidate: true }
+/**
+ * Sync queues its own revalidation (result.revalidateTags); the Plugins hook must not queue a second job.
+ * A fresh object per write: Payload v4 keeps the caller's context and hooks (plugin-search) write into it.
+ */
+const skipContext = () => ({ skipRevalidate: true })
 
 const COMPARED = ['fullName', 'owner', 'ownerAvatar', 'description', 'stars', 'forks', 'openIssues', 'license', 'isArchived', 'defaultBranch'] as const
 
@@ -204,7 +207,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
   // Free the unique full name held by another repository's row; its plugins are left to discovery.
   if (stale) {
     await payload.update({
-      collection: 'repositories', id: stale.id, overrideAccess: true, depth: 0, context: SKIP,
+      collection: 'repositories', id: stale.id, overrideAccess: true, depth: 0, context: skipContext(),
       data: { fullName: `${stale.fullName}~stale-${stale.githubId}` },
     })
   }
@@ -214,8 +217,8 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
     ? { ...repoData, pushedAt: existing?.pushedAt ?? null, lastSyncedAt: existing?.lastSyncedAt ?? null }
     : repoData
   const repo = existing
-    ? await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, context: SKIP, data: firstWrite })
-    : await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, context: SKIP, data: firstWrite })
+    ? await payload.update({ collection: 'repositories', id: existing.id, overrideAccess: true, depth: 0, context: skipContext(), data: firstWrite })
+    : await payload.create({ collection: 'repositories', overrideAccess: true, depth: 0, context: skipContext(), data: firstWrite })
   result.repositoryId = repo.id
   result.contentReRead = extraction !== null
   const aliasTags = await loadAliasTags(payload)
@@ -252,7 +255,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
           collection: 'plugins',
           overrideAccess: true,
           depth: 0,
-          context: SKIP,
+          context: skipContext(),
           data: {
             ...data, _h_tags: aliasIds, slug: p.slug, source: sourceFor(official, input.source), visibility: 'listed', firstSeenAt: now.toISOString(),
           },
@@ -270,7 +273,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         overrideAccess: true,
         trash: true,
         depth: 0,
-        context: SKIP,
+        context: skipContext(),
         data: { ...data, ...(tags ? { _h_tags: tags } : {}), ...(restore ? { deletedAt: null, syncTrashReason: null } : {}) },
       })
       ;(restore ? result.restored : result.updated).push(p.slug)
@@ -283,7 +286,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       : { repository: { equals: repo.id } }
     result.trashed = await trashPlugins(payload, removed, 'package-removed', now)
     await payload.update({
-      collection: 'repositories', id: repo.id, overrideAccess: true, depth: 0, context: SKIP,
+      collection: 'repositories', id: repo.id, overrideAccess: true, depth: 0, context: skipContext(),
       data: { pushedAt: repoData.pushedAt, lastSyncedAt: repoData.lastSyncedAt },
     })
   } else {
@@ -298,7 +301,7 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       const tags = staleChanged ? await mergedTagsNow(payload, p.id, topicTagIds) : null
       const tagsChanged = tags !== null
       await payload.update({
-        collection: 'plugins', id: p.id, overrideAccess: true, depth: 0, context: SKIP,
+        collection: 'plugins', id: p.id, overrideAccess: true, depth: 0, context: skipContext(),
         data: { healthScore, ...(tagsChanged ? { _h_tags: tags } : {}) },
       })
       result.updated.push(p.slug)

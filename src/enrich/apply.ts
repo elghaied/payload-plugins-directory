@@ -8,7 +8,8 @@ import type { CleanEnrichment } from './types'
 export type ApplyArgs = { pluginId: number; contentHash: string | null; fingerprint: string; model: string; result: CleanEnrichment; now: Date }
 export type ApplyResult = { status: 'applied' | 'stale' | 'missing' | 'disabled'; revalidateTags: string[]; createdTags: string[] }
 
-const WRITE = { overrideAccess: true as const, depth: 0, context: { enrichment: true, skipRevalidate: true } }
+/** A fresh `context` per write: Payload v4 keeps the caller's object and hooks (plugin-search) write into it. */
+const write = () => ({ overrideAccess: true as const, depth: 0, context: { enrichment: true, skipRevalidate: true } })
 
 /**
  * Writes one validated enrichment (spec §5.1, §5.3). The kill switch and the plugin are re-read right before
@@ -71,7 +72,7 @@ export async function applyEnrichment(payload: Payload, ctx: EnrichContext, args
     failedKey: null,
   }
 
-  await payload.update({ collection: 'plugins', id: plugin.id, ...WRITE, data })
+  await payload.update({ collection: 'plugins', id: plugin.id, ...write(), data })
   const tags = revalidationTagsFor([plugin.slug])
   for (const slug of new Set([oldCategory, newCategory])) if (slug) tags.push(categoryTag(slug))
   return { status: 'applied', revalidateTags: tags, createdTags }
@@ -132,7 +133,7 @@ export async function recordEnrichmentFailure(
   await payload.update({
     collection: 'plugins',
     id: plugin.id,
-    ...WRITE,
+    ...write(),
     data: { ai: { ...(plugin.ai ?? {}), failure: args.reason.slice(0, 200), failedAt: args.now.toISOString(), failedKey: args.key } },
   })
 }

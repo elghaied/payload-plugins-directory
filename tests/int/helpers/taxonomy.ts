@@ -1,12 +1,12 @@
 import type { Payload } from 'payload'
 
-const context = { skipRevalidate: true }
+const context = () => ({ skipRevalidate: true })
 
 /** storage-media > {cloud-storage, media-management}, other; tags seo (seo, meta-tags) and s3 (aws-s3). */
 export async function createTestTaxonomy(payload: Payload) {
   const category = (data: Record<string, unknown>) =>
-    payload.create({ collection: 'categories', overrideAccess: true, depth: 0, context, data: data as never })
-  const tag = (data: Record<string, unknown>) => payload.create({ collection: 'tags', overrideAccess: true, depth: 0, context, data: data as never })
+    payload.create({ collection: 'categories', overrideAccess: true, depth: 0, context: context(), data: data as never })
+  const tag = (data: Record<string, unknown>) => payload.create({ collection: 'tags', overrideAccess: true, depth: 0, context: context(), data: data as never })
   const storage = await category({ title: 'Storage & Media', slug: 'storage-media', intro: 'Where uploads live.' })
   const cloud = await category({ title: 'Cloud storage', slug: 'cloud-storage', intro: 'S3, R2 and friends.', parent: storage.id })
   const media = await category({ title: 'Media & images', slug: 'media-management', intro: 'Images and video.', parent: storage.id })
