@@ -2,14 +2,8 @@ import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 import config from '@payload-config'
 import { LIST_TAG, pluginTag } from '@/lib/cacheTags'
-import { toDetail, toSummary } from './mappers'
+import { SUMMARY_SELECT, toDetail, toSummary } from './mappers'
 import type { PluginDetail, PluginSummary } from './types'
-
-const SUMMARY_SELECT = {
-  slug: true, name: true, packageName: true, description: true, url: true, isOfficial: true,
-  payloadMajors: true, healthScore: true, npm: true, repository: true,
-  customTagline: true, ai: { tagline: true }, category: true, _h_tags: true,
-} as const
 
 async function payload() {
   return getPayload({ config: await config })

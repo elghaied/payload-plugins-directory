@@ -4,6 +4,12 @@ import type { Plugin, Repository } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
 import type { PluginDetail, PluginSummary } from './types'
 
+export const SUMMARY_SELECT = {
+  slug: true, name: true, packageName: true, description: true, url: true, isOfficial: true,
+  payloadMajors: true, healthScore: true, npm: true, repository: true,
+  customTagline: true, ai: { tagline: true }, category: true, _h_tags: true,
+} as const
+
 function repoOf(doc: Plugin): Repository {
   if (typeof doc.repository !== 'object' || doc.repository === null) {
     throw new Error(`Plugin ${doc.slug} was loaded without depth >= 1`)
