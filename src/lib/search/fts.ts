@@ -44,7 +44,15 @@ export async function searchIndex(payload: Payload, query: NormalizedQuery, opts
         hits as (
           select s.kind::text as kind, s.slug, s.title,
                  greatest(coalesce(ts_rank_cd(s.fts, q.web, 32), 0), coalesce(ts_rank_cd(s.fts, q.pre, 32), 0))
-                   + case when s.title ilike ${like}::text then 1 else 0 end as rank
+                   -- ts_rank_cd is < 1 per vector but README repeats can outscore one title hit, so lexical bonuses
+                   -- dominate: exact title or slug (10), slug substring (2), stemmed title word (1.5), title substring (1).
+                   + case when lower(s.title) = lower(${query.text}::text)
+                            or lower(s.slug) = lower(${query.text}::text)
+                            or lower(s.slug) = lower(replace(${query.text}::text, ' ', '-')) then 10 else 0 end
+                   + case when s.slug ilike ${like}::text then 2 else 0 end
+                   + case when s.title ilike ${like}::text then 1 else 0 end
+                   + case when to_tsvector('english', s.title) @@ q.web
+                            or (q.pre is not null and to_tsvector('english', s.title) @@ q.pre) then 1.5 else 0 end as rank
           from "search" s cross join q
           where s.fts @@ q.web
              or (q.pre is not null and s.fts @@ q.pre)
@@ -52,9 +60,9 @@ export async function searchIndex(payload: Payload, query: NormalizedQuery, opts
              or s.slug ilike ${like}::text
         )
         select kind, slug, rank
-        from (select hits.*, row_number() over (partition by kind order by rank desc, title asc) as rn from hits) ranked
+        from (select hits.*, row_number() over (partition by kind order by rank desc, title asc, slug asc) as rn from hits) ranked
         where rn <= ${perKind}::int
-        order by kind, rank desc
+        order by kind, rank desc, title asc, slug asc
       `)
     })
     return (result.rows as { kind: SearchKind; slug: string; rank: number | string }[]).map((r) => ({

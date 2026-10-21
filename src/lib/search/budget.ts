@@ -5,6 +5,8 @@
  */
 export const SEARCH_MAX_CONCURRENT = 4
 export const SEARCH_MAX_QUEUED = 32
+/** A queued search waits at most this long before it is refused as busy. */
+export const SEARCH_QUEUE_TIMEOUT_MS = 5_000
 
 export class SearchBusyError extends Error {
   constructor() {
@@ -16,14 +18,25 @@ export class SearchBusyError extends Error {
 let running = 0
 const waiting: (() => void)[] = []
 
-async function acquire(): Promise<void> {
+async function acquire(queueTimeoutMs: number): Promise<void> {
   if (running < SEARCH_MAX_CONCURRENT) {
     running++
     return
   }
   if (waiting.length >= SEARCH_MAX_QUEUED) throw new SearchBusyError()
   // The slot is handed over directly by release(), so `running` stays accurate.
-  await new Promise<void>((resolve) => waiting.push(resolve))
+  await new Promise<void>((resolve, reject) => {
+    const entry = () => {
+      clearTimeout(timer)
+      resolve()
+    }
+    const timer = setTimeout(() => {
+      const i = waiting.indexOf(entry)
+      if (i >= 0) waiting.splice(i, 1)
+      reject(new SearchBusyError())
+    }, queueTimeoutMs)
+    waiting.push(entry)
+  })
 }
 
 function release(): void {
@@ -32,8 +45,8 @@ function release(): void {
   else running--
 }
 
-export async function withSearchBudget<T>(fn: () => Promise<T>): Promise<T> {
-  await acquire()
+export async function withSearchBudget<T>(fn: () => Promise<T>, opts: { queueTimeoutMs?: number } = {}): Promise<T> {
+  await acquire(opts.queueTimeoutMs ?? SEARCH_QUEUE_TIMEOUT_MS)
   try {
     return await fn()
   } finally {

@@ -1,8 +1,9 @@
 import type { Payload, Where } from 'payload'
 import type { Category, Plugin, Tag } from '@/payload-types'
 import { SUMMARY_SELECT } from '@/lib/directory/mappers'
-import { withSearchBudget } from './budget'
-import { searchIndex } from './fts'
+import { isInSubtree } from '@/taxonomy/tree'
+import { SearchBusyError, withSearchBudget } from './budget'
+import { SearchTimeoutError, searchIndex } from './fts'
 import { normalizeQuery, type NormalizedQuery } from './query'
 
 export const PLUGIN_SEARCH_SELECT = {
@@ -18,13 +19,15 @@ const CATEGORY_SELECT = { title: true, slug: true, intro: true, parent: true, _h
 
 export type PluginFilter = { payloadMajor?: '1' | '2' | '3' | '4'; categorySlug?: string }
 export type DirectorySearch = {
+  /** 'ok', or why no results could be produced: the callers render a retry message instead of catching. */
+  status: 'ok' | 'timeout' | 'busy'
   query: NormalizedQuery | null
   plugins: Plugin[]
   categories: Category[]
   tags: Tag[]
   unknownCategory?: true
   page: number
-  /** True when more visible matches exist after this page. */
+  /** True when more visible matches exist after this page, within the top-`maxPool` ranked candidates. */
   hasMore: boolean
 }
 
@@ -45,7 +48,7 @@ const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(mi
 // A fresh context object per read (a shared one would accumulate hook state across calls).
 const displayContext = () => ({ computeHierarchyPaths: true })
 
-const empty = (query: NormalizedQuery | null, page: number): DirectorySearch => ({ query, plugins: [], categories: [], tags: [], page, hasMore: false })
+const empty = (query: NormalizedQuery | null, page: number): DirectorySearch => ({ status: 'ok', query, plugins: [], categories: [], tags: [], page, hasMore: false })
 
 async function filterWhere(payload: Payload, filter?: PluginFilter): Promise<Where | null | 'unknown-category'> {
   const and: Where[] = []
@@ -57,7 +60,7 @@ async function filterWhere(payload: Payload, filter?: PluginFilter): Promise<Whe
     if (!root._h_slugPath) throw new Error(`Category "${root.slug}" was loaded without _h_slugPath`)
     const rootPath = root._h_slugPath
     // Subtree match on the slug path: the category itself and everything below it.
-    const ids = cats.docs.filter((c) => c._h_slugPath === rootPath || c._h_slugPath?.startsWith(`${rootPath}/`)).map((c) => c.id)
+    const ids = cats.docs.filter((c) => isInSubtree(c._h_slugPath, rootPath)).map((c) => c.id)
     and.push({ category: { in: ids } })
   }
   return and.length ? { and } : null
@@ -75,15 +78,17 @@ export async function searchDirectory(
 ): Promise<DirectorySearch> {
   const pluginLimit = clamp(opts.pluginLimit ?? 50, 1, SEARCH_LIMITS.maxPluginLimit)
   const taxonomyLimit = clamp(opts.taxonomyLimit ?? 10, 0, SEARCH_LIMITS.maxTaxonomyLimit)
-  const page = clamp(opts.page ?? 1, 1, SEARCH_LIMITS.maxPage)
-  const query = normalizeQuery(raw)
+  // page x limit never exceeds the candidate pool, so a page is never silently short because the pool ran out.
+  const page = clamp(opts.page ?? 1, 1, Math.min(SEARCH_LIMITS.maxPage, Math.floor(SEARCH_LIMITS.maxPool / pluginLimit)))
+  const normalized = normalizeQuery(raw)
   const hasFilter = Boolean(opts.filter?.payloadMajor || opts.filter?.categorySlug)
+  const tooShort = normalized !== null && Array.from(normalized.text).length < SEARCH_LIMITS.minQueryChars
 
-  // No database work for blank, too-short, or (without a filter) empty queries.
-  if (query && Array.from(query.text).length < SEARCH_LIMITS.minQueryChars) return empty(query, page)
-  if (!query && !hasFilter) return empty(query, page)
+  // No database work for blank or too-short queries without a filter. With a filter, a too-short query behaves as no query.
+  if (!hasFilter && (normalized === null || tooShort)) return empty(tooShort ? normalized : null, page)
+  const query = tooShort ? null : normalized
 
-  return withSearchBudget(async () => {
+  const run = async (): Promise<DirectorySearch> => {
     const where = await filterWhere(payload, opts.filter)
     if (where === 'unknown-category') return { ...empty(query, page), unknownCategory: true as const }
 
@@ -107,7 +112,17 @@ export async function searchDirectory(
     const pool = hasFilter ? SEARCH_LIMITS.maxPool : Math.min(SEARCH_LIMITS.maxPool, offset + pluginLimit + 25)
     const hits = await searchIndex(payload, query, { perKind: Math.max(pool, taxonomyLimit, 1) })
     const slugsOf = (kind: string, n: number) => hits.filter((h) => h.kind === kind).map((h) => h.slug).slice(0, n)
-    const candidates = slugsOf('plugin', pool)
+    // The index has no package name: an exact package-name match (e.g. "@acme/payload-seo") is ranked first.
+    const byPackage = await payload.find({
+      collection: 'plugins',
+      ...anon,
+      depth: 0,
+      pagination: false,
+      limit: 5,
+      select: { slug: true },
+      where: { packageName: { in: [...new Set([query.text, query.text.toLowerCase()])] } },
+    })
+    const candidates = [...new Set([...byPackage.docs.map((d) => d.slug), ...slugsOf('plugin', pool)])].slice(0, pool)
     const categorySlugs = slugsOf('category', taxonomyLimit)
     const tagSlugs = slugsOf('tag', taxonomyLimit)
 
@@ -148,16 +163,25 @@ export async function searchDirectory(
       ? (await payload.find({ collection: 'categories', ...anon, depth: 0, pagination: false, limit: 0, select: CATEGORY_SELECT, where: { slug: { in: categorySlugs } } })).docs
       : []
     const tags = tagSlugs.length
-      ? (await payload.find({ collection: 'tags', ...anon, depth: 0, pagination: false, limit: 0, where: { slug: { in: tagSlugs } } })).docs
+      ? (await payload.find({ collection: 'tags', ...anon, depth: 0, pagination: false, limit: 0, select: { title: true, slug: true, aliases: true }, where: { slug: { in: tagSlugs } } })).docs
       : []
 
     return {
       query,
       plugins: inRankOrder(plugins as unknown as Plugin[], pageSlugs),
       categories: inRankOrder(categories as unknown as Category[], categorySlugs),
-      tags: inRankOrder(tags, tagSlugs),
+      tags: inRankOrder(tags as unknown as Tag[], tagSlugs),
       page,
       hasMore: visible.length > offset + pluginLimit,
+      status: 'ok' as const,
     }
-  })
+  }
+
+  try {
+    return await withSearchBudget(run)
+  } catch (err) {
+    if (err instanceof SearchTimeoutError) return { ...empty(query, page), status: 'timeout' }
+    if (err instanceof SearchBusyError) return { ...empty(query, page), status: 'busy' }
+    throw err
+  }
 }
