@@ -1,6 +1,9 @@
-import type { Category, Plugin, Repository } from '@/payload-types'
+import type { Category, Plugin, Repository, Template } from '@/payload-types'
 import { clampChars } from '@/sync/limits'
 import { authorDescriptionOf, pluginTagline } from '@/lib/directory/tagline'
+import { canonicalVideoUrl, getStartedFor, parseDemoUrl, parseVideoUrl } from '@/lib/templates/links'
+import { templateTagline } from '@/lib/templates/mappers'
+import { effectiveStack, type StackValue } from '@/lib/templates/stack'
 import { UNTRUSTED_NOTICE } from './instructions'
 
 export const README_MCP_LIMIT = 20_000
@@ -145,4 +148,81 @@ export function toMcpComparisonRow(doc: Plugin, siteURL: string): McpComparisonR
 export function toMcpCategory(doc: Pick<Category, 'slug' | 'title' | 'intro' | '_h_slugPath'>, parentSlug: string | null, pluginCount: number): McpCategory {
   if (!doc._h_slugPath) throw new Error(`Category "${doc.slug}" was loaded without _h_slugPath`)
   return { slug: doc.slug, title: doc.title, path: doc._h_slugPath, parentSlug, intro: doc.intro ?? null, pluginCount }
+}
+
+export type McpTemplateSummary = {
+  slug: string
+  name: string
+  tagline: string
+  url: string
+  repositoryUrl: string | null
+  isOfficial: boolean
+  stars: number | null
+  stack: StackValue
+  payloadMajors: string[]
+  category: McpCategoryRef | null
+  tags: McpTaxon[]
+}
+export type McpTemplateDetail = McpTemplateSummary & {
+  summary: string | null
+  features: string[]
+  goodFor: string[]
+  authorDescription: string | null
+  getStarted: { kind: 'command' | 'link'; value: string }
+  demoUrl: string | null
+  videoUrl: string | null
+  license: string | null
+  payloadVersionRange: string | null
+  readme: string | null
+  untrustedFields: string[]
+  notice: string
+}
+export type McpTemplateCategory = { slug: string; title: string; path: string; parentSlug: string | null; intro: string | null; templateCount: number }
+
+export function toMcpTemplateSummary(doc: Template, siteURL: string): McpTemplateSummary {
+  const repo = obj<Repository>(doc.repository)
+  return {
+    slug: doc.slug,
+    name: doc.name,
+    tagline: templateTagline(doc),
+    url: `${siteURL}/templates/${doc.slug}`,
+    repositoryUrl: repo?.url ?? null,
+    isOfficial: Boolean(doc.isOfficial),
+    // Official templates live in the shared payloadcms/payload repository: its stars are not theirs.
+    stars: doc.isOfficial ? null : (repo?.stars ?? null),
+    stack: effectiveStack(doc),
+    payloadMajors: doc.payloadMajors?.length ? [...doc.payloadMajors] : ['unknown'],
+    category: categoryRef(doc.category),
+    tags: (doc._h_tags ?? []).map(taxon).filter((t): t is McpTaxon => t !== null),
+  }
+}
+
+export function toMcpTemplateDetail(doc: Template, siteURL: string): McpTemplateDetail {
+  const repo = obj<Repository>(doc.repository)
+  const readme = doc.readme ?? null
+  const video = doc.videoUrl ? parseVideoUrl(doc.videoUrl) : null
+  return {
+    ...toMcpTemplateSummary(doc, siteURL),
+    summary: doc.ai?.summary?.trim() || null,
+    features: [...(doc.ai?.features ?? [])],
+    goodFor: [...(doc.ai?.useCases ?? [])],
+    authorDescription: authorDescriptionOf(doc.description) || null,
+    getStarted: getStartedFor({
+      isOfficial: Boolean(doc.isOfficial), slug: doc.slug, fullName: repo?.fullName ?? '', path: doc.path || null, isTemplateRepo: Boolean(doc.isTemplateRepo),
+    }),
+    // Re-validated on the way out: only a clean https demo URL and a known video host ever reach an agent.
+    demoUrl: doc.demoUrl ? parseDemoUrl(doc.demoUrl) : null,
+    videoUrl: video ? canonicalVideoUrl(video) : null,
+    license: doc.license ?? repo?.license ?? null,
+    payloadVersionRange: doc.payloadVersionRange ?? null,
+    readme: readme ? clampChars(readme, README_MCP_LIMIT) : null,
+    untrustedFields: ['tagline', 'summary', 'features', 'goodFor', 'authorDescription', 'readme'],
+    notice: UNTRUSTED_NOTICE,
+  }
+}
+
+/** Same rule as toMcpCategory: the category must have been read with `_h_slugPath`. */
+export function toMcpTemplateCategory(doc: Pick<Category, 'slug' | 'title' | 'intro' | '_h_slugPath'>, parentSlug: string | null, templateCount: number): McpTemplateCategory {
+  if (!doc._h_slugPath) throw new Error(`Template category "${doc.slug}" was loaded without _h_slugPath`)
+  return { slug: doc.slug, title: doc.title, path: doc._h_slugPath, parentSlug, intro: doc.intro ?? null, templateCount }
 }

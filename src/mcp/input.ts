@@ -12,7 +12,21 @@ const SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/
 const fail = (error: string) => ({ ok: false as const, error })
 const absent = (v: unknown) => v === undefined || v === null || v === ''
 
-type SearchInput = { query: string; payloadMajor?: PayloadMajorInput; category?: string; limit: number }
+export const MCP_KINDS = ['plugin', 'template', 'all'] as const
+export type McpKind = (typeof MCP_KINDS)[number]
+
+type SearchInput = { query: string; kind: McpKind; payloadMajor?: PayloadMajorInput; category?: string; limit: number }
+
+/** `kind` is optional (default 'plugin'); anything outside the three values is rejected. */
+function parseKind(raw: unknown): Parsed<McpKind> {
+  if (absent(raw)) return { ok: true, value: 'plugin' }
+  return typeof raw === 'string' && (MCP_KINDS as readonly string[]).includes(raw) ? { ok: true, value: raw as McpKind } : fail('kind must be "plugin", "template" or "all".')
+}
+
+export function parseKindInput(input: Record<string, unknown>): Parsed<McpKind> {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) return fail('Arguments must be an object.')
+  return parseKind(input.kind)
+}
 
 /** Strict: every field is type- and length-checked. `limit` is clamped, never rejected for being too large. */
 export function parseSearchPluginsInput(input: Record<string, unknown>): Parsed<SearchInput> {
@@ -20,7 +34,9 @@ export function parseSearchPluginsInput(input: Record<string, unknown>): Parsed<
   if (input.query !== undefined && typeof input.query !== 'string') return fail('query must be a string.')
   const query = (input.query as string | undefined) ?? ''
   if (Array.from(query).length > MCP_QUERY_MAX_CHARS) return fail(`query must be at most ${MCP_QUERY_MAX_CHARS} characters.`)
-  const value: SearchInput = { query, limit: MCP_LIMIT_DEFAULT }
+  const kind = parseKind(input.kind)
+  if (!kind.ok) return kind
+  const value: SearchInput = { query, kind: kind.value, limit: MCP_LIMIT_DEFAULT }
 
   if (!absent(input.payloadMajor)) {
     if (typeof input.payloadMajor !== 'string' && typeof input.payloadMajor !== 'number') return fail('payloadMajor must be one of "1", "2", "3", "4".')
@@ -31,6 +47,8 @@ export function parseSearchPluginsInput(input: Record<string, unknown>): Parsed<
   if (!absent(input.category)) {
     const category = typeof input.category === 'string' ? input.category.trim() : ''
     if (!SLUG.test(category)) return fail('category must be a category slug from listCategories.')
+    // Plugin and template categories are different trees: one slug cannot filter both.
+    if (value.kind === 'all') return fail('category cannot be combined with kind "all"; search kind "plugin" or "template" instead.')
     value.category = category
   }
   if (input.limit !== undefined && input.limit !== null) {

@@ -5,7 +5,7 @@ import { SEARCH_MAX_CONCURRENT, SEARCH_MAX_QUEUED, withSearchBudget } from '@/li
 import { PUBLIC_MCP_TOOLS } from '@/mcp/access'
 import { APP_COLLECTIONS } from '@/mcp/plugin'
 import { getTestPayload, resetDatabase } from './helpers/payload'
-import { createPlugin, createRepo, trashPlugin } from './helpers/directory'
+import { createPlugin, createRepo, createTemplate, trashPlugin, trashTemplate } from './helpers/directory'
 import { callTool, isRejected, mcpRequest, readRpc, rpc, toolJson } from './helpers/mcp'
 
 vi.mock('next/cache', () => ({ unstable_cache: (fn: unknown) => fn }))
@@ -30,6 +30,14 @@ beforeAll(async () => {
   await createPlugin(payload, repo, { slug: 'hidden-auth', name: 'Hidden Auth', category: auth.id, visibility: 'hidden', maintainers: [maintainerId] })
   const trashed = await createPlugin(payload, repo, { slug: 'trashed-auth', name: 'Trashed Auth', category: auth.id })
   await trashPlugin(payload, trashed.id)
+
+  const landing = await payload.create({ collection: 'template-categories', overrideAccess: true, context: { skipRevalidate: true }, data: { title: 'Landing pages', slug: 'landing-pages' } })
+  const trepo = await createRepo(payload, { fullName: 'payloadcms/payload', owner: 'payloadcms', url: 'https://github.com/payloadcms/payload', stars: 40000 })
+  await createTemplate(payload, trepo.id, { slug: 'blank', name: 'Blank', isOfficial: true, source: 'official', path: 'templates/blank', payloadMajors: ['3'], category: landing.id, readme: `# Blank\n${INJECTION}`, description: 'A blank starter', demoUrl: 'https://demo.example.com/', videoUrl: 'https://youtu.be/dQw4w9WgXcQ', maintainers: [maintainerId], ai: { tagline: 'Empty slate', summary: 'Starts empty.', features: ['one'], useCases: ['two'] } })
+  await createTemplate(payload, trepo.id, { slug: 'blank-tanstack', name: 'Blank TanStack', isOfficial: true, source: 'official', path: 'templates/blank-tanstack', payloadMajors: ['4'], stackDetected: 'tanstack-start' })
+  await createTemplate(payload, trepo.id, { slug: 'blank-hidden', name: 'Blank Hidden', visibility: 'hidden' })
+  const ttrashed = await createTemplate(payload, trepo.id, { slug: 'blank-trashed', name: 'Blank Trashed' })
+  await trashTemplate(payload, ttrashed.id)
 })
 afterAll(async () => {
   vi.unstubAllEnvs()
@@ -41,7 +49,7 @@ const PUBLIC_SORTED = [...PUBLIC_MCP_TOOLS].sort()
 const slugsOf = (rows: { slug: string }[]) => rows.map((r) => r.slug)
 
 describe('MCP discovery', () => {
-  it('anonymous tools/list shows exactly the four read-only tools', async () => {
+  it('anonymous tools/list shows exactly the five read-only tools', async () => {
     const body = await rpc(payload, 'tools/list')
     expect(toolNames(body)).toEqual(PUBLIC_SORTED)
     for (const t of body.result.tools) expect(t.annotations?.readOnlyHint).toBe(true)
@@ -288,5 +296,102 @@ describe('MCP tools respect visibility', () => {
       expect.objectContaining({ slug: 'auth', path: 'auth', parentSlug: null, pluginCount: 1 }),
       expect.objectContaining({ slug: 'oauth', path: 'auth/oauth', parentSlug: 'auth', pluginCount: 1 }),
     ])
+  })
+})
+
+describe('MCP templates', () => {
+  const GET_TEMPLATE_KEYS = [
+    'authorDescription', 'category', 'demoUrl', 'features', 'getStarted', 'goodFor', 'isOfficial', 'license', 'name', 'notice', 'payloadMajors', 'payloadVersionRange',
+    'readme', 'repositoryUrl', 'slug', 'stack', 'stars', 'summary', 'tagline', 'tags', 'untrustedFields', 'url', 'videoUrl',
+  ]
+  it('tools/list is exactly the five tools, also with an admin JWT and with ?overrideAccess=true', async () => {
+    expect(PUBLIC_SORTED).toEqual(['comparePlugins', 'getPlugin', 'getTemplate', 'listCategories', 'searchPlugins'])
+    expect(toolNames(await rpc(payload, 'tools/list'))).toEqual(PUBLIC_SORTED)
+    const email = 'mcp-admin-t@example.com'
+    const password = 'correct-horse-battery-staple'
+    await payload.create({ collection: 'users', overrideAccess: true, data: { email, password } })
+    const { token } = await payload.login({ collection: 'users', data: { email, password }, overrideAccess: true })
+    expect(toolNames(await rpc(payload, 'tools/list', {}, { headers: { Authorization: `JWT ${token}` } }))).toEqual(PUBLIC_SORTED)
+    const previous = process.env.NODE_ENV
+    vi.stubEnv('NODE_ENV', 'development')
+    try {
+      expect(toolNames(await rpc(payload, 'tools/list', {}, { query: '?overrideAccess=true' }))).toEqual(PUBLIC_SORTED)
+    } finally {
+      vi.stubEnv('NODE_ENV', previous as string)
+    }
+  })
+  it('getTemplate returns exactly the allow-listed keys and none of the admin-only data', async () => {
+    const data = toolJson(await callTool(payload, 'getTemplate', { slug: 'blank' }))
+    expect(Object.keys(data).sort()).toEqual(GET_TEMPLATE_KEYS)
+    expect(data).toMatchObject({
+      slug: 'blank', url: `${SERVER}/templates/blank`, isOfficial: true, stars: null, category: { slug: 'landing-pages', path: 'landing-pages' },
+      getStarted: { kind: 'command', value: 'npx create-payload-app -t blank' }, demoUrl: 'https://demo.example.com/', summary: 'Starts empty.',
+      features: ['one'], goodFor: ['two'], tagline: 'Empty slate',
+    })
+    expect(data.readme).toContain(INJECTION)
+    expect(data.notice).toContain('untrusted')
+    const json = JSON.stringify(data)
+    for (const key of ['readmeHtml', 'promptHash', 'maintainers', 'screenshots', 'visibility', 'contentHash', 'enrichedHash']) expect(json).not.toContain(key)
+  })
+  it('getTemplate refuses hidden, trashed and unknown slugs, and plugin slugs', async () => {
+    for (const slug of ['blank-hidden', 'blank-trashed', 'nope', 'listed-auth']) {
+      const body = await callTool(payload, 'getTemplate', { slug })
+      expect(isRejected(body), slug).toBe(true)
+      expect(JSON.stringify(body)).toContain('No listed template')
+    }
+  })
+  it("searchPlugins kind 'template' lists blank and blank-tanstack, never hidden or trashed", async () => {
+    const data = toolJson(await callTool(payload, 'searchPlugins', { query: 'blank', kind: 'template' }))
+    expect(slugsOf(data.results).sort()).toEqual(['blank', 'blank-tanstack'])
+    expect(data.notice).toContain('untrusted')
+    expect(Object.keys(data.results[0]).sort()).toEqual(['category', 'isOfficial', 'name', 'payloadMajors', 'repositoryUrl', 'slug', 'stack', 'stars', 'tagline', 'tags', 'url'])
+  })
+  it('template filters: payloadMajor, category (with subcategories) and unknown category', async () => {
+    expect(slugsOf(toolJson(await callTool(payload, 'searchPlugins', { query: 'blank', kind: 'template', payloadMajor: '4' })).results)).toEqual(['blank-tanstack'])
+    expect(slugsOf(toolJson(await callTool(payload, 'searchPlugins', { query: '', kind: 'template', category: 'landing-pages' })).results)).toEqual(['blank'])
+    expect(isRejected(await callTool(payload, 'searchPlugins', { query: 'x', kind: 'template', category: 'auth' }))).toBe(true) // a plugin category
+  })
+  it("kind 'all' returns plugins and templates; the default kind is unchanged", async () => {
+    const all = toolJson(await callTool(payload, 'searchPlugins', { query: 'listed blank', kind: 'all' }))
+    expect(Object.keys(all).sort()).toEqual(['notice', 'plugins', 'query', 'templates'])
+    expect(slugsOf(all.templates)).not.toContain('blank-hidden')
+    const plain = toolJson(await callTool(payload, 'searchPlugins', { query: 'auth' }))
+    expect(Object.keys(plain).sort()).toEqual(['notice', 'query', 'results'])
+    expect(slugsOf(plain.results)).toContain('listed-auth')
+    expect(slugsOf(plain.results)).not.toContain('blank')
+  })
+  it('kind: evil is rejected', async () => {
+    expect(isRejected(await callTool(payload, 'searchPlugins', { query: 'blank', kind: 'evil' }))).toBe(true)
+    expect(isRejected(await callTool(payload, 'listCategories', { kind: 'evil' }))).toBe(true)
+  })
+  it('listCategories by kind', async () => {
+    const plugin = toolJson(await callTool(payload, 'listCategories'))
+    expect(plugin.categories.every((c: { pluginCount?: number }) => typeof c.pluginCount === 'number')).toBe(true)
+    const tpl = toolJson(await callTool(payload, 'listCategories', { kind: 'template' }))
+    expect(tpl.categories).toEqual([expect.objectContaining({ slug: 'landing-pages', path: 'landing-pages', templateCount: 1 })])
+    const both = toolJson(await callTool(payload, 'listCategories', { kind: 'all' }))
+    expect(both.categories).toHaveLength(2)
+    expect(both.templateCategories).toHaveLength(1)
+  })
+  it('getTemplate shares the one-call and busy budget', async () => {
+    const release: (() => void)[] = []
+    const held = Array.from({ length: SEARCH_MAX_CONCURRENT + SEARCH_MAX_QUEUED }, () =>
+      withSearchBudget(() => new Promise<void>((resolve) => release.push(resolve)), { queueTimeoutMs: 60_000 }),
+    )
+    try {
+      const body = await callTool(payload, 'getTemplate', { slug: 'blank' })
+      expect(body.result.isError).toBe(true)
+      expect(body.result.content[0].text).toMatch(/busy/i)
+    } finally {
+      let pending = held.length
+      const all = Promise.all(held).then(() => {
+        pending = 0
+      })
+      while (pending > 0) {
+        release.shift()?.()
+        await new Promise((r) => setTimeout(r, 5))
+      }
+      await all
+    }
   })
 })

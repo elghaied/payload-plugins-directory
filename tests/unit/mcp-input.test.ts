@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { parseCompareInput, parseSearchPluginsInput, parseSlugInput } from '@/mcp/input'
+import { parseCompareInput, parseKindInput, parseSearchPluginsInput, parseSlugInput } from '@/mcp/input'
 
 describe('parseSearchPluginsInput', () => {
   it('accepts a query with defaults', () => {
-    expect(parseSearchPluginsInput({ query: 'seo' })).toEqual({ ok: true, value: { query: 'seo', limit: 10 } })
+    expect(parseSearchPluginsInput({ query: 'seo' })).toEqual({ ok: true, value: { query: 'seo', kind: 'plugin', limit: 10 } })
   })
   it('accepts filters, clamps limit', () => {
     expect(parseSearchPluginsInput({ query: '', payloadMajor: '3', category: 'auth', limit: 999 })).toEqual({
       ok: true,
-      value: { query: '', payloadMajor: '3', category: 'auth', limit: 25 },
+      value: { query: '', kind: 'plugin', payloadMajor: '3', category: 'auth', limit: 25 },
     })
     expect(parseSearchPluginsInput({ query: 'x', payloadMajor: 4 })).toMatchObject({ ok: true, value: { payloadMajor: '4' } })
   })
@@ -16,6 +16,33 @@ describe('parseSearchPluginsInput', () => {
     expect(parseSearchPluginsInput({ query: 'x', payloadMajor: '5' }).ok).toBe(false)
     expect(parseSearchPluginsInput({ query: 'x', category: '../etc' }).ok).toBe(false)
     expect(parseSearchPluginsInput({ query: '  ' }).ok).toBe(false)
+  })
+})
+
+describe('kind', () => {
+  it('accepts plugin, template and all; defaults to plugin', () => {
+    for (const kind of ['plugin', 'template', 'all']) expect(parseSearchPluginsInput({ query: 'x', kind })).toMatchObject({ ok: true, value: { kind } })
+    expect(parseSearchPluginsInput({ query: 'x' })).toMatchObject({ ok: true, value: { kind: 'plugin' } })
+    expect(parseSearchPluginsInput({ query: 'x', kind: null })).toMatchObject({ ok: true, value: { kind: 'plugin' } })
+  })
+  it('rejects anything else', () => {
+    for (const kind of ['evil', 'Plugin', 5, ['plugin'], {}]) expect(parseSearchPluginsInput({ query: 'x', kind }).ok).toBe(false)
+  })
+  it('with kind template, category is still a slug and payloadMajor applies', () => {
+    expect(parseSearchPluginsInput({ query: '', kind: 'template', category: 'landing-pages', payloadMajor: '3' })).toMatchObject({
+      ok: true,
+      value: { kind: 'template', category: 'landing-pages', payloadMajor: '3' },
+    })
+    expect(parseSearchPluginsInput({ query: 'x', kind: 'template', category: '../x' }).ok).toBe(false)
+  })
+  it('a category is ambiguous across both kinds, so kind all refuses it', () => {
+    expect(parseSearchPluginsInput({ query: 'x', kind: 'all', category: 'auth' }).ok).toBe(false)
+    expect(parseSearchPluginsInput({ query: 'x', kind: 'all', payloadMajor: '3' }).ok).toBe(true)
+  })
+  it('parseKindInput validates listCategories input', () => {
+    expect(parseKindInput({})).toEqual({ ok: true, value: 'plugin' })
+    expect(parseKindInput({ kind: 'all' })).toEqual({ ok: true, value: 'all' })
+    expect(parseKindInput({ kind: 'evil' }).ok).toBe(false)
   })
 })
 

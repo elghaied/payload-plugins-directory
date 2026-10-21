@@ -3,7 +3,7 @@ import type { Plugin } from 'payload'
 import { publicReadOnlyMCP } from './access'
 import { MCP_MAX_BODY_BYTES, mcpGuardPlugin } from './guard'
 import { SERVER_INSTRUCTIONS } from './instructions'
-import { comparePluginsTool, getPluginTool, listCategoriesTool, searchPluginsTool } from './tools'
+import { comparePluginsTool, getPluginTool, getTemplateTool, listCategoriesTool, searchPluginsTool } from './tools'
 
 /** Every non-`payload-*` collection. Tests fail if a collection is added without being listed here. */
 export const APP_COLLECTIONS = ['users', 'maintainers', 'repositories', 'plugins', 'templates', 'categories', 'template-categories', 'tags', 'submissions', 'media', 'search'] as const
@@ -25,8 +25,9 @@ export const directoryMcpPlugin = (): Plugin[] => [
       getPlugin: getPluginTool,
       listCategories: listCategoriesTool,
       comparePlugins: comparePluginsTool,
+      getTemplate: getTemplateTool,
     },
-    // Braces: every caller is anonymous and sees only the four tools above (also hides payload-* collections).
+    // Braces: every caller is anonymous and sees only the five tools above (also hides payload-* collections).
     overrideGetAuthorizedMCP: publicReadOnlyMCP,
     mcp: {
       maxRequestBodySize: MCP_MAX_BODY_BYTES,

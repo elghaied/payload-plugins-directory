@@ -13,6 +13,9 @@ const items = [
 ]
 
 describe('publicReadOnlyMCP', () => {
+  it('advertises exactly five tools, getTemplate included', () => {
+    expect([...PUBLIC_MCP_TOOLS]).toEqual(['searchPlugins', 'getPlugin', 'listCategories', 'comparePlugins', 'getTemplate'])
+  })
   it('forces an anonymous, access-controlled caller and exposes only the public tools', async () => {
     const req = { user: { id: 1, collection: 'users' } }
     const result = await publicReadOnlyMCP({ overrideAccess: true, pluginConfig: { items } as never, req: req as never })
