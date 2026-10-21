@@ -1,5 +1,6 @@
 import type { CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
+import { convertToTemplateEndpoint } from '@/endpoints/convertToTemplate'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
 import { linkApprovedSubmissions } from '@/collections/hooks/linkApprovedSubmissions'
 import { queueReadmeRender } from '@/collections/hooks/queueReadmeRender'
@@ -43,6 +44,7 @@ export const Plugins: CollectionConfig = {
     },
     delete: isAdmin,
   },
+  endpoints: [convertToTemplateEndpoint],
   hooks: {
     beforeOperation: [restrictMaintainerPluginEdits],
     beforeChange: [
@@ -159,6 +161,15 @@ export const Plugins: CollectionConfig = {
       hooks: { beforeValidate: [({ value }) => (value === undefined ? value : normalizeTagline(value))] },
     },
     { name: 'logo', type: 'upload', relationTo: 'media' },
+    {
+      name: 'convertToTemplate',
+      type: 'ui',
+      admin: {
+        position: 'sidebar',
+        condition: (_data, _siblingData, { user }) => isAdminUser(user),
+        components: { Field: './components/admin/ConvertToTemplateButton.tsx#ConvertToTemplateButton' },
+      },
+    },
     // Visibility
     {
       name: 'visibility',
