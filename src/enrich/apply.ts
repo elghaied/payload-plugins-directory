@@ -82,7 +82,7 @@ export async function applyEnrichment(payload: Payload, ctx: EnrichContext, args
  * Tags deleted since the context was loaded (an admin, or a category/tag cleanup while the model answered) are
  * dropped: writing their ids would fail the whole (paid) result on the relationship.
  */
-async function existingTagIds(payload: Payload, ids: ReadonlySet<number>): Promise<number[]> {
+export async function existingTagIds(payload: Payload, ids: ReadonlySet<number>): Promise<number[]> {
   if (ids.size === 0) return []
   const found = await payload.find({
     collection: 'tags',

@@ -1,7 +1,7 @@
 import type { Payload } from 'payload'
 import { applyEnrichment, recordEnrichmentFailure } from './apply'
 import { allLocked, failureKey, findActivePlugin, loadEnrichContext, toPluginInput, type EnrichContext } from './context'
-import { buildRequest } from './prompt'
+import { buildRequest, buildUserContent } from './prompt'
 import { interpretMessage, usageOf, ZERO_USAGE } from './response'
 import type { EnrichClient, EnrichMessage, EnrichUsage } from './types'
 import { validateEnrichment } from './validate'
@@ -27,7 +27,7 @@ export async function runEnrich(payload: Payload, pluginId: number, client: Enri
 
   const contentHash = plugin.contentHash ?? null
   const message = await client.createMessage(
-    buildRequest({ model: ctx.settings.model, system: ctx.system, schema: ctx.schema }, toPluginInput(plugin)),
+    buildRequest({ model: ctx.settings.model, system: ctx.system, schema: ctx.schema }, buildUserContent(toPluginInput(plugin))),
   )
   const settled = await settleSafely(payload, ctx, { pluginId, contentHash, message, now: now() })
   return { ...settled, usage: usageOf(message), model: message.model }

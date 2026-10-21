@@ -31,7 +31,7 @@ export const CATEGORIES_LLM_INSTRUCTIONS = `${CATEGORIES_BASE} \`_h_slugPath\` i
 /** For the `listCategories` tool: its output field is `path`, not `_h_slugPath`. */
 export const CATEGORIES_TOOL_INSTRUCTIONS = `${CATEGORIES_BASE} \`path\` is the URL path of the category page (\`/categories/<path>\`).`
 
-export const SERVER_INSTRUCTIONS = `Payload Plugin Directory: a read-only catalogue of official and community plugins for Payload CMS.
+export const SERVER_INSTRUCTIONS = `Payload Directory: a read-only catalogue of official and community plugins for Payload CMS.
 
 Tools: searchPlugins (full-text search with optional payloadMajor / category filters), getPlugin (one plugin by slug, including README), listCategories (the category tree with plugin counts), comparePlugins (2–5 plugins side by side).
 

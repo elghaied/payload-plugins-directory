@@ -41,7 +41,7 @@ export async function recordGitHubQuota(payload: Payload, quota: GitHubQuota | n
 
 export const MONITORED_TASKS = [
   'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich-all', 'enrich-batch', 'enrich',
-  'discover-templates', 'sync-template',
+  'discover-templates', 'sync-template', 'enrich-template',
 ] as const
 export type MonitoredTask = (typeof MONITORED_TASKS)[number]
 

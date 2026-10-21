@@ -6,7 +6,7 @@ import { TAXONOMY_EDITED_KEY } from '@/taxonomy/hooks'
 import { isBatchNotFound, isDefiniteCreateFailure } from './client'
 import { allLocked, failureKey, findActivePlugin, loadEnrichContext, toPluginInput } from './context'
 import { settleSafely } from './enrichPlugin'
-import { buildRequest } from './prompt'
+import { buildRequest, buildUserContent } from './prompt'
 import { addUsage, usageOf, ZERO_USAGE } from './response'
 import type { BatchItem, EnrichClient, EnrichUsage } from './types'
 
@@ -179,15 +179,20 @@ async function pendingJobs(payload: Payload, task: 'enrich' | 'enrich-batch') {
   return res.docs
 }
 
-/** Latest category create/update/delete or settings save (deletes leave no updatedAt: see markTaxonomyEdited). */
-async function lastTaxonomyEdit(payload: Payload): Promise<number> {
-  const [latest, settings, deleted] = await Promise.all([
+/**
+ * Latest plugin or template category create/update/delete or settings save (deletes leave no updatedAt: see
+ * markTaxonomyEdited). Shared by the plugin and template passes of enrich-all.
+ */
+export async function lastTaxonomyEdit(payload: Payload): Promise<number> {
+  const [latest, latestTemplate, settings, deleted] = await Promise.all([
     payload.find({ collection: 'categories', overrideAccess: true, depth: 0, limit: 1, sort: '-updatedAt' }),
+    payload.find({ collection: 'template-categories', overrideAccess: true, depth: 0, limit: 1, sort: '-updatedAt' }),
     payload.findGlobal({ slug: 'directory-settings', overrideAccess: true, depth: 0 }),
     payload.db.drizzle.select().from(jobStatus).where(eq(jobStatus.key, TAXONOMY_EDITED_KEY)),
   ])
   return Math.max(
     Date.parse(latest.docs[0]?.updatedAt ?? '') || 0,
+    Date.parse(latestTemplate.docs[0]?.updatedAt ?? '') || 0,
     Date.parse(settings.updatedAt ?? '') || 0,
     deleted[0]?.lastSuccessAt?.getTime() ?? 0,
   )
@@ -253,7 +258,7 @@ export async function runEnrichAll(
     if (!plugin?.contentHash) continue
     items.push({
       custom_id: customIdFor(s.id),
-      params: buildRequest({ model: ctx.settings.model, system: ctx.system, schema: ctx.schema }, toPluginInput(plugin)),
+      params: buildRequest({ model: ctx.settings.model, system: ctx.system, schema: ctx.schema }, buildUserContent(toPluginInput(plugin))),
     })
     // The hash of the content actually sent: a result is applied only while the plugin still has it.
     submitted.push({ id: s.id, contentHash: plugin.contentHash })

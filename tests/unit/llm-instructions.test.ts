@@ -26,6 +26,8 @@ describe('LLM instructions', () => {
   it('server instructions carry the untrusted-content warning and list the tools', () => {
     expect(SERVER_INSTRUCTIONS).toContain(UNTRUSTED_NOTICE)
     for (const tool of ['searchPlugins', 'getPlugin', 'listCategories', 'comparePlugins']) expect(SERVER_INSTRUCTIONS).toContain(tool)
+    expect(SERVER_INSTRUCTIONS).toMatch(/^Payload Directory:/)
+    expect(SERVER_INSTRUCTIONS).not.toContain('Plugin Directory')
   })
   it('keeps host names out of the server instructions and builds the MCP URL from SERVER_URL', () => {
     expect(SERVER_INSTRUCTIONS).not.toMatch(/https?:\/\/|\.dev\b/)

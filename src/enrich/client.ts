@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { RateLimitError } from '@/sync/http'
 import type { BatchInfo, BatchItem, BatchResultEntry, EnrichClient, EnrichMessage, EnrichRequest } from './types'
 
 /**
@@ -140,3 +141,18 @@ export const isDefiniteCreateFailure = (err: unknown): boolean =>
 export const isBatchNotFound = (err: unknown): boolean => err instanceof Anthropic.NotFoundError
 
 export const isPermanentAnthropicError = (err: unknown): boolean => classifyAnthropicError(err).kind === 'permanent'
+
+/**
+ * A transient Anthropic error (429, 5xx, overloaded) that says when to come back (retry-after) becomes a RateLimitError,
+ * so `track` re-queues the job at that time instead of using a retry (Phase 1 pattern). Anything else propagates.
+ * Shared by the enrich and enrich-template tasks.
+ */
+export async function honourRetryAfter<T>(now: Date, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run()
+  } catch (err) {
+    const c = classifyAnthropicError(err, now)
+    if (c.kind === 'transient' && c.retryAt) throw new RateLimitError('anthropic', c.retryAt)
+    throw err
+  }
+}

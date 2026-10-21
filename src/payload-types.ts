@@ -143,6 +143,7 @@ export interface Config {
       enrich: TaskEnrich;
       'enrich-all': TaskEnrichAll;
       'enrich-batch': TaskEnrichBatch;
+      'enrich-template': TaskEnrichTemplate;
       'search-resync': TaskSearchResync;
       'render-readmes': TaskRenderReadmes;
       inline: {
@@ -810,6 +811,7 @@ export interface PayloadJob {
           | 'enrich'
           | 'enrich-all'
           | 'enrich-batch'
+          | 'enrich-template'
           | 'search-resync'
           | 'render-readmes';
         taskID: string;
@@ -855,6 +857,7 @@ export interface PayloadJob {
                 | 'enrich'
                 | 'enrich-all'
                 | 'enrich-batch'
+                | 'enrich-template'
                 | 'search-resync'
                 | 'render-readmes'
               )
@@ -877,6 +880,7 @@ export interface PayloadJob {
         | 'enrich'
         | 'enrich-all'
         | 'enrich-batch'
+        | 'enrich-template'
         | 'search-resync'
         | 'render-readmes'
       )
@@ -1906,6 +1910,7 @@ export interface TaskEnrichAll {
     queued?: number | null;
     batchId?: string | null;
     warning?: string | null;
+    templatesQueued?: number | null;
   };
 }
 /**
@@ -1932,6 +1937,22 @@ export interface TaskEnrichBatch {
     applied?: number | null;
     failed?: number | null;
     retried?: number | null;
+    inputTokens?: number | null;
+    outputTokens?: number | null;
+    cacheReadTokens?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskEnrich-template".
+ */
+export interface TaskEnrichTemplate {
+  input: {
+    templateId: number;
+  };
+  output: {
+    status?: string | null;
+    reason?: string | null;
     inputTokens?: number | null;
     outputTokens?: number | null;
     cacheReadTokens?: number | null;

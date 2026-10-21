@@ -1,12 +1,13 @@
 import { JobCancelledError, type Payload, type TaskConfig } from 'payload'
 import { getEnrichClient, getSyncDeps } from '@/sync/deps'
-import { RateLimitError } from '@/sync/http'
 import { QUEUES } from '@/sync/queues'
 import { queueRevalidate, track } from '@/sync/taskKit'
 import { BATCH_POLL_MS, cancelBatchQuietly, clearInflight, runEnrichAll, runEnrichBatch, type EnrichBatchInput } from './batch'
-import { classifyAnthropicError } from './client'
+import { honourRetryAfter } from './client'
 import { runEnrich } from './enrichPlugin'
 import { queueEnrich } from './queue'
+import { runTemplateEnrichAll } from './templates/run'
+import { enrichTemplateTask, queueEnrichTemplate } from './templates/task'
 import type { EnrichClient } from './types'
 
 /** Without an API key a submitted (paid) batch is polled hourly, so its results are collected once the key returns. */
@@ -15,20 +16,6 @@ export const NO_KEY_POLL_MS = 3_600_000
 /** A fresh poll job, not a retry: a running batch never uses up enrich-batch's retries (like Phase 1's rate-limit re-queue). */
 async function queueEnrichBatch(payload: Payload, input: EnrichBatchInput, waitUntil: Date): Promise<void> {
   await payload.jobs.queue({ task: 'enrich-batch', input, queue: QUEUES.default, waitUntil, overrideAccess: true })
-}
-
-/**
- * A transient Anthropic error (429, 5xx, overloaded) that says when to come back (retry-after) becomes a RateLimitError,
- * so `track` re-queues the job at that time instead of using a retry (Phase 1 pattern). Anything else propagates.
- */
-async function honourRetryAfter<T>(now: Date, run: () => Promise<T>): Promise<T> {
-  try {
-    return await run()
-  } catch (err) {
-    const c = classifyAnthropicError(err, now)
-    if (c.kind === 'transient' && c.retryAt) throw new RateLimitError('anthropic', c.retryAt)
-    throw err
-  }
 }
 
 const usageFields = [
@@ -91,6 +78,7 @@ const enrichAllTask: TaskConfig<'enrich-all'> = {
     { name: 'queued', type: 'number' },
     { name: 'batchId', type: 'text' },
     { name: 'warning', type: 'text' },
+    { name: 'templatesQueued', type: 'number' },
   ],
   handler: async ({ input, req }) => {
     const { payload } = req
@@ -102,12 +90,16 @@ const enrichAllTask: TaskConfig<'enrich-all'> = {
       const queued = await queueEnrich(payload, r.direct)
       // Same run: the poller exists as soon as the batch does (the in-flight marker covers a crash in between).
       if (r.batch) await queueEnrichBatch(payload, r.batch, new Date(at.getTime() + BATCH_POLL_MS))
+      // Template pass (Phase 6): always direct jobs, independent of the plugin batch state above.
+      const t = await runTemplateEnrichAll(payload, getEnrichClient(deps), at, { force: Boolean(input?.force) })
+      const templatesQueued = await queueEnrichTemplate(payload, t.ids)
       return {
         status: r.status,
         stale: r.stale,
         queued,
         ...(r.batch ? { batchId: r.batch.batchId } : {}),
         ...(r.warning ? { warning: r.warning } : {}),
+        templatesQueued,
       }
     })
     return { output }
@@ -197,4 +189,4 @@ const enrichBatchTask: TaskConfig<'enrich-batch'> = {
   },
 }
 
-export const enrichTasks = [enrichTask, enrichAllTask, enrichBatchTask]
+export const enrichTasks = [enrichTask, enrichAllTask, enrichBatchTask, enrichTemplateTask]

@@ -1,6 +1,6 @@
 import type { Payload, Where } from 'payload'
 import { loadEnrichContext, toPluginInput } from './context'
-import { buildRequest } from './prompt'
+import { buildRequest, buildUserContent } from './prompt'
 
 /** Rough sizing only: ~4 characters per token for English prose and code. No tokenizer, no API call. */
 const CHARS_PER_TOKEN = 4
@@ -51,7 +51,7 @@ export async function previewEnrichment(payload: Payload, opts: { slugs?: string
     where,
   })
   return res.docs.map((plugin) => {
-    const request = buildRequest({ model: ctx.settings.model, system: ctx.system, schema: ctx.schema }, toPluginInput(plugin))
+    const request = buildRequest({ model: ctx.settings.model, system: ctx.system, schema: ctx.schema }, buildUserContent(toPluginInput(plugin)))
     const systemChars = request.system.reduce((n, b) => n + b.text.length, 0)
     const userChars = request.messages.reduce((n, m) => n + m.content.length, 0)
     const schemaTokens = tokensOf(JSON.stringify(request.output_config.format.schema).length)

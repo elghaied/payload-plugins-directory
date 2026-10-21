@@ -7,10 +7,10 @@ import { jobsConfig, SyncConfigError } from '@/sync/tasks'
 import { WORKER_QUEUES } from '@/sync/worker'
 
 describe('enrich task wiring', () => {
-  it('registers enrich, enrich-all and enrich-batch after the sync tasks', () => {
-    expect(enrichTasks.map((t) => t.slug)).toEqual(['enrich', 'enrich-all', 'enrich-batch'])
+  it('registers enrich, enrich-all, enrich-batch and enrich-template after the sync tasks', () => {
+    expect(enrichTasks.map((t) => t.slug)).toEqual(['enrich', 'enrich-all', 'enrich-batch', 'enrich-template'])
     expect((jobsConfig.tasks ?? []).map((t) => t.slug)).toEqual([
-      'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'discover-templates', 'sync-template', 'enrich', 'enrich-all', 'enrich-batch', 'search-resync', 'render-readmes',
+      'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'discover-templates', 'sync-template', 'enrich', 'enrich-all', 'enrich-batch', 'enrich-template', 'search-resync', 'render-readmes',
     ])
   })
   it('schedules enrich-all hourly and runs enrich jobs two at a time on their own queue', () => {
@@ -24,6 +24,13 @@ describe('enrich task wiring', () => {
     const c = enrich.concurrency as unknown as { key: (a: { input: { pluginId: number } }) => string; supersedes: boolean }
     expect(c.key({ input: { pluginId: 7 } })).toBe('enrich:7')
     expect(c.supersedes).toBe(true)
+  })
+  it('collapses duplicate enrich-template jobs per template and retries like enrich', () => {
+    const task = enrichTasks.find((t) => t.slug === 'enrich-template')!
+    const c = task.concurrency as unknown as { key: (a: { input: { templateId: number } }) => string; supersedes: boolean }
+    expect(c.key({ input: { templateId: 7 } })).toBe('enrich-template:7')
+    expect(c.supersedes).toBe(true)
+    expect(task.retries).toEqual(enrichTasks.find((t) => t.slug === 'enrich')!.retries)
   })
   it('never retries enrich-all (a retried pass could submit a second batch) and runs one at a time', () => {
     const all = enrichTasks.find((t) => t.slug === 'enrich-all')!
