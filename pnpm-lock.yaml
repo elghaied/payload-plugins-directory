@@ -20,6 +20,9 @@ importers:
       '@payloadcms/next':
         specifier: 4.0.0-beta.2
         version: 4.0.0-beta.2(@types/react@19.3.0)(graphql@16.14.2)(monaco-editor@0.57.0)(next@16.4.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.12.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.2(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
+      '@payloadcms/plugin-mcp':
+        specifier: 4.0.0-beta.2
+        version: 4.0.0-beta.2(payload@4.0.0-beta.2(graphql@16.14.2)(typescript@6.0.3))
       '@payloadcms/plugin-search':
         specifier: 4.0.0-beta.2
         version: 4.0.0-beta.2(@types/react@19.3.0)(graphql@16.14.2)(monaco-editor@0.57.0)(next@16.4.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.12.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.2(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
@@ -1345,6 +1348,14 @@ packages:
   '@jsdevtools/ono@7.1.3':
     resolution: {integrity: sha512-4JQNk+3mVzK3xh2rqd6RB4J46qUR19azEHBneZyTZM+c456qOrbbM/5xcR8huNCCcbVt7+UmizG6GuUvPvKUYg==}
 
+  '@modelcontextprotocol/core@2.3.1':
+    resolution: {integrity: sha512-laVmIhPGpWi7rG9q+0UigblRN0Hws/Yjlb6qLFtVqryXVLkc4h+yN8z731POD2LnAGQlFe7/tXhUm7Bi0YB91g==}
+    engines: {node: '>=20'}
+
+  '@modelcontextprotocol/server@2.3.1':
+    resolution: {integrity: sha512-e59MfWuSssj6DoQ96JCTqdW1AXT5/XtnTl0WWd6MU1Ka434fFUGGosCLJbGNySDhHGvxQWoRWK137FXYFkYNWw==}
+    engines: {node: '>=20'}
+
   '@monaco-editor/loader@1.7.0':
     resolution: {integrity: sha512-gIwR1HrJrrx+vfyOhYmCZ0/JcWqG5kbfG7+d3f/C1LXk2EvzAbHSg3MQ5lO2sMlo9izoAZ04shohfKLVT6crVA==}
 
@@ -1466,6 +1477,12 @@ packages:
     peerDependencies:
       graphql: ^16.8.1
       next: '>=16.4.0 <17.0.0'
+      payload: 4.0.0-beta.2
+
+  '@payloadcms/plugin-mcp@4.0.0-beta.2':
+    resolution: {integrity: sha512-xf3x4SBEk7o0Wuy9E48h2vGmrJYtRXeu41Ko/BzPdR156gDK55Tql+0VYwoQr5Q3ikbhhOqP+npMkmQe/9O3jQ==}
+    hasBin: true
+    peerDependencies:
       payload: 4.0.0-beta.2
 
   '@payloadcms/plugin-search@4.0.0-beta.2':
@@ -5464,6 +5481,15 @@ snapshots:
 
   '@jsdevtools/ono@7.1.3': {}
 
+  '@modelcontextprotocol/core@2.3.1':
+    dependencies:
+      zod: 4.6.7
+
+  '@modelcontextprotocol/server@2.3.1':
+    dependencies:
+      '@modelcontextprotocol/core': 2.3.1
+      zod: 4.6.7
+
   '@monaco-editor/loader@1.7.0':
     dependencies:
       state-local: 1.0.7
@@ -5655,6 +5681,12 @@ snapshots:
       - react-dom
       - supports-color
       - typescript
+
+  '@payloadcms/plugin-mcp@4.0.0-beta.2(payload@4.0.0-beta.2(graphql@16.14.2)(typescript@6.0.3))':
+    dependencies:
+      '@modelcontextprotocol/server': 2.3.1
+      payload: 4.0.0-beta.2(graphql@16.14.2)(typescript@6.0.3)
+      tsx: 4.23.15
 
   '@payloadcms/plugin-search@4.0.0-beta.2(@types/react@19.3.0)(graphql@16.14.2)(monaco-editor@0.57.0)(next@16.4.2(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@types/node@24.12.3)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(sass@1.77.4))(payload@4.0.0-beta.2(graphql@16.14.2)(typescript@6.0.3))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(typescript@6.0.3)':
     dependencies:
