@@ -11,6 +11,7 @@ import { Media } from './collections/Media'
 import { Plugins } from './collections/Plugins'
 import { Repositories } from './collections/Repositories'
 import { Submissions } from './collections/Submissions'
+import { Templates } from './collections/Templates'
 import { Tags } from './collections/Tags'
 import { Users } from './collections/Users'
 import { isAdmin } from './access'
@@ -52,7 +53,7 @@ export default buildConfig({
       ],
     },
   },
-  collections: [Users, Maintainers, Repositories, Plugins, Categories, TemplateCategories, Tags, Submissions, Media],
+  collections: [Users, Maintainers, Repositories, Plugins, Templates, Categories, TemplateCategories, Tags, Submissions, Media],
   globals: [DirectorySettings],
   // Admin presets (Low confidence, Uncategorized, Enrichment failed). v4 would allow any authenticated user,
   // which includes maintainers once Phase 4 adds their login.
@@ -70,7 +71,21 @@ export default buildConfig({
     for (const warning of runtimeEnvWarnings(process.env, role)) payload.logger.warn(warning)
     for (const notice of runtimeEnvNotices(process.env, role)) payload.logger.info(notice)
   },
-  upload: { transformers: [sharpTransformer()] },
+  upload: {
+    transformers: [
+      sharpTransformer({
+        collections: {
+          // v4 beta: image sizes are `variants` on the sharp transformer (`upload.imageSizes` was removed).
+          media: {
+            variants: [
+              { name: 'gallery', width: 1600, withoutEnlargement: true, formatOptions: { format: 'webp', options: { quality: 85 } } },
+              { name: 'card', width: 640, withoutEnlargement: true, formatOptions: { format: 'webp', options: { quality: 85 } } },
+            ],
+          },
+        },
+      }),
+    ],
+  },
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   db: postgresAdapter({
     pool: { connectionString: process.env.DATABASE_URL || '' },

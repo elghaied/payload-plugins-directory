@@ -24,7 +24,7 @@ export const Media: CollectionConfig = {
       // so admin uploads (and any future non-logo relation to media) are never swept. Set by saveBranding only.
       name: 'origin',
       type: 'select',
-      options: ['maintainer', 'admin'],
+      options: ['maintainer', 'admin', 'template-screenshot'],
       defaultValue: 'admin',
       index: true,
       admin: { hidden: true, readOnly: true },

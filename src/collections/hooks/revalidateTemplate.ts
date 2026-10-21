@@ -1,5 +1,6 @@
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook, PayloadRequest } from 'payload'
-import { TEMPLATES_TAG, templateCategoryTag } from '@/lib/cacheTags'
+import { isMaintainersOnlyChange } from '@/collections/hooks/revalidatePlugin'
+import { TEMPLATES_TAG, templateCategoryTag, templateRevalidationTagsFor } from '@/lib/cacheTags'
 import { QUEUES } from '@/sync/queues'
 
 /**
@@ -23,5 +24,20 @@ export const revalidateTemplateCategoryChange: CollectionAfterChangeHook = async
 
 export const revalidateTemplateCategoryDelete: CollectionAfterDeleteHook = async ({ doc, req, context }) => {
   if (!skip(context)) await queueRevalidation(req, [TEMPLATES_TAG, templateCategoryTag(doc.slug)])
+  return doc
+}
+
+export const revalidateTemplateChange: CollectionAfterChangeHook = async ({ doc, previousDoc, req, context }) => {
+  if (skip(context)) return doc
+  // `maintainers` is not rendered on any public page or cached query: approving a claim needs no purge.
+  if (isMaintainersOnlyChange(previousDoc, doc)) return doc
+  const slugs = [doc.slug]
+  if (previousDoc?.slug && previousDoc.slug !== doc.slug) slugs.push(previousDoc.slug)
+  await queueRevalidation(req, templateRevalidationTagsFor(slugs))
+  return doc
+}
+
+export const revalidateTemplateDelete: CollectionAfterDeleteHook = async ({ doc, req, context }) => {
+  if (!skip(context)) await queueRevalidation(req, templateRevalidationTagsFor([doc.slug]))
   return doc
 }

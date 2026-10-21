@@ -72,6 +72,7 @@ export interface Config {
     maintainers: Maintainer;
     repositories: Repository;
     plugins: Plugin;
+    templates: Template;
     categories: Category;
     'template-categories': TemplateCategory;
     tags: Tag;
@@ -92,6 +93,7 @@ export interface Config {
     maintainers: MaintainersSelect<false> | MaintainersSelect<true>;
     repositories: RepositoriesSelect<false> | RepositoriesSelect<true>;
     plugins: PluginsSelect<false> | PluginsSelect<true>;
+    templates: TemplatesSelect<false> | TemplatesSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     'template-categories': TemplateCategoriesSelect<false> | TemplateCategoriesSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
@@ -452,7 +454,7 @@ export interface Tag {
 export interface Media {
   id: number;
   alt: string;
-  origin?: ('maintainer' | 'admin') | null;
+  origin?: ('maintainer' | 'admin' | 'template-screenshot') | null;
   createdBy?:
     | ({
         relationTo: 'users';
@@ -492,6 +494,113 @@ export interface Media {
   };
   focalX?: number | null;
   focalY?: number | null;
+  variants?: {
+    gallery?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+      prefix?: string | null;
+      _objectKey?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+      prefix?: string | null;
+      _objectKey?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "templates".
+ */
+export interface Template {
+  id: number;
+  slug: string;
+  name: string;
+  repository: number | Repository;
+  /**
+   * Subdirectory within the repository; empty for a repo-root template.
+   */
+  path?: string | null;
+  url: string;
+  isOfficial?: boolean | null;
+  source: 'official' | 'submission' | 'converted';
+  firstSeenAt?: string | null;
+  description?: string | null;
+  readme?: string | null;
+  /**
+   * Set by sync when the README was cut at the storage limit.
+   */
+  readmeTruncated?: boolean | null;
+  readmeHtml?: string | null;
+  readmeRenderVersion?: string | null;
+  fallbackImageUrl?: string | null;
+  contentHash?: string | null;
+  /**
+   * package.json dependency names (written by sync).
+   */
+  dependencyNames?: string[] | null;
+  payloadVersionRange?: string | null;
+  payloadMajors?: ('1' | '2' | '3' | '4' | 'unknown')[] | null;
+  /**
+   * Detected at sync time from package.json.
+   */
+  stackDetected?: ('nextjs' | 'tanstack-start' | 'other') | null;
+  /**
+   * Wins over the detected stack.
+   */
+  stackOverride?: ('nextjs' | 'tanstack-start' | 'other') | null;
+  isTemplateRepo?: boolean | null;
+  lastUpdatedAt?: string | null;
+  license?: string | null;
+  category?: (number | null) | TemplateCategory;
+  _h_tags?: (number | Tag)[] | null;
+  /**
+   * Generated from the README by Claude. Editing a field here locks it (see Locks), so enrichment never overwrites it; untick the lock to hand it back.
+   */
+  ai?: {
+    tagline?: string | null;
+    summary?: string | null;
+    features?: string[] | null;
+    useCases?: string[] | null;
+    confidence?: number | null;
+    model?: string | null;
+    enrichedAt?: string | null;
+    enrichedHash?: string | null;
+    promptHash?: string | null;
+    failure?: string | null;
+    failedAt?: string | null;
+    failedKey?: string | null;
+  };
+  locks?: {
+    category?: boolean | null;
+    tags?: boolean | null;
+    tagline?: boolean | null;
+    summary?: boolean | null;
+    features?: boolean | null;
+    useCases?: boolean | null;
+  };
+  maintainers?: (number | Maintainer)[] | null;
+  customTagline?: string | null;
+  screenshots?: (number | Media)[] | null;
+  demoUrl?: string | null;
+  videoUrl?: string | null;
+  visibility: 'listed' | 'hidden';
+  /**
+   * Set when sync moved this template to Trash. Sync restores it when the template reappears; templates an admin trashed stay trashed (use Visibility to hide a template).
+   */
+  syncTrashReason?: ('repository-gone' | 'package-removed') | null;
+  updatedAt: string;
+  createdAt: string;
+  deletedAt?: string | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -799,6 +908,10 @@ export interface PayloadLockedDocument {
         value: number | Plugin;
       } | null)
     | ({
+        relationTo: 'templates';
+        value: number | Template;
+      } | null)
+    | ({
         relationTo: 'categories';
         value: number | Category;
       } | null)
@@ -1095,6 +1208,73 @@ export interface PluginsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "templates_select".
+ */
+export interface TemplatesSelect<T extends boolean = true> {
+  slug?: T;
+  name?: T;
+  repository?: T;
+  path?: T;
+  url?: T;
+  isOfficial?: T;
+  source?: T;
+  firstSeenAt?: T;
+  description?: T;
+  readme?: T;
+  readmeTruncated?: T;
+  readmeHtml?: T;
+  readmeRenderVersion?: T;
+  fallbackImageUrl?: T;
+  contentHash?: T;
+  dependencyNames?: T;
+  payloadVersionRange?: T;
+  payloadMajors?: T;
+  stackDetected?: T;
+  stackOverride?: T;
+  isTemplateRepo?: T;
+  lastUpdatedAt?: T;
+  license?: T;
+  category?: T;
+  _h_tags?: T;
+  ai?:
+    | T
+    | {
+        tagline?: T;
+        summary?: T;
+        features?: T;
+        useCases?: T;
+        confidence?: T;
+        model?: T;
+        enrichedAt?: T;
+        enrichedHash?: T;
+        promptHash?: T;
+        failure?: T;
+        failedAt?: T;
+        failedKey?: T;
+      };
+  locks?:
+    | T
+    | {
+        category?: T;
+        tags?: T;
+        tagline?: T;
+        summary?: T;
+        features?: T;
+        useCases?: T;
+      };
+  maintainers?: T;
+  customTagline?: T;
+  screenshots?: T;
+  demoUrl?: T;
+  videoUrl?: T;
+  visibility?: T;
+  syncTrashReason?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  deletedAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "categories_select".
  */
 export interface CategoriesSelect<T extends boolean = true> {
@@ -1194,6 +1374,34 @@ export interface MediaSelect<T extends boolean = true> {
       };
   focalX?: T;
   focalY?: T;
+  variants?:
+    | T
+    | {
+        gallery?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+              prefix?: T;
+              _objectKey?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+              prefix?: T;
+              _objectKey?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1491,6 +1699,7 @@ export interface CollectionQueryWidget {
       | 'maintainers'
       | 'repositories'
       | 'plugins'
+      | 'templates'
       | 'categories'
       | 'template-categories'
       | 'tags'
@@ -1525,6 +1734,7 @@ export interface ActivityWidget {
           | 'maintainers'
           | 'repositories'
           | 'plugins'
+          | 'templates'
           | 'categories'
           | 'template-categories'
           | 'tags'
