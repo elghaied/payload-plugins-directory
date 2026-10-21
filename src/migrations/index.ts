@@ -10,6 +10,7 @@ import * as migration_20261019_052800_enrich_jobs from './20261019_052800_enrich
 import * as migration_20261019_094206_maintainer_revocation from './20261019_094206_maintainer_revocation';
 import * as migration_20261019_101513_maintainers from './20261019_101513_maintainers';
 import * as migration_20261019_110150_submissions_claim_check from './20261019_110150_submissions_claim_check';
+import * as migration_20261021_000259_media_origin from './20261021_000259_media_origin';
 
 export const migrations = [
   {
@@ -70,6 +71,11 @@ export const migrations = [
   {
     up: migration_20261019_110150_submissions_claim_check.up,
     down: migration_20261019_110150_submissions_claim_check.down,
-    name: '20261019_110150_submissions_claim_check'
+    name: '20261019_110150_submissions_claim_check',
+  },
+  {
+    up: migration_20261021_000259_media_origin.up,
+    down: migration_20261021_000259_media_origin.down,
+    name: '20261021_000259_media_origin'
   },
 ];

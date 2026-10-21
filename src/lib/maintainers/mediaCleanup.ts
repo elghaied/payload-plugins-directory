@@ -5,25 +5,37 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const BATCH = 200
 
 /**
- * Deletes media not referenced by any plugin (trashed ones count as references) and older than a day: leftovers
- * of crashed or racing logo uploads. `plugins.logo` is the only relation to `media`. Runs at the tail of the daily
- * snapshot job. One batch per run; a larger backlog drains over the following days.
+ * Deletes maintainer-uploaded logos (`origin = 'maintainer'`) that no plugin references (trashed plugins count as
+ * references) and that are older than a day: leftovers of crashed or racing uploads. Admin uploads are never touched.
+ * `plugins.logo` is the only relation to `media`; any new relation to media must be added to `referencedLogoIds`.
+ * Runs at the tail of the daily snapshot job. Referenced rows are excluded in the query, so a page of live logos can
+ * never hide an orphan; one batch per run, and a larger backlog drains over the following days.
+ *
+ * The worker deletes through Payload, which unlinks the file under ITS `staticDir`: the worker must mount the same
+ * media volume as web (docker/compose.yml), or the rows go but the files stay.
  */
-export async function sweepOrphanMedia(payload: Payload, now: Date): Promise<number> {
-  const old = await payload.find({
-    collection: 'media', overrideAccess: true, depth: 0, limit: BATCH, sort: 'createdAt',
-    where: { createdAt: { less_than: new Date(now.getTime() - DAY_MS).toISOString() } },
-  })
-  if (!old.docs.length) return 0
-  const ids = old.docs.map((m) => m.id)
+export async function referencedLogoIds(payload: Payload): Promise<number[]> {
   const used = await payload.find({
     collection: 'plugins', overrideAccess: true, depth: 0, trash: true, pagination: false, limit: 0,
-    where: { logo: { in: ids } }, select: { logo: true },
+    where: { logo: { exists: true } }, select: { logo: true },
   })
-  const referenced = new Set(used.docs.map((p) => relationId(p.logo)))
+  return [...new Set(used.docs.map((p) => relationId(p.logo)).filter((id): id is number => typeof id === 'number'))]
+}
+
+export async function sweepOrphanMedia(payload: Payload, now: Date): Promise<number> {
+  const referenced = await referencedLogoIds(payload)
+  const old = await payload.find({
+    collection: 'media', overrideAccess: true, depth: 0, limit: BATCH, sort: 'createdAt', pagination: false,
+    where: {
+      and: [
+        { origin: { equals: 'maintainer' } },
+        { createdAt: { less_than: new Date(now.getTime() - DAY_MS).toISOString() } },
+        ...(referenced.length ? [{ id: { not_in: referenced } }] : []),
+      ],
+    },
+  })
   let deleted = 0
-  for (const id of ids) {
-    if (referenced.has(id)) continue
+  for (const { id } of old.docs) {
     try {
       await payload.delete({ collection: 'media', id, overrideAccess: true })
       deleted++

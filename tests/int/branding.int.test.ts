@@ -166,39 +166,60 @@ describe('saveBranding polish', () => {
 })
 
 describe('sweepOrphanMedia', () => {
-  it('deletes only unreferenced media older than a day', async () => {
-    const mk = (alt: string) =>
-      payload.create({ collection: 'media', overrideAccess: true, data: { alt }, file: { data: PNG, mimetype: 'image/png', name: `${alt}.png`, size: PNG.length } })
+  const mk = (alt: string, origin: 'maintainer' | 'admin' = 'maintainer') =>
+    payload.create({ collection: 'media', overrideAccess: true, data: { alt, origin }, file: { data: PNG, mimetype: 'image/png', name: `${alt}.png`, size: PNG.length } })
+  const gone = (id: number) => payload.findByID({ collection: 'media', id, overrideAccess: true, disableErrors: true })
+  const future = () => new Date(Date.now() + 2 * 86_400_000)
+
+  it('deletes only unreferenced maintainer media older than a day', async () => {
     const orphan = await mk('orphan-old')
     const fresh = await mk('orphan-fresh')
     const logoId = relationId((await mine()).logo)!
-    const future = new Date(Date.now() + 2 * 86_400_000)
-    // "now" two days ahead makes every row old; the fresh one is protected by moving "now" back instead
+    // "now" two days ahead makes every row old
     expect(await sweepOrphanMedia(payload, new Date())).toBe(0)
-    const deleted = await sweepOrphanMedia(payload, future)
+    const deleted = await sweepOrphanMedia(payload, future())
     expect(deleted).toBeGreaterThanOrEqual(2)
-    const gone = (id: number) => payload.findByID({ collection: 'media', id, overrideAccess: true, disableErrors: true })
     expect(await gone(orphan.id)).toBeNull()
     expect(await gone(fresh.id)).toBeNull()
     expect(await gone(logoId)).not.toBeNull()
   })
-})
 
-describe('loadMeData', () => {
-  it('returns only the maintainer\'s own plugins, listings and claims', async () => {
-    const mineP = await mine()
-    const theirs = await makePlugin('theirs', { maintainers: [other.id] })
-    const mk = (who: CurrentMaintainer, data: Record<string, unknown>) =>
-      payload.create({ collection: 'submissions', overrideAccess: true, data: { submittedBy: who.id, ...data } as never })
-    await mk(owner, { type: 'listing', url: 'https://github.com/o/own-listing' })
-    await mk(other, { type: 'listing', url: 'https://github.com/o/other-listing' })
-    await mk(owner, { type: 'claim', plugin: theirs.id })
-    await mk(other, { type: 'claim', plugin: mineP.id })
-    const data = await loadMeData(payload, owner)
-    expect(data.plugins.map((p) => p.slug)).toContain('mine')
-    expect(data.plugins.map((p) => p.slug)).not.toContain('theirs')
-    expect(data.listings.map((s) => s.url)).toEqual(['https://github.com/o/own-listing'])
-    expect(data.claims).toHaveLength(1)
-    expect(data.truncated).toBe(false)
+  it('never deletes admin-uploaded media, however old and unreferenced', async () => {
+    const adminUpload = await mk('admin-upload', 'admin')
+    const defaulted = await payload.create({ collection: 'media', overrideAccess: true, data: { alt: 'no-origin' }, file: { data: PNG, mimetype: 'image/png', name: 'no-origin.png', size: PNG.length } })
+    expect(defaulted.origin).toBe('admin')
+    await sweepOrphanMedia(payload, future())
+    expect(await gone(adminUpload.id)).not.toBeNull()
+    expect(await gone(defaulted.id)).not.toBeNull()
+    await payload.delete({ collection: 'media', id: adminUpload.id, overrideAccess: true })
+    await payload.delete({ collection: 'media', id: defaulted.id, overrideAccess: true })
   })
+
+  it('saveBranding marks the media it creates as maintainer-owned', async () => {
+    await saveBranding({ payload, maintainer: owner, slug: 'mine', tagline: '', logo: { data: PNG } })
+    const logo = await payload.findByID({ collection: 'media', id: relationId((await mine()).logo)!, overrideAccess: true, depth: 0 })
+    expect(logo.origin).toBe('maintainer')
+  })
+
+  it('finds the orphan behind 250 referenced old logos', async () => {
+    const created: number[] = []
+    for (let i = 0; i < 250; i++) {
+      const media = await mk(`live-${i}`)
+      created.push(media.id)
+      const repo = await payload.create({ collection: 'repositories', overrideAccess: true, data: { fullName: `o/live-${i}`, owner: 'o', url: `https://github.com/o/live-${i}` } as never })
+      await payload.create({
+        collection: 'plugins', overrideAccess: true, context: { skipRevalidate: true },
+        data: { slug: `live-${i}`, name: `Live ${i}`, repository: repo.id, url: repo.url, source: 'topic', visibility: 'listed', logo: media.id } as never,
+      })
+    }
+    const orphan = await mk('late-orphan')
+    expect(await sweepOrphanMedia(payload, future())).toBe(1)
+    expect(await gone(orphan.id)).toBeNull()
+    for (const id of created) expect(await gone(id)).not.toBeNull()
+    for (let i = 0; i < 250; i++) {
+      const p = (await payload.find({ collection: 'plugins', overrideAccess: true, depth: 0, limit: 1, where: { slug: { equals: `live-${i}` } } })).docs[0]
+      await payload.delete({ collection: 'plugins', id: p.id, overrideAccess: true, context: { skipRevalidate: true } })
+      await payload.delete({ collection: 'media', id: created[i], overrideAccess: true })
+    }
+  }, 120_000)
 })

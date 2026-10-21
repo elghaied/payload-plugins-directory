@@ -99,7 +99,7 @@ export async function saveBranding({
       collection: 'media',
       overrideAccess: true,
       depth: 0,
-      data: { alt: `${plugin.name} logo` },
+      data: { alt: `${plugin.name} logo`, origin: 'maintainer' },
       file: { data: clean.data, mimetype: kind.mime, name: `${plugin.slug}-logo-${Date.now()}-${randomBytes(3).toString('hex')}.${kind.ext}`, size: clean.data.length },
     })
     nextLogo = createdMedia = media.id

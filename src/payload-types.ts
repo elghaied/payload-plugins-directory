@@ -440,6 +440,7 @@ export interface Tag {
 export interface Media {
   id: number;
   alt: string;
+  origin?: ('maintainer' | 'admin') | null;
   createdBy?:
     | ({
         relationTo: 'users';
@@ -1044,6 +1045,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
+  origin?: T;
   createdBy?: T;
   updatedBy?: T;
   updatedAt?: T;

@@ -82,5 +82,10 @@ services:
       SERVER_URL: https://payloaddirectory.dev
       # The web service's internal address (revalidate jobs POST /api/revalidate here).
       INTERNAL_WEB_URL: http://web:3000
+    # The daily orphan-media sweep runs here and unlinks files under /app/media: this MUST be the same volume as web,
+    # read-write, or the rows are deleted but the files stay on disk. In Coolify, attach the one shared volume to BOTH
+    # services (a per-service volume with the same name is a different volume).
+    volumes:
+      - media:/app/media
 volumes:
   media:
