@@ -102,6 +102,25 @@ export function TemplateDirectory({
     return c ? c.title : path;
   };
 
+  const submitLink = (
+    <Link href="/submit?type=templates" className="text-primary underline underline-offset-4">
+      Submit a template
+    </Link>
+  );
+
+  if (templates.length === 0) {
+    return (
+      <div data-testid="template-directory" className="mx-auto w-full max-w-7xl px-4 pb-12 pt-4 sm:px-6">
+        <div className="rounded-xl border border-dashed px-6 py-16 text-center">
+          <h2 className="text-lg font-semibold">Templates are on their way</h2>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Starter projects for Payload will be listed here. Built one? {submitLink} and it will show up once approved.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div data-testid="template-directory" className="mx-auto w-full max-w-7xl px-4 pb-12 pt-4 sm:px-6">
       <div className="mb-6 flex flex-col gap-3">
@@ -140,6 +159,9 @@ export function TemplateDirectory({
           </Select>
         </div>
       </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Starter projects for Payload. Built one? {submitLink}.
+      </p>
       {results.length === 0 ? (
         <p className="py-16 text-center text-muted-foreground">
           No templates match.{" "}

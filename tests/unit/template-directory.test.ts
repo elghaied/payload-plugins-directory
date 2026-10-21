@@ -14,6 +14,7 @@ vi.mock('@/components/PluginDirectory', () => ({
 }))
 
 import { DirectoryHome } from '@/components/templates/DirectoryHome'
+import { TemplateDirectory } from '@/components/templates/TemplateDirectory'
 import { TemplateCard } from '@/components/templates/TemplateCard'
 
 const tpl = (over: Partial<TemplateSummary> = {}): TemplateSummary => ({
@@ -78,6 +79,18 @@ describe('DirectoryHome', () => {
     expect(triggers(home())).toEqual(['Any stack', 'Any version', 'Any source', 'Default'])
     nav.params = new URLSearchParams('type=templates&major=4&stack=tanstack-start&category=ecommerce&source=official&sort=name')
     expect(triggers(home())).toEqual(['ecommerce', 'TanStack Start', 'v4', 'Official', 'Name'])
+  })
+  it('links "Submit a template" to /submit?type=templates', () => {
+    nav.params = new URLSearchParams('type=templates')
+    expect(home()).toMatch(/<a[^>]*href="\/submit\?type=templates"[^>]*>Submit a template/)
+  })
+  it('says templates are on their way when there are none at all (no search box, no filters)', () => {
+    nav.params = new URLSearchParams('type=templates')
+    const html = renderToStaticMarkup(React.createElement(TemplateDirectory, { templates: [], categories: [] }))
+    expect(html).toContain('Templates are on their way')
+    expect(html).toMatch(/<a[^>]*href="\/submit\?type=templates"/)
+    expect(html).not.toContain('role="combobox"')
+    expect(html).not.toContain('No templates match')
   })
   it('filters by URL params and shows the empty state with a clear link', () => {
     nav.params = new URLSearchParams('type=templates&q=zzzz')
