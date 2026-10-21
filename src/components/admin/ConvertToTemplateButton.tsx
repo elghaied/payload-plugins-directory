@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { useDocumentInfo } from '@payloadcms/ui'
+import { Button, useDocumentInfo } from '@payloadcms/ui'
 
 /** Admin sidebar action on a plugin: moves the listing to the templates collection (the plugin goes to Trash). */
 export function ConvertToTemplateButton() {
@@ -28,9 +28,9 @@ export function ConvertToTemplateButton() {
 
   return (
     <div className="field-type">
-      <button type="button" className="btn btn--style-secondary btn--size-medium" disabled={busy} onClick={convert}>
+      <Button buttonStyle="secondary" size="medium" disabled={busy} onClick={convert}>
         {busy ? 'Converting…' : 'Convert to template'}
-      </button>
+      </Button>
       {error ? <p style={{ color: 'var(--theme-error-500)' }}>{error}</p> : null}
     </div>
   )

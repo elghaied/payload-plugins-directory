@@ -122,6 +122,7 @@ export interface Config {
   };
   locale: null;
   widgets: {
+    submissions: SubmissionsWidget;
     'job-health': JobHealthWidget;
     enrichment: EnrichmentWidget;
     welcome: WelcomeWidget;
@@ -1671,6 +1672,16 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_widget".
+ */
+export interface SubmissionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

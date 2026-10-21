@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { Button } from '@payloadcms/ui'
 
 /** One dashboard "Run now" button: queues the job for the worker's next tick (within about a minute). */
 export function RunJobButton({ task, label, hint, confirm }: { task: string; label: string; hint: string; confirm?: string }) {
@@ -26,10 +27,10 @@ export function RunJobButton({ task, label, hint, confirm }: { task: string; lab
   }
 
   return (
-    <div style={{ display: 'grid', gap: '0.25rem', alignContent: 'start' }}>
-      <button type="button" className="btn btn--style-secondary btn--size-small" style={{ margin: 0 }} disabled={busy} onClick={run} title={hint}>
+    <div style={{ display: 'grid', gap: '0.25rem', alignContent: 'start', justifyItems: 'start' }}>
+      <Button buttonStyle="secondary" size="medium" margin={false} disabled={busy} onClick={run} tooltip={hint}>
         {busy ? 'Queueing…' : label}
-      </button>
+      </Button>
       <span style={{ fontSize: '0.75rem', color: message?.error ? 'var(--theme-error-500)' : 'var(--theme-elevation-600)' }} role={message ? 'status' : undefined}>
         {message?.text ?? hint}
       </span>

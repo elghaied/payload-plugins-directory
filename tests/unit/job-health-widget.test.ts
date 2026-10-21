@@ -1,9 +1,11 @@
+import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { WidgetServerProps } from 'payload'
 import { JobHealthWidget } from '@/components/admin/JobHealthWidget'
 import { MANUAL_JOBS } from '@/sync/manualJobs'
 
+vi.mock('@payloadcms/ui', () => ({ Button: ({ children }: { children: unknown }) => createElement('button', { type: 'button' }, children as never) }))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => {} }) }))
 
 function propsWithFailingLoader() {

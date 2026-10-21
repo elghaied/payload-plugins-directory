@@ -35,6 +35,12 @@ export default buildConfig({
     dashboard: {
       widgets: [
         {
+          slug: 'submissions',
+          label: 'Submissions',
+          Component: './components/admin/SubmissionsWidget.tsx#SubmissionsWidget',
+          minWidth: 'medium',
+        },
+        {
           slug: 'job-health',
           label: 'Job health',
           Component: './components/admin/JobHealthWidget.tsx#JobHealthWidget',
@@ -48,6 +54,7 @@ export default buildConfig({
         },
       ],
       defaultLayout: [
+        { widgetSlug: 'submissions', width: 'full' },
         { widgetSlug: 'job-health', width: 'full' },
         { widgetSlug: 'enrichment', width: 'full' },
         { widgetSlug: 'collections', width: 'full' },
