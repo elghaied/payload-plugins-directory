@@ -53,4 +53,17 @@ describe('getCurrentMaintainer', () => {
     holder.headers = new Headers({ cookie: `${SESSION_COOKIE}=${sessionToken}`, origin: 'https://evil.example', 'next-action': 'abc' })
     expect(await getCurrentMaintainer()).toBeNull()
   })
+  it('a garbage or expired payload-token next to pd_session still resolves the maintainer', async () => {
+    const { getCurrentMaintainer } = await import('@/lib/auth/current')
+    for (const junk of ['not-a-jwt', `${adminToken.slice(0, -4)}AAAA`]) {
+      holder.headers = new Headers({ cookie: `payload-token=${junk}; ${SESSION_COOKIE}=${sessionToken}`, 'sec-fetch-site': 'same-origin' })
+      expect((await payload.auth({ headers: holder.headers })).user?.collection, junk).toBe('maintainers')
+      expect(await getCurrentMaintainer(), junk).toMatchObject({ login: 'both' })
+    }
+  })
+  it('with only the admin cookie, getCurrentMaintainer is null', async () => {
+    const { getCurrentMaintainer } = await import('@/lib/auth/current')
+    holder.headers = new Headers({ cookie: `payload-token=${adminToken}`, 'sec-fetch-site': 'same-origin' })
+    expect(await getCurrentMaintainer()).toBeNull()
+  })
 })

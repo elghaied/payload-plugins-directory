@@ -25,7 +25,8 @@ export function isCrossOriginWrite(method: string | undefined, origin: string | 
  */
 export const MAINTAINER_API_ALLOW_LIST = ['/api/plugins', '/api/submissions'] as const
 
-export function maintainerMayUseApiPath(pathname: string): boolean {
+export function maintainerMayUseApiPath(rawPathname: string): boolean {
+  const pathname = rawPathname.toLowerCase() // route matching must not be bypassable by case
   if (!pathname.startsWith('/api/') && pathname !== '/api') return true
   return MAINTAINER_API_ALLOW_LIST.some((p) => pathname === p || pathname.startsWith(`${p}/`))
 }
@@ -36,6 +37,16 @@ function requestPathname(req: { pathname?: string; url?: string } | undefined): 
     return req?.url ? new URL(req.url).pathname : '/'
   } catch {
     return '/api/invalid' // unparseable: fail closed
+  }
+}
+
+/** A request whose Origin header names another site, whatever the method (covers no-JS form posts and cross-site fetches). */
+export function isForeignOrigin(origin: string | null, serverURL: string): boolean {
+  if (!origin || !serverURL) return false
+  try {
+    return new URL(origin).origin !== new URL(serverURL).origin
+  } catch {
+    return true
   }
 }
 
@@ -61,7 +72,7 @@ export const githubSessionStrategy: AuthStrategy = {
     const token = readCookie(headers, SESSION_COOKIE)
     if (!token) return { user: null }
     if (!maintainerMayUseApiPath(requestPathname(req))) return { user: null }
-    if (isCrossOriginWrite(req?.method, headers.get('origin'), getServerURL())) return { user: null }
+    if (isForeignOrigin(headers.get('origin'), getServerURL())) return { user: null }
 
     let secret: Uint8Array
     try {
@@ -112,7 +123,7 @@ export const githubSessionAuthStrategy: AuthStrategy = {
   authenticate: async (args) => {
     if (readCookie(args.headers, `${args.payload.config.cookiePrefix}-token`)) {
       try {
-        const admin = await JWTAuthentication(args as never)
+        const admin = await JWTAuthentication({ ...args, strategyName: 'local-jwt' } as never)
         if (admin.user) return admin
       } catch {
         // An unusable admin cookie never blocks the maintainer session.

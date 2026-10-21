@@ -159,3 +159,30 @@ describe('github-session strategy: system endpoints (allow-list)', () => {
     expect(res.status).toBe(200)
   })
 })
+
+describe('github-session strategy: origin and path hardening', () => {
+  const at = (pathname: string, headers: Headers, method = 'GET') =>
+    githubSessionStrategy.authenticate({ headers, payload, req: { method, pathname } as never } as never)
+
+  it('ignores the cookie when Origin names another site, whatever the method', async () => {
+    const token = await tokenFor(m.id, 4242)
+    for (const method of ['GET', 'HEAD', 'POST']) {
+      const headers = new Headers({ cookie: `${SESSION_COOKIE}=${token}`, origin: 'https://evil.example' })
+      expect((await at('/me', headers, method)).user, method).toBeNull()
+    }
+    const same = new Headers({ cookie: `${SESSION_COOKIE}=${token}`, origin: new URL(process.env.SERVER_URL || 'http://localhost:3000').origin })
+    expect((await at('/me', same)).user).not.toBeNull()
+  })
+  it('applies the /api allow-list case-insensitively', async () => {
+    const token = await tokenFor(m.id, 4242)
+    expect((await at('/API/payload-preferences/x', cookie(token))).user).toBeNull()
+    expect((await at('/Api/GraphQL', cookie(token))).user).toBeNull()
+  })
+  it('labels an admin resolved through the maintainers strategy as local-jwt, not github-session', async () => {
+    await payload.create({ collection: 'users', overrideAccess: true, data: { email: 'strategy-admin@example.com', password: 'correct-horse-battery-1' } })
+    const login = await payload.login({ collection: 'users', data: { email: 'strategy-admin@example.com', password: 'correct-horse-battery-1' } })
+    const headers = new Headers({ cookie: `payload-token=${login.token}; ${SESSION_COOKIE}=${await tokenFor(m.id, 4242)}`, 'sec-fetch-site': 'same-origin' })
+    const { user } = await payload.auth({ headers })
+    expect(user).toMatchObject({ collection: 'users', _strategy: 'local-jwt' })
+  })
+})
