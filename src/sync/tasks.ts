@@ -1,4 +1,4 @@
-import type { JobsConfig, Payload, TaskConfig } from 'payload'
+import type { JobsConfig, TaskConfig } from 'payload'
 import { isAdmin, isAdminUser } from '@/access'
 import { queueEnrichForChanged } from '@/enrich/queue'
 import { enrichTasks } from '@/enrich/tasks'
@@ -6,8 +6,7 @@ import { SNAPSHOT_TAGS } from '@/lib/cacheTags'
 import { isUsableSecret, MIN_SECRET_LENGTH } from '@/lib/revalidate'
 import { createSyncContext, getSyncDeps } from './deps'
 import { runDiscover } from './discover'
-import type { GitHubClient } from './github'
-import { DISCOVER_GUARD_KEY, recordGitHubQuota, recordJobSuccess } from './jobStatus'
+import { DISCOVER_GUARD_KEY, recordJobSuccess } from './jobStatus'
 import { runNpmStats } from './npmStats'
 import { QUEUES } from './queues'
 import { postRevalidate } from './revalidate'
@@ -16,20 +15,10 @@ import { searchResyncTask } from '@/lib/search/resync'
 import { renderReadmesTask } from './readmeTask'
 import { runSnapshot } from './snapshot'
 import { runSyncRepository } from './syncRepository'
-import { queueRevalidate, SyncConfigError, track } from './taskKit'
+import { queueRevalidate, SyncConfigError, track, withQuota } from './taskKit'
+import { templateSyncTasks } from './templates/tasks'
 
 export { isPermanent, SyncConfigError } from './taskKit'
-
-/** Records the GitHub quota the run saw, whether it succeeded or not (the widget shows the latest one). */
-async function withQuota<T>(payload: Payload, github: GitHubClient, at: Date, run: () => Promise<T>): Promise<T> {
-  try {
-    return await run()
-  } finally {
-    await recordGitHubQuota(payload, github.quota, at).catch((err: unknown) =>
-      payload.logger.error({ err, msg: 'Could not record the GitHub quota' }),
-    )
-  }
-}
 
 const discoverTask: TaskConfig<'discover'> = {
   slug: 'discover',
@@ -264,5 +253,5 @@ export const jobsConfig: JobsConfig = {
     access: { ...defaultJobsCollection.access, read: isAdmin },
     admin: { ...defaultJobsCollection.admin, group: 'System', hidden: false },
   }),
-  tasks: [...syncTasks, ...enrichTasks, searchResyncTask, renderReadmesTask],
+  tasks: [...syncTasks, ...templateSyncTasks, ...enrichTasks, searchResyncTask, renderReadmesTask],
 }

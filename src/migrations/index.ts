@@ -19,6 +19,7 @@ import * as migration_20261021_073906_render_readmes_task from './20261021_07390
 import * as migration_20261021_105019_template_categories from './20261021_105019_template_categories';
 import * as migration_20261021_105100_seed_template_categories from './20261021_105100_seed_template_categories';
 import * as migration_20261021_111206_templates from './20261021_111206_templates';
+import * as migration_20261021_113614_template_tasks from './20261021_113614_template_tasks';
 
 export const migrations = [
   {
@@ -124,6 +125,11 @@ export const migrations = [
   {
     up: migration_20261021_111206_templates.up,
     down: migration_20261021_111206_templates.down,
-    name: '20261021_111206_templates'
+    name: '20261021_111206_templates',
+  },
+  {
+    up: migration_20261021_113614_template_tasks.up,
+    down: migration_20261021_113614_template_tasks.down,
+    name: '20261021_113614_template_tasks'
   },
 ];

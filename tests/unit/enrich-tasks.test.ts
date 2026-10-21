@@ -10,7 +10,7 @@ describe('enrich task wiring', () => {
   it('registers enrich, enrich-all and enrich-batch after the sync tasks', () => {
     expect(enrichTasks.map((t) => t.slug)).toEqual(['enrich', 'enrich-all', 'enrich-batch'])
     expect((jobsConfig.tasks ?? []).map((t) => t.slug)).toEqual([
-      'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'enrich', 'enrich-all', 'enrich-batch', 'search-resync', 'render-readmes',
+      'discover', 'sync-repository', 'npm-stats', 'snapshot', 'revalidate', 'discover-templates', 'sync-template', 'enrich', 'enrich-all', 'enrich-batch', 'search-resync', 'render-readmes',
     ])
   })
   it('schedules enrich-all hourly and runs enrich jobs two at a time on their own queue', () => {

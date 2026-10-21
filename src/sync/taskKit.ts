@@ -1,8 +1,8 @@
 import { JobCancelledError, type Payload } from 'payload'
 import { isPermanentAnthropicError } from '@/enrich/client'
-import { InvalidGitHubPathError } from './github'
+import { InvalidGitHubPathError, type GitHubClient } from './github'
 import { RateLimitError } from './http'
-import { recordJobFailure, recordJobSuccess } from './jobStatus'
+import { recordGitHubQuota, recordJobFailure, recordJobSuccess } from './jobStatus'
 import { InvalidNpmPackageNameError } from './npm'
 import { QUEUES } from './queues'
 
@@ -11,6 +11,17 @@ export type RateLimited = { status: 'rate-limited' }
 export async function queueRevalidate(payload: Payload, tags: readonly string[]): Promise<void> {
   if (tags.length === 0) return
   await payload.jobs.queue({ task: 'revalidate', input: { tags: [...new Set(tags)] }, queue: QUEUES.default, overrideAccess: true })
+}
+
+/** Records the GitHub quota the run saw, whether it succeeded or not (the widget shows the latest one). */
+export async function withQuota<T>(payload: Payload, github: GitHubClient, at: Date, run: () => Promise<T>): Promise<T> {
+  try {
+    return await run()
+  } finally {
+    await recordGitHubQuota(payload, github.quota, at).catch((err: unknown) =>
+      payload.logger.error({ err, msg: 'Could not record the GitHub quota' }),
+    )
+  }
 }
 
 /** The worker is misconfigured: retrying cannot help until someone changes the environment. */

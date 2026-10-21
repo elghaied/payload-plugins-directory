@@ -138,6 +138,8 @@ export interface Config {
       'npm-stats': TaskNpmStats;
       snapshot: TaskSnapshot;
       revalidate: TaskRevalidate;
+      'discover-templates': TaskDiscoverTemplates;
+      'sync-template': TaskSyncTemplate;
       enrich: TaskEnrich;
       'enrich-all': TaskEnrichAll;
       'enrich-batch': TaskEnrichBatch;
@@ -803,6 +805,8 @@ export interface PayloadJob {
           | 'npm-stats'
           | 'snapshot'
           | 'revalidate'
+          | 'discover-templates'
+          | 'sync-template'
           | 'enrich'
           | 'enrich-all'
           | 'enrich-batch'
@@ -846,6 +850,8 @@ export interface PayloadJob {
                 | 'npm-stats'
                 | 'snapshot'
                 | 'revalidate'
+                | 'discover-templates'
+                | 'sync-template'
                 | 'enrich'
                 | 'enrich-all'
                 | 'enrich-batch'
@@ -866,6 +872,8 @@ export interface PayloadJob {
         | 'npm-stats'
         | 'snapshot'
         | 'revalidate'
+        | 'discover-templates'
+        | 'sync-template'
         | 'enrich'
         | 'enrich-all'
         | 'enrich-batch'
@@ -1840,6 +1848,36 @@ export interface TaskRevalidate {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskDiscover-templates".
+ */
+export interface TaskDiscoverTemplates {
+  input?: unknown;
+  output: {
+    status?: string | null;
+    queued?: number | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "TaskSync-template".
+ */
+export interface TaskSyncTemplate {
+  input: {
+    fullName: string;
+    githubId?: number | null;
+    path?: string | null;
+    source: 'official' | 'submission' | 'converted';
+  };
+  output: {
+    status?: string | null;
+    created?: number | null;
+    updated?: number | null;
+    trashed?: number | null;
+    contentChanged?: number[] | null;
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "TaskEnrich".
  */
 export interface TaskEnrich {
@@ -1924,6 +1962,7 @@ export interface TaskRenderReadmes {
   input: {
     afterId?: number | null;
     all?: boolean | null;
+    collection?: ('plugins' | 'templates') | null;
   };
   output: {
     status?: string | null;

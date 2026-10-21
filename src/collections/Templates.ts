@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, Where } from 'payload'
 import { createTagField } from 'payload'
 import { adminOnly, isAdmin, isAdminUser } from '@/access'
+import { queueReadmeRender } from '@/collections/hooks/queueReadmeRender'
 import { restrictMaintainerTemplateEdits } from '@/collections/hooks/restrictMaintainerTemplateEdits'
 import { revalidateTemplateChange, revalidateTemplateDelete } from '@/collections/hooks/revalidateTemplate'
 import { lockAdminEditedAiFields } from '@/enrich/locks'
@@ -54,7 +55,7 @@ export const Templates: CollectionConfig = {
       // Reads only category, _h_tags, ai.* and locks, which templates share with plugins.
       lockAdminEditedAiFields as unknown as CollectionBeforeChangeHook,
     ],
-    afterChange: [revalidateTemplateChange],
+    afterChange: [revalidateTemplateChange, queueReadmeRender],
     afterDelete: [revalidateTemplateDelete],
   },
   fields: [

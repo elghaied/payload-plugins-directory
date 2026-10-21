@@ -1,5 +1,6 @@
 import { NO_DESCRIPTION } from '@/lib/directory/tagline'
 import type { ExtractedPlugin } from './extract'
+import type { ExtractedTemplate } from './templates/extract'
 
 /**
  * Payload 4 enforces `config.defaultMaxTextLength` (40,000) on every text/textarea field without its own
@@ -53,5 +54,18 @@ export function clampExtracted(p: ExtractedPlugin): ExtractedPlugin {
     payloadVersionRange: str(p.payloadVersionRange, VERSION_RANGE_MAX_CHARS) ?? null,
     readme: typeof p.readme === 'string' ? truncateReadme(p.readme) : undefined,
     keywords,
+  }
+}
+
+/** Every text field of an extracted template bounded, like `clampExtracted` (template extraction is untrusted too). */
+export function clampExtractedTemplate(t: ExtractedTemplate): ExtractedTemplate {
+  return {
+    ...t,
+    name: str(t.name, NAME_MAX_CHARS) || t.slug,
+    path: str(t.path, PATH_MAX_CHARS) ?? null,
+    url: str(t.url, URL_MAX_CHARS) ?? '',
+    description: str(t.description, DESCRIPTION_MAX_CHARS) || NO_DESCRIPTION,
+    payloadVersionRange: str(t.payloadVersionRange, VERSION_RANGE_MAX_CHARS) ?? null,
+    readme: typeof t.readme === 'string' ? truncateReadme(t.readme) : undefined,
   }
 }

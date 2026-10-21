@@ -45,10 +45,10 @@ export type SyncRepositoryResult = {
  * process) only when the stored stamp (pipeline version + README hash) is out of date; a failed or refused render
  * stores null HTML with the stamp, so it is not retried every sync. The reason is logged once per render.
  */
-async function renderReadmeFor(
+export async function renderReadmeFor(
   payload: Payload,
   ctx: SyncContext,
-  prev: Plugin | undefined,
+  prev: { readmeRenderVersion?: string | null } | undefined,
   p: { slug: string; readme?: string | null; path?: string | null },
   repoData: { fullName: string; defaultBranch: string | null },
 ): Promise<{ readmeHtml?: string | null; readmeRenderVersion?: string }> {
@@ -109,7 +109,7 @@ async function repositoryWhere(payload: Payload, where: Where): Promise<Reposito
   return res.docs[0] ?? null
 }
 
-type ResolvedRepository = {
+export type ResolvedRepository = {
   /** The row that is this repository: same githubId, or a seeded row (githubId null) with the same full name. */
   match: Repository | null
   /** Another repository's row (different, non-null githubId) holding this full name, e.g. after a rename. */
@@ -120,7 +120,7 @@ type ResolvedRepository = {
  * Identity is the GitHub id. A full-name match is adopted only when the stored row has no githubId (seeded);
  * a row under the same name with another githubId belongs to a different repository and is never adopted.
  */
-async function resolveRepository(payload: Payload, ref: { githubId?: number | null; fullName: string }): Promise<ResolvedRepository> {
+export async function resolveRepository(payload: Payload, ref: { githubId?: number | null; fullName: string }): Promise<ResolvedRepository> {
   const byId = ref.githubId ? await repositoryWhere(payload, { githubId: { equals: ref.githubId } }) : null
   const byName = byId?.fullName === ref.fullName ? byId : await repositoryWhere(payload, { fullName: { equals: ref.fullName } })
   if (!byName || byName.id === byId?.id) return { match: byId, stale: null }
@@ -132,6 +132,18 @@ async function resolveRepository(payload: Payload, ref: { githubId?: number | nu
 async function findPlugins(payload: Payload, where: Where): Promise<Plugin[]> {
   const res = await payload.find({ collection: 'plugins', overrideAccess: true, trash: true, depth: 0, limit: 0, pagination: false, where })
   return res.docs
+}
+
+/**
+ * `(path ?? '')` of every non-trashed template of the repository: sync never creates (or keeps) a plugin at a path a
+ * template holds, so one repository path is never both kinds. Templates themselves are never read or written here.
+ */
+async function templatePaths(payload: Payload, repositoryId: number): Promise<Set<string>> {
+  const res = await payload.find({
+    collection: 'templates', overrideAccess: true, depth: 0, limit: 0, pagination: false,
+    where: { repository: { equals: repositoryId } }, select: { path: true },
+  })
+  return new Set(res.docs.map((t) => t.path ?? ''))
 }
 
 async function loadAliasTags(payload: Payload): Promise<AliasTag[]> {
@@ -250,11 +262,13 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
 
   if (extraction) {
     const officialNames = official ? new Set<string>() : await officialPackageNames(payload)
+    const templateHeld = await templatePaths(payload, repo.id)
     const kept: string[] = []
 
     for (const extracted of extraction.plugins) {
       const p = clampExtracted(extracted)
       if (!official && p.packageName && officialNames.has(p.packageName.toLowerCase())) continue
+      if (templateHeld.has(p.path ?? '')) continue // a template owns this repository path
       kept.push(p.slug)
       const prev = bySlug.get(p.slug)
       const contentHash = computeContentHash(p)

@@ -21,12 +21,12 @@ describe('runWorkerTick', () => {
     setSyncDeps({ fetch: f, env: { internalWebUrl: 'http://web.test', revalidateSecret: SECRET } })
     await payload.jobs.queue({ task: 'revalidate', input: { tags: ['plugins'] }, queue: 'default', overrideAccess: true })
 
-    expect(await runWorkerTick(payload, { budgetMs: 10_000 })).toEqual({ scheduled: 5, ran: { default: 1, sync: 0, enrich: 0 } })
+    expect(await runWorkerTick(payload, { budgetMs: 10_000 })).toEqual({ scheduled: 6, ran: { default: 1, sync: 0, enrich: 0 } })
     expect(f.calls).toHaveLength(1)
 
     const pending = await payload.find({ collection: 'payload-jobs', overrideAccess: true, sort: 'taskSlug' })
     // task_slug is a Postgres enum: SQL sorts by declaration order (new slugs last), so sort the names here.
-    expect(pending.docs.map((j) => j.taskSlug).sort()).toEqual(['discover', 'enrich-all', 'npm-stats', 'render-readmes', 'snapshot'])
+    expect(pending.docs.map((j) => j.taskSlug).sort()).toEqual(['discover', 'discover-templates', 'enrich-all', 'npm-stats', 'render-readmes', 'snapshot'])
     expect(pending.docs.every((j) => Boolean(j.waitUntil) && Date.parse(j.waitUntil!) > Date.now())).toBe(true)
 
     expect(await runWorkerTick(payload, { budgetMs: 10_000 })).toEqual({ scheduled: 0, ran: { default: 0, sync: 0, enrich: 0 } })

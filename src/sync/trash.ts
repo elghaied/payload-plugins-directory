@@ -18,3 +18,17 @@ export async function trashPlugins(payload: Payload, where: Where, reason: SyncT
   if (res.errors.length) throw new Error(`Trashing plugins failed: ${res.errors.map((e) => e.message).join('; ')}`)
   return res.docs.map((d) => d.slug).sort()
 }
+
+/** The template counterpart of `trashPlugins`: same rules (sync-trashed rows carry a reason; admin-trashed ones none). */
+export async function trashTemplates(payload: Payload, where: Where, reason: SyncTrashReason, now: Date): Promise<string[]> {
+  const res = await payload.update({
+    collection: 'templates',
+    overrideAccess: true,
+    depth: 0,
+    context: { syncTrash: true, skipRevalidate: true },
+    where: { and: [where, { deletedAt: { exists: false } }] },
+    data: { deletedAt: now.toISOString(), syncTrashReason: reason },
+  })
+  if (res.errors.length) throw new Error(`Trashing templates failed: ${res.errors.map((e) => e.message).join('; ')}`)
+  return res.docs.map((d) => d.slug).sort()
+}

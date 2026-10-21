@@ -300,6 +300,38 @@ describe('runSyncRepository', () => {
     })
   })
 
+  it('keeps plugins and templates apart: skips a templated path, leaves templates untouched, official plugins unaffected', async () => {
+    // Community: a root template blocks the root plugin.
+    const row = await createRepo(payload, { fullName: 'acme/payload-seo', owner: 'acme', githubId: 7 })
+    const tpl = await payload.create({
+      collection: 'templates', overrideAccess: true, depth: 0, context: { skipRevalidate: true },
+      data: { slug: '7-root', name: 'Tpl', repository: row.id, url: 'https://github.com/acme/payload-seo', source: 'submission' } as never,
+    })
+    expect(await sync(seoRoutes())).toMatchObject({ status: 'synced', created: [] })
+    expect(await plugin('7-root')).toBeUndefined()
+    const after = await payload.findByID({ collection: 'templates', id: tpl.id, overrideAccess: true, trash: true, depth: 0 })
+    expect(after).toMatchObject({ name: 'Tpl', deletedAt: null, updatedAt: tpl.updatedAt })
+
+    // Official monorepo: templates live under templates/, plugins under packages/ — no overlap.
+    const PAYLOAD = ghRepo(100, 'payloadcms/payload', { open_issues_count: 900 })
+    const official = await createRepo(payload, { fullName: 'payloadcms/payload', owner: 'payloadcms', githubId: 100 })
+    const website = await payload.create({
+      collection: 'templates', overrideAccess: true, depth: 0, context: { skipRevalidate: true },
+      data: { slug: 'website', name: 'Website', repository: official.id, path: 'templates/website', url: 'https://github.com/payloadcms/payload', source: 'official', isOfficial: true } as never,
+    })
+    const r = await sync(
+      {
+        [repoById(100)]: json(PAYLOAD),
+        [contents('payloadcms/payload', 'packages')]: json([dirEntry('plugin-seo', 'packages/plugin-seo')]),
+        [raw('payloadcms/payload', 'packages/plugin-seo/package.json')]: pkg({ name: '@payloadcms/plugin-seo', peerDependencies: { payload: '^3.0.0' } }),
+      },
+      { fullName: 'payloadcms/payload', githubId: 100, source: 'official' },
+    )
+    expect(r.created).toEqual(['official-plugin-seo'])
+    const websiteAfter = await payload.findByID({ collection: 'templates', id: website.id, overrideAccess: true, trash: true, depth: 0 })
+    expect(websiteAfter).toMatchObject({ deletedAt: null, updatedAt: website.updatedAt })
+  })
+
   describe('pushedAt advances only after every plugin write', () => {
     it('re-reads a new repository whose first sync failed mid-write', async () => {
       failNextPluginWrite()
