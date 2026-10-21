@@ -105,7 +105,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
             {result.plugins.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No plugins match. Try fewer or different words, or {browse}.
+                {result.templates.length > 0 ? (
+                  <>No plugins match, but templates do.</>
+                ) : (
+                  <>No plugins match. Try fewer or different words, or {browse}.</>
+                )}
               </p>
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
