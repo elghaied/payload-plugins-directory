@@ -164,6 +164,13 @@ describe('approving submissions', () => {
       const stored = await payload.findByID({ collection: 'submissions', id: s.id, overrideAccess: true, depth: 0 })
       expect(stored.plugin ?? null).toBeNull()
     })
+    it('an admin-created template submission without a path takes the folder from its /tree/main/<path> URL', async () => {
+      const s = await templateListing('https://github.com/tpl/adminmade/tree/main/apps/site', null)
+      const doc = await approve(s.id)
+      expect(doc).toMatchObject({ repositoryFullName: 'tpl/adminmade', path: 'apps/site' })
+      const jobs = (await templateJobs()).filter((j) => j.input.fullName === 'tpl/adminmade')
+      expect(jobs.map((j) => j.input)).toEqual([{ fullName: 'tpl/adminmade', path: 'apps/site', source: 'submission' }])
+    })
     it('a root template submission queues sync-template with a null path', async () => {
       const s = await templateListing('https://github.com/tpl/root', null)
       await approve(s.id)

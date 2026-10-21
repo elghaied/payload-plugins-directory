@@ -40,15 +40,20 @@ export const resolveApprovedListing: CollectionBeforeChangeHook = async ({ data,
     return data
   }
   if (type !== 'listing' || !becomesApproved(operation, data.status ?? originalDoc?.status, originalDoc?.status)) return data
-  if (data.repositoryFullName || originalDoc?.repositoryFullName) return data
 
   if ((data.kind ?? originalDoc?.kind) === 'template') {
-    // Templates are GitHub-only: the repository comes straight from the URL, no registry call.
+    // Templates are GitHub-only: the repository (and folder) come straight from the URL, no registry call.
     const target = parseTemplateSubmissionUrl(String(data.url ?? originalDoc?.url ?? ''))
+    const fullName = data.repositoryFullName || originalDoc?.repositoryFullName
+    // A submission an admin created by hand may carry the folder only in its URL (`/tree/<ref>/<path>`).
+    const sameRepo = !fullName || fullName.toLowerCase() === target?.fullName.toLowerCase()
+    if (!(data.path ?? originalDoc?.path) && target?.path && sameRepo) data.path = target.path
+    if (fullName) return data
     if (!target) throw invalid('repositoryFullName', MESSAGES.unresolvedRepository)
     data.repositoryFullName = target.fullName
     return data
   }
+  if (data.repositoryFullName || originalDoc?.repositoryFullName) return data
 
   const target = parseSubmissionUrl(String(data.url ?? originalDoc?.url ?? ''))
   let fullName: string | null = null
