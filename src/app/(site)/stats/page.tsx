@@ -187,7 +187,7 @@ export default async function StatsPage() {
           {/* Most downloaded community plugins */}
           {stats.mostDownloadedCommunity.length > 0 && (
             <section className="bg-card border rounded-lg p-4 sm:p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
+              <div className="absolute top-0 right-0 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-semibold uppercase tracking-widest px-3 py-1 rounded-bl-lg">
                 Community
               </div>
               <h2 className="text-sm font-semibold mb-4 uppercase tracking-wider text-muted-foreground">
