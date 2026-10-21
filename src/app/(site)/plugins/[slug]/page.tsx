@@ -18,7 +18,7 @@ import {
   Flag,
   BadgeCheck,
 } from "lucide-react";
-import { getPluginDetail } from "@/lib/directory/queries";
+import { getPluginDetail, getSimilarPlugins } from "@/lib/directory/queries";
 import { capReadme } from "@/lib/directory/readme";
 import { getServerURL } from "@/lib/serverUrl";
 import { BadgeEmbed } from "@/components/BadgeEmbed";
@@ -31,6 +31,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PayloadIcon } from "@/components/PayloadIcon";
 import { CategoryBreadcrumbs } from "@/components/CategoryBreadcrumbs";
+import { SimilarPlugins } from "@/components/SimilarPlugins";
 import { PluginAiOverview } from "@/components/PluginAiOverview";
 import { getCategoryNodes } from "@/lib/directory/taxonomy";
 import { categoryHref, tagHref } from "@/lib/taxonomy/links";
@@ -91,7 +92,7 @@ export default async function PluginDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const [plugin, trends] = await Promise.all([getPluginDetail(slug), loadTrends(slug)]);
+  const [plugin, trends, similar] = await Promise.all([getPluginDetail(slug), loadTrends(slug), getSimilarPlugins(slug)]);
   if (!plugin) notFound();
   // PluginTrends carries no lastSnapshotDay; derive it from the newest point of either series.
   const lastSnapshotDay = trends
@@ -502,6 +503,8 @@ export default async function PluginDetailPage({
             </div>
           </div>
         )}
+
+        <SimilarPlugins plugins={similar} />
 
         {/* Action buttons */}
         <div className="flex items-center gap-3 flex-wrap">

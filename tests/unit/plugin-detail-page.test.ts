@@ -8,7 +8,7 @@ const state = vi.hoisted(() => ({ detail: null as unknown, trends: null as unkno
 vi.mock('next/link', () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => createElement('a', { href }, children),
 }))
-vi.mock('@/lib/directory/queries', () => ({ getPluginDetail: async () => state.detail }))
+vi.mock('@/lib/directory/queries', () => ({ getPluginDetail: async () => state.detail, getSimilarPlugins: async () => [] }))
 vi.mock('@/lib/trends/queries', () => ({ getPluginTrends: async () => state.trends }))
 vi.mock('@/lib/directory/taxonomy', () => ({
   getCategoryNodes: async () =>

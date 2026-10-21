@@ -3,6 +3,7 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { LIST_TAG, pluginTag } from '@/lib/cacheTags'
 import { SUMMARY_SELECT, toDetail, toSummary } from './mappers'
+import { rankSimilar } from './similar'
 import type { PluginDetail, PluginSummary } from './types'
 
 async function payload() {
@@ -53,6 +54,18 @@ export async function getPluginDetail(slug: string): Promise<PluginDetail | null
     ['plugin-detail', slug],
     { tags: [LIST_TAG, pluginTag(slug)], revalidate: 3600 },
   )()
+}
+
+/**
+ * Listed plugins similar to `slug` (same category, shared tags), ranked from the cached summaries:
+ * no extra query and no per-slug cache entry. [] for an unknown or unlisted slug.
+ */
+export async function getSimilarPlugins(slug: string, limit = 6): Promise<PluginSummary[]> {
+  const summaries = await getPluginSummaries()
+  const target = summaries.find((s) => s.slug === slug)
+  if (!target) return []
+  const bySlug = new Map(summaries.map((s) => [s.slug, s]))
+  return rankSimilar(target, summaries, limit).flatMap((s) => bySlug.get(s) ?? [])
 }
 
 export const getDirectoryMeta = unstable_cache(
