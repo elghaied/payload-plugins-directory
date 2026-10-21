@@ -6,6 +6,8 @@ export type SiteSearchResult = {
   status: DirectorySearch['status']
   query: string
   truncated: boolean
+  /** More matches exist than the shown page. */
+  hasMore: boolean
   /** The query was too short to search (the search layer ran no query). */
   tooShort: boolean
   /** `description` is the display tagline (customTagline, then AI tagline, then author description). */
@@ -14,14 +16,16 @@ export type SiteSearchResult = {
   tags: { slug: string; title: string }[]
 }
 
-/** Page view model. `null` when there was no query at all (blank input) and nothing went wrong. */
+/** Page view model. `null` only for a blank query with nothing wrong; a timeout or busy status is always returned. */
 export function toSiteResult(result: DirectorySearch): SiteSearchResult | null {
-  if (!result.query) return null
+  if (!result.query && result.status === 'ok') return null
+  const text = result.query?.text ?? ''
   return {
     status: result.status,
-    query: result.query.text,
-    truncated: result.query.truncated,
-    tooShort: Array.from(result.query.text).length < 2,
+    query: text,
+    truncated: result.query?.truncated ?? false,
+    hasMore: result.hasMore,
+    tooShort: Array.from(text).length < 2,
     plugins: result.plugins.map((doc) => toSummary(doc)),
     categories: result.categories.map((c) => {
       // Ruling F1: no slug fallback; the search read requests _h_slugPath.

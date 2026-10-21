@@ -195,6 +195,7 @@ describe('toSiteResult', () => {
     const { toSiteResult } = await import('@/lib/search/present')
     const q = { text: 'x', prefix: '', truncated: false }
     for (const status of ['timeout', 'busy'] as const) {
+      expect(toSiteResult({ status, query: null, plugins: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
       expect(toSiteResult({ status, query: q, plugins: [], categories: [], tags: [], page: 1, hasMore: false })?.status).toBe(status)
     }
   })

@@ -6,7 +6,7 @@ export function SimilarPlugins({ plugins }: { plugins: PluginSummary[] }) {
   return (
     <section className="mb-8" aria-labelledby="similar-plugins">
       <h2 id="similar-plugins" className="mb-3 text-xs font-medium text-muted-foreground">Similar plugins</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {plugins.map((p) => (
           <PluginListCard key={p.slug} plugin={p} />
         ))}

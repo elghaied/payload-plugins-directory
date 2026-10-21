@@ -97,12 +97,16 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
               </div>
             )}
 
+            {result.hasMore && (
+              <p className="text-sm text-muted-foreground">Showing the top {result.plugins.length} matches — refine your search.</p>
+            )}
+
             {result.plugins.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No plugins match. Try fewer or different words, or {browse}.
               </p>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {result.plugins.map((plugin) => (
                   <PluginListCard key={plugin.slug} plugin={plugin} />
                 ))}
