@@ -3,7 +3,7 @@ import { ValidationError } from 'payload'
 import type { CurrentMaintainer } from '@/lib/auth/current'
 import type { GitHubAuthClient } from '@/lib/github/client'
 import { relationId } from '@/lib/relationId'
-import type { Plugin, Repository } from '@/payload-types'
+import type { Repository } from '@/payload-types'
 import { CLAIM_RECHECK_BUDGET_WINDOW_MS, CLAIM_RECHECK_COOLDOWN_MS, MAX_PENDING_PER_MAINTAINER } from './limits'
 import { MESSAGES } from './messages'
 import { normalizeNote, validationMessage } from './submit'
@@ -17,8 +17,11 @@ export type ClaimGitHub = Pick<GitHubAuthClient, 'getRepositoryById' | 'getUserB
 
 const OFFICIAL_OWNER = 'payloadcms'
 
-/** Official plugins (the `payloadcms` org) are always reviewed by an admin (ruling F25). */
-function isOfficial(plugin: Pick<Plugin, 'isOfficial' | 'source'>, repository: Pick<Repository, 'fullName' | 'owner'>): boolean {
+/** What the official rule reads; plugins and templates both have it. */
+type OfficialFlags = { isOfficial?: boolean | null; source?: string | null }
+
+/** Official plugins and templates (the `payloadcms` org) are always reviewed by an admin (ruling F25). */
+function isOfficial(plugin: OfficialFlags, repository: Pick<Repository, 'fullName' | 'owner'>): boolean {
   return (
     plugin.isOfficial === true ||
     plugin.source === 'official' ||
@@ -45,7 +48,8 @@ export async function isInstantClaim({
 }: {
   github: ClaimGitHub
   maintainer: Pick<CurrentMaintainer, 'githubId'>
-  plugin: Pick<Plugin, 'isOfficial' | 'source'>
+  /** The listing being claimed: a plugin or a template. */
+  plugin: OfficialFlags
   repository: Pick<Repository, 'githubId' | 'fullName' | 'owner'>
   onError?: (err: unknown) => void
 }): Promise<boolean> {
@@ -75,31 +79,46 @@ export async function isInstantClaim({
   }
 }
 
-export async function claimPlugin({
+export type ClaimKind = 'plugin' | 'template'
+
+/** Plugin claims keep their exact behaviour: a thin wrapper over `claimListing`. */
+export function claimPlugin(args: { payload: Payload; maintainer: CurrentMaintainer; slug: string; note: string; github: ClaimGitHub }): Promise<ClaimResult> {
+  return claimListing({ ...args, kind: 'plugin' })
+}
+
+/**
+ * Claims a listed plugin or template. Same rules, cap and cooldowns for both kinds; official listings are never instant.
+ * A claim submission links the listing through `plugin` or `template` (by kind), never both.
+ */
+export async function claimListing({
   payload,
   maintainer,
+  kind,
   slug,
   note,
   github,
 }: {
   payload: Payload
   maintainer: CurrentMaintainer
+  kind: ClaimKind
   slug: string
   note: string
   github: ClaimGitHub
 }): Promise<ClaimResult> {
-  // As the maintainer: only listed, non-trashed plugins are visible.
+  const relation = kind === 'template' ? 'template' : 'plugin'
+  // As the maintainer: only listed, non-trashed listings are visible.
   const found = await payload.find({
-    collection: 'plugins',
+    collection: kind === 'template' ? 'templates' : 'plugins',
     overrideAccess: false,
     user: maintainer,
     depth: 1,
     limit: 1,
     where: { slug: { equals: slug } },
   })
-  const plugin = found.docs[0]
-  if (!plugin || typeof plugin.repository !== 'object' || plugin.repository === null) return { status: 'not_found' }
-  if ((plugin.maintainers ?? []).map(relationId).includes(maintainer.id)) return { status: 'already' }
+  const listing = found.docs[0]
+  if (!listing || typeof listing.repository !== 'object' || listing.repository === null) return { status: 'not_found' }
+  if ((listing.maintainers ?? []).map(relationId).includes(maintainer.id)) return { status: 'already' }
+  const link = kind === 'template' ? { template: listing.id } : { plugin: listing.id }
 
   const onError = (err: unknown) => payload.logger.warn({ err }, 'claim: ownership check failed; queueing for review')
   const own = await payload.find({
@@ -108,7 +127,7 @@ export async function claimPlugin({
     user: maintainer,
     depth: 0,
     limit: 1,
-    where: { and: [{ type: { equals: 'claim' } }, { plugin: { equals: plugin.id } }, { status: { equals: 'pending' } }] },
+    where: { and: [{ type: { equals: 'claim' } }, { [relation]: { equals: listing.id } }, { status: { equals: 'pending' } }] },
   })
   const existing = own.docs[0]
   if (existing) {
@@ -133,7 +152,7 @@ export async function claimPlugin({
     if (github.isRateLimited?.()) return { status: 'pending' }
     // Stamp BEFORE calling GitHub so a slow or failing check still counts (system write: the field is admin-only).
     await payload.update({ collection: 'submissions', id: existing.id, overrideAccess: true, depth: 0, data: { lastClaimCheckAt: new Date().toISOString() } })
-    if (!(await isInstantClaim({ github, maintainer, plugin, repository: plugin.repository, onError }))) return { status: 'pending' }
+    if (!(await isInstantClaim({ github, maintainer, plugin: listing, repository: listing.repository, onError }))) return { status: 'pending' }
     try {
       await payload.update({ collection: 'submissions', id: existing.id, overrideAccess: true, depth: 0, data: { status: 'approved' } })
       return { status: 'claimed' }
@@ -152,18 +171,18 @@ export async function claimPlugin({
   })
   if (pendingTotal.totalDocs >= MAX_PENDING_PER_MAINTAINER) return { status: 'invalid', message: MESSAGES.tooMany }
 
-  const instant = await isInstantClaim({ github, maintainer, plugin, repository: plugin.repository, onError })
+  const instant = await isInstantClaim({ github, maintainer, plugin: listing, repository: listing.repository, onError })
 
   try {
     if (instant) {
       // System write: an approved claim record is the audit trail, and Task 10's approval hook adds the maintainer
       // through `addMaintainer`. Maintainers cannot create approved submissions themselves. No `context` flags: Payload v4
-      // merges context into the shared `req.context`, and the plugin revalidate hook skips maintainers-only changes itself.
+      // merges context into the shared `req.context`, and the listing revalidate hook skips maintainers-only changes itself.
       await payload.create({
         collection: 'submissions',
         overrideAccess: true,
         depth: 0,
-        data: { type: 'claim', plugin: plugin.id, submittedBy: maintainer.id, status: 'approved', note: normalizeNote(note) },
+        data: { type: 'claim', kind, ...link, submittedBy: maintainer.id, status: 'approved', note: normalizeNote(note) },
       })
       return { status: 'claimed' }
     }
@@ -172,7 +191,7 @@ export async function claimPlugin({
       overrideAccess: false,
       user: maintainer,
       depth: 0,
-      data: { type: 'claim', plugin: plugin.id, submittedBy: maintainer.id, status: 'pending', note: normalizeNote(note) },
+      data: { type: 'claim', kind, ...link, submittedBy: maintainer.id, status: 'pending', note: normalizeNote(note) },
     })
     return { status: 'queued' }
   } catch (err) {

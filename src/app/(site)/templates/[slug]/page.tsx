@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
-import { ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { BadgeCheck, ExternalLink } from "lucide-react";
 import { OG_IMAGES, TWITTER_IMAGES } from "@/lib/siteOg";
 import { getServerURL } from "@/lib/serverUrl";
 import { getSimilarTemplates, getTemplateCategoryNodes, getTemplateDetail } from "@/lib/templates/queries";
@@ -173,6 +174,15 @@ export default async function TemplatePage({ params }: Props) {
 
             <div className="lg:sticky lg:top-20 lg:self-start">
               <TemplateSidePanel template={template} categoryHref={categoryLink} />
+              {!template.isOfficial && (
+                <Link
+                  href={`/claim/templates/${encodeURIComponent(template.slug)}`}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  <BadgeCheck className="h-4 w-4" aria-hidden="true" />
+                  Claim this template
+                </Link>
+              )}
             </div>
           </div>
 

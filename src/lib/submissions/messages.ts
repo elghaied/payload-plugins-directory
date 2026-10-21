@@ -17,6 +17,10 @@ export const MESSAGES = {
   claimNotListed: 'A claim must reference a listed plugin.',
   alreadyMaintainer: 'You already maintain this plugin.',
   claimPending: 'You already have a pending claim for this plugin.',
+  claimTemplateNotListed: 'A claim must reference a listed template.',
+  alreadyTemplateMaintainer: 'You already maintain this template.',
+  claimTemplatePending: 'You already have a pending claim for this template.',
+  claimTemplateGone: 'The template for this claim is trashed or no longer exists, so the claim cannot be approved.',
   registryUnavailable: 'The npm registry did not answer. The submission stays pending; try again in a moment, or enter owner/repo by hand.',
   approvedIsFinal: {
     claim: 'An approved claim cannot be changed. Remove the maintainer from the plugin instead.',

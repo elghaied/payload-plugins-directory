@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import sharp from 'sharp'
 import { detectImageType } from '@/lib/maintainers/branding'
+import { detectImageType as sniff, reencodeImage } from '@/lib/maintainers/imageReencode'
 import { normalizeTagline, validateTagline } from '@/lib/maintainers/tagline'
 
 // Invisible characters are always written as escapes, never as literals.
@@ -53,5 +55,35 @@ describe('detectImageType', () => {
     expect(detectImageType(Buffer.from('<!doctype html><script>'))).toBeNull()
     expect(detectImageType(Buffer.from('GIF89a'))).toBeNull()
     expect(detectImageType(Buffer.alloc(0))).toBeNull()
+  })
+})
+
+describe('imageReencode', () => {
+  it('branding re-exports the shared sniffer', () => {
+    expect(detectImageType).toBe(sniff)
+  })
+  it('the shared sniffer still refuses SVG and GIF', () => {
+    expect(sniff(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'))).toBeNull()
+    expect(sniff(Buffer.from('GIF89a\x01\x00\x01\x00'))).toBeNull()
+    expect(sniff(Buffer.from('GIF87a'))).toBeNull()
+  })
+  it('re-encodes to WebP when asked, within the dimension cap', async () => {
+    const png = await sharp({ create: { width: 40, height: 20, channels: 3, background: '#123456' } }).png().toBuffer()
+    const out = await reencodeImage(png, sniff(png)!, { maxDimension: 4096, maxBytes: 2 * 1024 * 1024, format: 'webp' })
+    if ('error' in out) throw new Error(out.error)
+    expect(out.kind).toEqual({ mime: 'image/webp', ext: 'webp' })
+    expect(sniff(out.data)).toEqual({ mime: 'image/webp', ext: 'webp' })
+  })
+  it('keeps the input format by default, and reports over-dimension and pixel-limit input as tooLarge', async () => {
+    const png = await sharp({ create: { width: 40, height: 20, channels: 3, background: '#123456' } }).png().toBuffer()
+    const same = await reencodeImage(png, sniff(png)!, { maxDimension: 64, maxBytes: 1024 * 1024 })
+    expect('error' in same ? same.error : same.kind.mime).toBe('image/png')
+    expect(await reencodeImage(png, sniff(png)!, { maxDimension: 32, maxBytes: 1024 * 1024 })).toEqual({ error: 'tooLarge' })
+    const big = await sharp({ create: { width: 200, height: 200, channels: 3, background: '#000' } }).png().toBuffer()
+    expect(await reencodeImage(big, sniff(big)!, { maxDimension: 100, maxBytes: 1024 * 1024 })).toEqual({ error: 'tooLarge' })
+  })
+  it('reports undecodable bytes as wrongType', async () => {
+    const fake = Buffer.concat([Buffer.from('89504e470d0a1a0a', 'hex'), Buffer.from('not really a png')])
+    expect(await reencodeImage(fake, sniff(fake)!, { maxDimension: 100, maxBytes: 1024 })).toEqual({ error: 'wrongType' })
   })
 })

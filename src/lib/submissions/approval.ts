@@ -28,13 +28,15 @@ export const resolveApprovedListing: CollectionBeforeChangeHook = async ({ data,
   }
 
   if (type === 'claim' && becomesApproved(operation, data.status ?? originalDoc?.status, originalDoc?.status)) {
-    const pluginId = relationId(data.plugin ?? originalDoc?.plugin)
-    // System lookup (overrideAccess): the approving admin may approve claims on hidden plugins; trashed ones are excluded by default.
+    const isTemplate = (data.kind ?? originalDoc?.kind) === 'template'
+    const field = isTemplate ? 'template' : 'plugin'
+    const listingId = relationId(data[field] ?? originalDoc?.[field])
+    // System lookup (overrideAccess): the approving admin may approve claims on hidden listings; trashed ones are excluded by default.
     const found =
-      pluginId === undefined
+      listingId === undefined
         ? null
-        : await req.payload.find({ collection: 'plugins', where: { id: { equals: pluginId } }, select: {}, limit: 1, depth: 0, overrideAccess: true, req })
-    if (!found?.docs[0]) throw invalid('plugin', MESSAGES.claimPluginGone)
+        : await req.payload.find({ collection: isTemplate ? 'templates' : 'plugins', where: { id: { equals: listingId } }, select: {}, limit: 1, depth: 0, overrideAccess: true, req })
+    if (!found?.docs[0]) throw invalid(field, isTemplate ? MESSAGES.claimTemplateGone : MESSAGES.claimPluginGone)
     return data
   }
   if (type !== 'listing' || !becomesApproved(operation, data.status ?? originalDoc?.status, originalDoc?.status)) return data
@@ -70,21 +72,26 @@ export const resolveApprovedListing: CollectionBeforeChangeHook = async ({ data,
   return data
 }
 
-async function addMaintainer(req: PayloadRequest, pluginId: number | undefined, maintainerId: number | undefined) {
-  if (pluginId === undefined || maintainerId === undefined) return
-  const plugin = await req.payload.findByID({ collection: 'plugins', id: pluginId, depth: 0, overrideAccess: true, req, disableErrors: true })
-  if (!plugin) return
-  const current = (plugin.maintainers ?? []).map(relationId).filter((id): id is number => id !== undefined)
+async function addMaintainer(
+  req: PayloadRequest,
+  collection: 'plugins' | 'templates',
+  listingId: number | undefined,
+  maintainerId: number | undefined,
+) {
+  if (listingId === undefined || maintainerId === undefined) return
+  const listing = await req.payload.findByID({ collection, id: listingId, depth: 0, overrideAccess: true, req, disableErrors: true })
+  if (!listing) return
+  const current = (listing.maintainers ?? []).map(relationId).filter((id): id is number => id !== undefined)
   if (current.includes(maintainerId)) return
-  // System write on approval: maintainers can never edit `maintainers` themselves.
+  // System write on approval: maintainers can never edit `maintainers` themselves (plugins or templates).
   // No `skipRevalidate` here: in Payload v4 a Local API `context` is merged into the shared `req.context`, so the flag
   // would leak to every later write on this request. `revalidatePluginChange` instead skips a save whose only change is
-  // `maintainers` (not rendered on any public page), decided per document.
-  // Known race (accepted): the maintainers array is read then written in full, so two claims for the SAME plugin approved
+  // `maintainers` (not rendered on any public page), decided per document; `revalidateTemplateChange` does the same.
+  // Known race (accepted): the maintainers array is read then written in full, so two claims for the SAME listing approved
   // at the exact same moment could lose one grant. Approvals are admin-only and rare; sequential approvals are safe.
   await req.payload.update({
-    collection: 'plugins',
-    id: pluginId,
+    collection,
+    id: listingId,
     data: { maintainers: [...current, maintainerId] },
     depth: 0,
     overrideAccess: true,
@@ -110,12 +117,13 @@ async function approveTemplateListing(req: PayloadRequest, doc: Submission, full
   return doc
 }
 
-/** Spec §9: approving a claim adds the maintainer; approving a listing links the plugin and enqueues a sync. */
+/** Spec §9: approving a claim adds the maintainer (to the plugin or the template, by kind); approving a listing links the plugin and enqueues a sync. */
 export const applyApproval: CollectionAfterChangeHook<Submission> = async ({ doc, operation, previousDoc, req }) => {
   if (!becomesApproved(operation, doc.status, previousDoc?.status)) return doc
 
   if (doc.type === 'claim') {
-    await addMaintainer(req, relationId(doc.plugin), relationId(doc.submittedBy))
+    if (doc.kind === 'template') await addMaintainer(req, 'templates', relationId(doc.template), relationId(doc.submittedBy))
+    else await addMaintainer(req, 'plugins', relationId(doc.plugin), relationId(doc.submittedBy))
     return doc
   }
 

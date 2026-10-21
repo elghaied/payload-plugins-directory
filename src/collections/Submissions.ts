@@ -8,6 +8,7 @@ import { findListingConflict, MAX_PENDING_PER_MAINTAINER, type ListingConflict, 
 import { MESSAGES } from '@/lib/submissions/messages'
 import { FULL_NAME_RE, parseSubmissionUrl, parseTemplateSubmissionUrl, validTemplatePath } from '@/lib/submissions/url'
 import { listedPluginsWhere } from './Plugins'
+import { listedTemplatesWhere } from './Templates'
 
 const invalid = (req: PayloadRequest, path: string, message: string) =>
   new ValidationError({ collection: 'submissions', errors: [{ path, message }], req })
@@ -57,33 +58,40 @@ const enforceOwnership: CollectionBeforeChangeHook = async ({ data, operation, r
     return data
   }
 
-  // claim (claims are for plugins)
+  // claim: of a listed plugin (`plugin`) or a listed template (`template`), by `kind`; never both.
   delete data.url
   delete data.path
-  delete data.template
-  data.kind = 'plugin'
-  const pluginId = relationId(data.plugin)
+  const isTemplate = data.kind === 'template'
+  data.kind = isTemplate ? 'template' : 'plugin'
+  if (isTemplate) delete data.plugin
+  else delete data.template
+  const target = isTemplate
+    ? { collection: 'templates' as const, field: 'template' as const, where: listedTemplatesWhere,
+        messages: { notListed: MESSAGES.claimTemplateNotListed, already: MESSAGES.alreadyTemplateMaintainer, pending: MESSAGES.claimTemplatePending } }
+    : { collection: 'plugins' as const, field: 'plugin' as const, where: listedPluginsWhere,
+        messages: { notListed: MESSAGES.claimNotListed, already: MESSAGES.alreadyMaintainer, pending: MESSAGES.claimPending } }
+  const listingId = relationId(data[target.field])
   const found =
-    pluginId === undefined
+    listingId === undefined
       ? null
       : await req.payload.find({
-          collection: 'plugins',
-          where: { and: [{ id: { equals: pluginId } }, listedPluginsWhere] },
+          collection: target.collection,
+          where: { and: [{ id: { equals: listingId } }, target.where] },
           select: { maintainers: true },
           limit: 1,
           depth: 0,
           overrideAccess: true,
           req,
         })
-  const plugin = found?.docs[0]
-  if (!plugin) throw invalid(req, 'plugin', MESSAGES.claimNotListed)
-  if ((plugin.maintainers ?? []).map(relationId).includes(maintainerId)) throw invalid(req, 'plugin', MESSAGES.alreadyMaintainer)
+  const listing = found?.docs[0]
+  if (!listing) throw invalid(req, target.field, target.messages.notListed)
+  if ((listing.maintainers ?? []).map(relationId).includes(maintainerId)) throw invalid(req, target.field, target.messages.already)
   const open = await req.payload.count({
     collection: 'submissions',
     where: {
       and: [
         { type: { equals: 'claim' } },
-        { plugin: { equals: pluginId } },
+        { [target.field]: { equals: listingId } },
         { submittedBy: { equals: maintainerId } },
         { status: { equals: 'pending' } },
       ],
@@ -91,7 +99,7 @@ const enforceOwnership: CollectionBeforeChangeHook = async ({ data, operation, r
     overrideAccess: true,
     req,
   })
-  if (open.totalDocs) throw invalid(req, 'plugin', MESSAGES.claimPending)
+  if (open.totalDocs) throw invalid(req, target.field, target.messages.pending)
   return data
 }
 
@@ -111,14 +119,15 @@ export const Submissions: CollectionConfig = {
   fields: [
     { name: 'type', type: 'select', required: true, defaultValue: 'listing', options: ['listing', 'claim'] },
     {
-      // What a listing asks for. Maintainers choose it on create; only admins change it afterwards.
+      // Plugin or template: what a listing asks for, or what a claim is for. Set on create; only admins change it afterwards.
       name: 'kind',
       type: 'select',
       required: true,
       defaultValue: 'plugin',
       index: true,
       options: ['plugin', 'template'],
-      admin: { condition: (data) => data?.type === 'listing' },
+      // Shown for listings and claims alike (a claim's kind says whether `plugin` or `template` is the claimed listing).
+      admin: { condition: (data) => data?.type === 'listing' || data?.type === 'claim' },
       access: { update: adminOnly },
     },
     {
@@ -163,12 +172,16 @@ export const Submissions: CollectionConfig = {
     },
     { name: 'plugin', type: 'relationship', relationTo: 'plugins' },
     {
-      // Linked by approval or by template sync; never set by a maintainer.
+      // A listing's template is linked by approval or by template sync. A maintainer sets it only when creating a claim
+      // (enforceOwnership then checks the template is listed and drops it from listings).
       name: 'template',
       type: 'relationship',
       relationTo: 'templates',
-      admin: { condition: (data) => data?.type === 'listing' && data?.kind === 'template' },
-      access: { create: adminOnly, update: adminOnly },
+      admin: { condition: (data) => data?.kind === 'template' },
+      access: {
+        create: ({ req, data }) => isAdminUser(req.user) || (req.user?.collection === 'maintainers' && data?.type === 'claim'),
+        update: adminOnly,
+      },
     },
     {
       name: 'submittedBy',

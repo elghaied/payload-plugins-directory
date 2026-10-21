@@ -88,6 +88,11 @@ describe('template page', () => {
     expect(html).toMatch(/aria-label="Copy command"/)
   })
 
+  it('links "Claim this template" to /claim/templates/<slug> on a community template only', async () => {
+    expect(await render()).toMatch(/<a[^>]*href="\/claim\/templates\/990001-root"[^>]*>.*Claim this template/)
+    expect(await render(official)).not.toContain('Claim this template')
+  })
+
   it('links "Use this template" to GitHub /generate for a community template repo', async () => {
     const html = await render()
     expect(html).toMatch(/<a[^>]*href="https:\/\/github.com\/acme\/shop\/generate"[^>]*>[^<]*Use this template/)
