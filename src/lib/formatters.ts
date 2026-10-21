@@ -79,3 +79,7 @@ export function getHealthDisplayFromScore(score: number): { color: string; label
   if (score >= 25) return { color: "bg-yellow-500", label: "Fair" };
   return { color: "bg-orange-500", label: "Poor" };
 }
+
+export function formatPluginCount(count: number): string {
+  return `${count} ${count === 1 ? "plugin" : "plugins"}`;
+}

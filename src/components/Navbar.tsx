@@ -73,7 +73,7 @@ export function Navbar() {
             href="https://github.com/elghaied/payload-plugins-directory"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden lg:flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
             aria-label="Directory GitHub"
             title="GitHub"
           >
@@ -90,7 +90,7 @@ export function Navbar() {
 
           <Link
             href="/submit"
-            className="hidden md:flex items-center h-8 px-2.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            className="hidden lg:flex items-center h-8 px-2.5 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
           >
             Submit
           </Link>

@@ -56,6 +56,7 @@ import {
   formatDownloads,
   formatSize,
   getHealthDisplay,
+  formatPluginCount,
 } from "@/lib/formatters";
 
 const ROW_HEIGHT_ESTIMATE = 420;
@@ -247,8 +248,8 @@ function PluginCard({ plugin, onTopicClick, onOwnerClick, compareMode, isSelecte
           <CopyInstallButton packageName={plugin.packageName} />
         )}
 
-        <div className="flex items-center justify-between mt-4 pt-3 border-t text-sm text-muted-foreground">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mt-4 pt-3 border-t text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span
               className="flex items-center gap-1"
               title={`${plugin.stars} stars`}
@@ -764,9 +765,9 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
 
         {/* Filters */}
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 -mx-4 px-4 border-b mb-6">
-          <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
             {/* Search — always visible */}
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0 sm:basis-full">
               <label htmlFor="plugin-search" className="sr-only">Search plugins</label>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -882,13 +883,13 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
             </Button>
           </div>
 
-          {/* Mobile: active filter chips */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap gap-2 sm:hidden">
+          {/* Active filter chips + clear link (all widths) */}
+          {(activeFilterCount > 0 || searchTerm) && (
+            <div className="flex flex-wrap items-center gap-2 mt-3" data-testid="active-filters">
               {versionFilter !== "all" && (
                 <button
                   onClick={() => handleVersionChange("all" as VersionFilter)}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1 rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   {versionFilter === "unknown" ? "v?" : `v${versionFilter}`}
                   <X className="h-3 w-3" />
@@ -897,7 +898,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               {sourceFilter !== "all" && (
                 <button
                   onClick={() => handleSourceChange("all" as SourceFilter)}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1 rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   {sourceFilter === "official" ? "Official" : "Community"}
                   <X className="h-3 w-3" />
@@ -906,7 +907,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               {licenseFilter !== "all" && (
                 <button
                   onClick={() => handleLicenseChange("all")}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1 rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   {licenseFilter}
                   <X className="h-3 w-3" />
@@ -915,7 +916,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               {categoryFilter !== "all" && (
                 <button
                   onClick={() => handleCategoryChange("all")}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1 rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   {categoryFilter === UNCATEGORIZED ? "Uncategorized" : (categories.find((c) => c.slug === categoryFilter)?.title ?? categoryFilter)}
                   <X className="h-3 w-3" />
@@ -924,12 +925,18 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
               {tagFilter !== "all" && (
                 <button
                   onClick={() => handleTagChange("all")}
-                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] sm:min-h-0 sm:py-1 rounded-full bg-secondary text-secondary-foreground text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
                 >
                   #{tags.find((t) => t.slug === tagFilter)?.title ?? tagFilter}
                   <X className="h-3 w-3" />
                 </button>
               )}
+              <button
+                onClick={() => updateParams({ q: null, version: null, source: null, license: null, category: null, tag: null })}
+                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground px-2 py-2 min-h-[44px] sm:min-h-0 cursor-pointer"
+              >
+                Clear filters
+              </button>
             </div>
           )}
         </div>
@@ -969,7 +976,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
         {/* Results count */}
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-muted-foreground">
-            {filteredAndSortedPlugins.length} plugins
+            {formatPluginCount(filteredAndSortedPlugins.length)}
             {searchTerm && (
               <span>
                 {" "}
@@ -1146,7 +1153,7 @@ export const PluginDirectory: React.FC<PluginDirectoryProps> = ({
                 variant="outline"
                 className="w-full cursor-pointer"
                 onClick={() => {
-                  updateParams({ version: null, source: null, license: null });
+                  updateParams({ version: null, source: null, license: null, category: null, tag: null });
                 }}
               >
                 Reset Filters
