@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { maxTreeDepth } from '@/lib/directory/markdown'
 import { README_MARKDOWN_MAX } from '@/lib/directory/readmeLimits'
 import { isPathologicallyNested, readmeRenderBlocker, renderReadmeHtml, renderReadmeDetailed } from '@/lib/directory/readmeHtml'
 import { ALLOWED_README_IMAGE_HOSTS, isAllowedReadmeImageUrl, rewriteReadmeUrl } from '@/lib/directory/markdown'
@@ -294,9 +295,10 @@ describe('cap corrections (review M2, M3, M4, M13)', () => {
     }
     expect(renderReadmeHtml(fenced, repo)).not.toBeNull()
   })
-  it('M2: real raw HTML outside code still counts, and unknown tags do not', () => {
+  it('M2: real raw HTML outside code still counts, whatever the tag name', () => {
     expect(isPathologicallyNested('<div>'.repeat(25))).toBe(true)
-    expect(isPathologicallyNested('<t>'.repeat(40) + '<config>'.repeat(40))).toBe(false)
+    expect(isPathologicallyNested('<t>'.repeat(25))).toBe(true)
+    expect(isPathologicallyNested('<t>'.repeat(10) + '<config>'.repeat(10))).toBe(false)
     expect(isPathologicallyNested('```\nx\n```\n' + '<div>'.repeat(25))).toBe(true)
   })
   it('M3: indentation after a quote marker counts as nesting', () => {
@@ -320,3 +322,53 @@ describe('cap corrections (review M2, M3, M4, M13)', () => {
     expect(renderReadmeDetailed('# ok', repo).html).toContain('<h2')
   })
 })
+
+describe('structural depth check (authoritative, after sanitize)', () => {
+  it('refuses nesting the pre-parse scan cannot see: tags hidden after fake inline code', () => {
+    // The backtick inside the tag attribute is not a code span for Markdown, but withoutCode() pairs it with the next
+    // one and hides everything between: the old scan sees no nesting, the final tree is 100 levels deep.
+    const source = '<a title="`">' + '<div>'.repeat(100) + '<a title="`">x'
+    expect(isPathologicallyNested(source)).toBe(false)
+    expect(readmeRenderBlocker(source)).toBeNull()
+    expect(renderReadmeDetailed(source, repo)).toEqual({ html: null, reason: 'cap:depth' })
+  })
+  it('refuses the same with escaped backticks and blank-line tricks', () => {
+    const source = '`\\`\n\n' + '<section>'.repeat(90) + '\n\n`'
+    expect(renderReadmeDetailed(source, repo).html === null || maxDepthOf(renderReadmeDetailed(source, repo).html as string) <= 64).toBe(true)
+  })
+  it('unknown tags wrapping known ones are caught (counted by the scan, whatever their name)', () => {
+    const source = '<x>'.repeat(30) + '<div>'.repeat(30) + 'text'
+    expect(renderReadmeDetailed(source, repo).html).toBeNull()
+  })
+  it('stores nothing deeper than the limit, accepts the limit itself', () => {
+    const ok = '<div>'.repeat(19) + 'x'
+    expect(renderReadmeDetailed(ok, repo).html).not.toBeNull()
+    for (const n of [65, 200]) {
+      const html = renderReadmeDetailed('<a title="`">' + '<span>'.repeat(n) + '<a title="`">', repo)
+      expect(html.html).toBeNull()
+    }
+  })
+  it('maxTreeDepth is iterative: a 100k-deep tree does not overflow the stack', () => {
+    type Node = { type: string; tagName?: string; properties?: object; children: Node[] }
+    const root: Node = { type: 'root', children: [] }
+    let cur = root
+    for (let i = 0; i < 100_000; i++) {
+      const el: Node = { type: 'element', tagName: 'div', properties: {}, children: [] }
+      cur.children.push(el)
+      cur = el
+    }
+    expect(maxTreeDepth(root as never)).toBe(100_000)
+    expect(maxTreeDepth(root as never, 64)).toBeGreaterThan(64)
+  })
+})
+
+function maxDepthOf(html: string): number {
+  let d = 0
+  let max = 0
+  for (const m of html.matchAll(/<(\/?)([a-z][a-z0-9]*)[^>]*>/g)) {
+    if (['br', 'img', 'hr', 'input', 'source'].includes(m[2])) continue
+    d += m[1] ? -1 : 1
+    max = Math.max(max, d)
+  }
+  return max
+}

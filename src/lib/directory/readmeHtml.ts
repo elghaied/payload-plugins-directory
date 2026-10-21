@@ -7,7 +7,7 @@ import rehypeSanitize from 'rehype-sanitize'
 import { toHtml } from 'hast-util-to-html'
 import type { Root } from 'hast'
 import { README_HTML_MAX_CHARS, README_MARKDOWN_MAX } from './readmeLimits'
-import { readmeSanitizeSchema, rehypeReadme, type RepoRef } from './markdown'
+import { README_MAX_TREE_DEPTH, maxHtmlNesting, maxTreeDepth, readmeSanitizeSchema, rehypeReadme, type RepoRef } from './markdown'
 
 /**
  * README Markdown -> sanitized HTML. Runs ONLY in the worker process at sync time (and the backfill CLI), inside an
@@ -26,9 +26,6 @@ export const README_MAX_EMPHASIS_DEPTH = 20
 export const README_MAX_DELIMITER_DENSITY = 0.3
 
 const DELIMITERS = new Set(['*', '_', '[', ']', '!', '~'])
-const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
-/** Raw-HTML elements that exist in the sanitizer schema: other "tags" (generics, JSX components) are not counted. */
-const KNOWN_TAGS = new Set((readmeSanitizeSchema.tagNames ?? []).map((t) => t.toLowerCase()))
 
 /** The source without fenced code blocks and inline code spans: what the nesting and emphasis scans should look at. */
 function withoutCode(source: string): string {
@@ -114,43 +111,6 @@ function maxBlockNesting(source: string): number {
     const depth = quotes + markers + (markers > 0 ? Math.floor(indent / 2) : 0)
     if (depth > max) max = depth
     start = end + 1
-  }
-  return max
-}
-
-/**
- * Deepest open raw-HTML element stack, counting only elements the sanitizer knows (code is already removed). A start
- * tag of a non-void element opens (`<div/>` too: HTML ignores the slash on non-void elements); an end tag closes only
- * a matching open element. Linear: every step advances.
- */
-function maxHtmlNesting(source: string, limit: number): number {
-  const stack: string[] = []
-  let max = 0
-  let i = source.indexOf('<')
-  let close = -1
-  while (i !== -1) {
-    if (close < i) close = source.indexOf('>', i)
-    if (close === -1) break
-    const next = source.indexOf('<', i + 1)
-    if (next !== -1 && next < close) {
-      i = next
-      continue
-    }
-    const m = /^(\/?)([a-zA-Z][a-zA-Z0-9-]*)/.exec(source.slice(i + 1, close))
-    if (m) {
-      const name = m[2].toLowerCase()
-      if (KNOWN_TAGS.has(name)) {
-        if (m[1]) {
-          const at = stack.lastIndexOf(name)
-          if (at !== -1) stack.length = at
-        } else if (!VOID_TAGS.has(name)) {
-          stack.push(name)
-          if (stack.length > max) max = stack.length
-          if (max > limit) return max
-        }
-      }
-    }
-    i = next
   }
   return max
 }
@@ -247,6 +207,8 @@ export function renderReadmeDetailed(source: string, repo: RepoRef): ReadmeRende
       .use(rehypeSanitize, readmeSanitizeSchema)
       .use(rehypeReadme, repo)
     const tree = processor.runSync(processor.parse(text)) as Root
+    // Authoritative structural check on the final tree (the pre-parse scans are only early exits and can be fooled).
+    if (maxTreeDepth(tree, README_MAX_TREE_DEPTH) > README_MAX_TREE_DEPTH) return { html: null, reason: 'cap:depth' }
     const html = toHtml(tree)
     return html.length > README_HTML_MAX_CHARS ? { html: null, reason: 'size' } : { html }
   } catch {

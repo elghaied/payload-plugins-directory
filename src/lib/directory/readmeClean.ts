@@ -6,7 +6,7 @@ import { unified } from 'unified'
 import rehypeSanitize from 'rehype-sanitize'
 import type { Element, Root } from 'hast'
 import { pluginTag } from '@/lib/cacheTags'
-import { readmeSanitizeSchema, rehypeReadme } from './markdown'
+import { README_MAX_TREE_DEPTH, maxHtmlNesting, maxTreeDepth, readmeSanitizeSchema, rehypeReadme } from './markdown'
 
 const PREFIX = 'user-content-'
 
@@ -53,7 +53,11 @@ function stripPrefixOnce(node: Root | Element): void {
  */
 export function cleanStoredReadmeHtml(html: string): string | null {
   try {
+    // Linear scan BEFORE parsing: the parser itself is super-linear on deep nesting (17 s at 60k levels).
+    if (maxHtmlNesting(html, README_MAX_TREE_DEPTH) > README_MAX_TREE_DEPTH) return null
     const tree = fromHtml(html, { fragment: true })
+    // Deeper than any README the writer stores: a hand-edited or buggy value. Plain text, without recursing into it.
+    if (maxTreeDepth(tree, README_MAX_TREE_DEPTH) > README_MAX_TREE_DEPTH) return null
     stripPrefixOnce(tree)
     const processor = unified().use(rehypeSanitize, readSchema).use(rehypeReadme, { fullName: 'unknown/unknown' }, { demoteHeadings: false, relative: 'drop' })
     return toHtml(processor.runSync(tree) as Root)

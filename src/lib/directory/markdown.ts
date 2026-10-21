@@ -319,3 +319,58 @@ export function rehypeReadme(repo: RepoRef, options: RehypeReadmeOptions = {}) {
     resolveAnchors(tree)
   }
 }
+
+/** Deepest element depth (root children = 1) of a hast tree. Iterative (no recursion); stops early above `limit`. */
+export function maxTreeDepth(tree: Root, limit = Infinity): number {
+  let max = 0
+  const stack: { node: Root | Element; depth: number }[] = [{ node: tree, depth: 0 }]
+  while (stack.length) {
+    const { node, depth } = stack.pop() as { node: Root | Element; depth: number }
+    if (depth > max) max = depth
+    if (max > limit) return max
+    for (const child of node.children) if (child.type === 'element') stack.push({ node: child, depth: depth + 1 })
+  }
+  return max
+}
+
+/** Deepest element nesting allowed in rendered or stored README HTML. */
+export const README_MAX_TREE_DEPTH = 64
+
+const VOID_TAGS = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'])
+
+/**
+ * Deepest open raw-HTML element stack, counting every non-void start tag whatever its name (code is already removed;
+ * this is a cheap early exit, the authoritative check is maxTreeDepth on the final tree). A start
+ * tag of a non-void element opens (`<div/>` too: HTML ignores the slash on non-void elements); an end tag closes only
+ * a matching open element. Linear: every step advances.
+ */
+export function maxHtmlNesting(source: string, limit: number): number {
+  const stack: string[] = []
+  let max = 0
+  let i = source.indexOf('<')
+  let close = -1
+  while (i !== -1) {
+    if (close < i) close = source.indexOf('>', i)
+    if (close === -1) break
+    const next = source.indexOf('<', i + 1)
+    if (next !== -1 && next < close) {
+      i = next
+      continue
+    }
+    const m = /^(\/?)([a-zA-Z][a-zA-Z0-9-]*)/.exec(source.slice(i + 1, close))
+    if (m) {
+      const name = m[2].toLowerCase()
+      if (m[1]) {
+        const at = stack.lastIndexOf(name)
+        if (at !== -1) stack.length = at
+      } else if (!VOID_TAGS.has(name)) {
+        stack.push(name)
+        if (stack.length > max) max = stack.length
+        if (max > limit) return max
+      }
+    }
+    i = next
+  }
+  return max
+}
+

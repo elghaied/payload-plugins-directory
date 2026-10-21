@@ -57,6 +57,17 @@ describe('cleanStoredReadmeHtml (re-sanitize on read)', () => {
     expect(stored).toContain('target="_blank"')
     expect(cleanStoredReadmeHtml(stored)).toBe(stored)
   })
+  it('falls back to plain text, fast, for a hand-inserted 60k-deep stored value', () => {
+    for (const html of ['<div>'.repeat(60_000), '<div>'.repeat(80_000), '<p><b>'.repeat(30_000), '<div><span>'.repeat(30_000) + 'x' + '</span></div>'.repeat(30_000)]) {
+      const start = performance.now()
+      expect(cleanStoredReadmeHtml(html)).toBeNull()
+      expect(performance.now() - start).toBeLessThan(200)
+    }
+  })
+  it('keeps ordinary stored nesting', () => {
+    const html = '<ul><li><ul><li><ul><li><blockquote><p><strong>deep enough</strong></p></blockquote></li></ul></li></ul></li></ul>'
+    expect(cleanStoredReadmeHtml(html)).toContain('deep enough')
+  })
   it('cold time at the 400k storage limit', () => {
     const unit = '<h2 id="user-content-s">Section</h2><p>Some <strong>bold</strong> text with <a href="https://example.com/x" target="_blank" rel="nofollow ugc noopener noreferrer">a link</a> and <code>code</code>.</p><ul><li>one</li><li>two</li></ul>\n'
     const html = unit.repeat(Math.floor(400_000 / unit.length))
