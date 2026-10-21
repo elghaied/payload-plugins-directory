@@ -244,6 +244,9 @@ services:
       SERVER_URL: https://payloaddirectory.dev
     volumes:
       - media:/app/media
+    networks:
+      - default
+      - coolify
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3000/api/health']
       interval: 30s
@@ -281,5 +284,13 @@ services:
     # services (a per-service volume with the same name is a different volume).
     volumes:
       - media:/app/media
+    networks:
+      - default
+      - coolify
 volumes:
   media:
+# Coolify's shared network, where the Postgres resource lives. Named explicitly so the containers join it on every
+# deploy, independent of the "Connect to predefined network" toggle. `default` keeps http://web:3000 working.
+networks:
+  coolify:
+    external: true
