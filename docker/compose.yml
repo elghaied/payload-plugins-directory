@@ -1,19 +1,53 @@
-# Maintainer sign-in (phase 4) deploy notes, web service only:
-#   - GitHub OAuth App owned by the directory's GitHub account, callback: https://payloaddirectory.dev/auth/github/callback
-#     -> GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET. SESSION_SECRET = `openssl rand -hex 32`
-#     (rotating it signs everyone out).
-#   - Optional GITHUB_WEB_TOKEN: fine-grained PAT, public repositories read-only, created on a bot account that is in no
-#     organisation (raises claim ownership checks from 60 to 5,000 requests/hour).
-#   - Cloudflare Cache Rule "Bypass cache" when: URI path starts with /me, /submit, /claim/, /auth/
-#     OR the request cookie contains "pd_session"
-#     OR URI path starts with /search (dynamic results, one URL per query: an edge cache rule must never store them). Badges (/badge/*.svg) stay cacheable: the origin sends
-#     s-maxage=3600 (1 h), so a hidden or trashed plugin's badge can linger at the CDN for up to 1 h (+1 h stale-while-revalidate).
-#   - Cloudflare rate-limit rules for /auth/*, /submit, /claim/*, /me and REST writes (POST/PATCH/DELETE on /api/*).
-#     Include /api/payload-preferences* in the REST write limit (the admin uses it; keep the limit low). The app already
-#     refuses maintainer sessions on every /api path except /api/plugins and /api/submissions.
-#     Also rate-limit /badge/* requests that carry a query string (cache-busting reaches the origin).
-#   - HSTS: send Strict-Transport-Security with includeSubDomains (Cloudflare SSL/TLS > Edge Certificates, or at the proxy)
-#     because the pd_session cookie is Secure and must never travel over plain HTTP.
+# DEPLOY CHECKLIST (single source of truth for first deploy and for every Cloudflare rule; the README only links here).
+#
+# Application, web service:
+#   1. GitHub OAuth App (maintainer sign-in) owned by the directory's GitHub account, callback
+#      https://payloaddirectory.dev/auth/github/callback -> GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET.
+#      SESSION_SECRET = `openssl rand -hex 32` (rotating it signs everyone out). The worker never needs these.
+#   2. Optional GITHUB_WEB_TOKEN: fine-grained PAT, public repositories read-only, created on a bot account that is in no
+#      organisation (raises claim ownership checks from 60 to 5,000 requests/hour). Not the worker's GITHUB_TOKEN.
+#   3. REVALIDATE_SECRET must be the SAME value on web and worker (the worker's revalidate job POSTs /api/revalidate on
+#      INTERNAL_WEB_URL with it); both services read it from the one environment variable below.
+#   4. One shared `media` volume attached read-write to BOTH web and worker (the daily orphan-media sweep runs on the worker).
+#   5. On start, web runs `payload migrate` and then `payload reindex-search --if-empty`. Check the web log for
+#      `Search reindex complete` (upserted ~ listed plugins + categories + tags). After a bulk data operation (db:push):
+#      docker exec <web> sh -c 'cd /app/cli && npx payload reindex-search'
+#
+# Cloudflare (zone payloaddirectory.dev):
+#   6. TLS: send Strict-Transport-Security with includeSubDomains (SSL/TLS > Edge Certificates, or at the proxy), because
+#      the pd_session cookie is Secure and must never travel over plain HTTP.
+#   7. Cache Rule "Bypass cache" when: URI path starts with /me, /submit, /claim/, /auth/, /search or /api/mcp
+#      OR the request cookie contains "pd_session". (/search and POST /api/mcp are dynamic, one URL per query: an edge cache
+#      rule must never store them.) Badges (/badge/*.svg) stay cacheable: the origin sends s-maxage=3600 (1 h), so a hidden
+#      or trashed plugin's badge can linger at the CDN for up to 1 h (+1 h stale-while-revalidate).
+#   8. Rate-limit rules, per IP. Keep the MCP rule separate from the REST-write rule, or MCP is throttled like an admin write:
+#      a. Auth and maintainer pages: /auth/*, /submit, /claim/*, /me.
+#      b. REST writes: POST/PATCH/DELETE on /api/* EXCLUDING /api/mcp*. Include /api/payload-preferences* (the admin uses it;
+#         keep the limit low). The app already refuses maintainer sessions on every /api path except /api/plugins and
+#         /api/submissions.
+#      c. MCP and search: (http.request.method eq "POST" and starts_with(http.request.uri.path, "/api/mcp"))
+#         or starts_with(http.request.uri.path, "/search"). Suggested 30 requests / 10 s per IP (Pro+: 120 / 1 min), action
+#         Block for 10 s (Pro+: 1 min). One MCP request is at most one tool call. /search is uncached and hits Postgres.
+#      d. /badge/* requests that carry a query string (cache-busting reaches the origin).
+#      On the Free plan (few rate-limit rules) combine a-d into one rule whose expression is the OR of the paths above, but
+#      keep /api/mcp* out of the REST-write branch of that expression.
+#   9. WAF custom rule on /api/mcp*: block when the request body is larger than 16 KB, for example
+#      starts_with(http.request.uri.path, "/api/mcp") and http.request.body.size > 16384
+#      (the app already refuses > 16 KB with 413 and /api/mcp is excluded from Next's 10 MB proxy body buffering, so this
+#      only keeps junk off the origin; use the Content-Length header if your plan does not expose body size).
+#  10. Optional: Request Header Transform Rule that removes X-Payload-HTTP-Method-Override on /api/mcp* (Payload would read
+#      that body with an unbounded request.json() before any handler runs).
+#  11. /api/mcp serves non-browser MCP clients only: no CORS. Do not add Access-Control-Allow-Origin there and never set a
+#      global Payload `cors`.
+#
+# Verify after deploy:
+#   - for i in $(seq 1 40); do curl -s -o /dev/null -w '%{http_code}\n' 'https://payloaddirectory.dev/search?q=seo'; done | sort | uniq -c
+#     shows some 429 (rule 8c).
+#   - curl -s https://payloaddirectory.dev/api/mcp -X POST -H 'content-type: application/json' \
+#       -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2025-06-18' \
+#       -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | jq -r '.result.tools[].name'
+#     lists comparePlugins, getPlugin, listCategories, searchPlugins; and `curl -sI 'https://payloaddirectory.dev/search?q=seo'` is 200.
+#   - repeat a /search or /api/mcp request and confirm no cf-cache-status HIT.
 #
 # Production stack for Coolify (pasted into a Docker Compose resource; this file is the source of truth).
 #

@@ -365,6 +365,12 @@ The `worker` process (`payload worker --cron "* * * * *"`) runs these jobs, defi
 
 Nothing is fetched at request time. The legacy `data/plugins.json` is only used for the one-time `payload seed --file` import described above.
 
+## Operations: edge rules and deploy checklist
+
+Cache bypass, rate limits (including the separate limit for `/api/mcp` and `/search`), the MCP body-size block, HSTS and the other
+first-deploy steps are kept in one numbered checklist at the top of [`docker/compose.yml`](docker/compose.yml). Agents can connect
+to the public MCP endpoint described on `/about#mcp`.
+
 ---
 
 ## License
