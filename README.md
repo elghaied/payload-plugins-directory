@@ -45,8 +45,8 @@ One Docker image runs as two processes that share a Postgres database (and a vol
 The flow, step by step:
 
 1. **Discover** (every 6 hours). `discover` searches GitHub for the `payload-plugin` topic and reads the official
-   plugins in the monorepo; `discover-templates` reads the official `templates/` folders and the approved community
-   templates. Each queues one sync job per repository.
+   plugins in the monorepo; `discover-templates` reads the official `templates/` folders, lists repositories with the
+   `payload-template` topic and suggests other Payload starters for review. Each queues one sync job per repository.
 2. **Sync.** `sync-repository` and `sync-template` refresh repository metadata and, when the repo changed, re-read
    `package.json` (Payload version, npm package, stack) and the README. `render-readmes` turns READMEs into sanitized
    HTML.

@@ -85,9 +85,9 @@
   <g data-steps="1" data-color="--src">
     <rect class="box" x="30" y="120" width="220" height="110" rx="12"/>
     <text x="48" y="148" class="t">GitHub</text>
-    <text x="48" y="172" class="s">payload-plugin topic repos</text>
-    <text x="48" y="190" class="s">payloadcms/payload: official</text>
-    <text x="48" y="208" class="s">plugins and templates/</text>
+    <text x="48" y="172" class="s">payload-plugin and</text>
+    <text x="48" y="190" class="s">payload-template topics,</text>
+    <text x="48" y="208" class="s">official repo, suggestions</text>
   </g>
   <g data-steps="3" data-color="--src">
     <rect class="box" x="30" y="250" width="220" height="70" rx="12"/>
@@ -219,13 +219,13 @@
 <script>
   const STEPS = [
     'The worker runs in the background: GitHub and npm in, Postgres out. Visitors only ever read from the web server.',
-    'Every 6 hours the worker finds plugins and templates on GitHub and queues one sync job per repository.',
+    'Every 6 hours the worker searches GitHub: payload-plugin and payload-template repos are listed, other starters suggested.',
     'Sync jobs read package.json and the README, save the listing and render the README to safe HTML.',
     'Every day: npm downloads, a 0–100 health score and the snapshots behind Trending and Stats.',
     'Every hour Claude writes summaries, categories and tags for new or changed listings. Admin edits lock a field.',
     'After each change the worker tells the web server which cached pages to refresh. Nothing is fetched per request.',
     'Visitors browse through Cloudflare; AI agents search the same data through the MCP endpoint.',
-    'Authors sign in with GitHub to submit, claim and edit. The admin approves on the dashboard, which queues a sync.',
+    'Authors submit, claim and edit with GitHub sign-in. The admin approves them, and suggestions, in one click.',
   ]
   const params = new URLSearchParams(location.search)
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim()
