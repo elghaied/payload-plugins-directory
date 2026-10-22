@@ -17,7 +17,7 @@ export { SCREENSHOT_MAX_BYTES, SCREENSHOT_MAX_COUNT, SCREENSHOT_MAX_DIMENSION, S
 
 export const TEMPLATE_DETAIL_MESSAGES = {
   demoUrl: 'Enter a public https:// URL for the demo (no credentials, localhost or IP address).',
-  videoUrl: 'Enter a YouTube, Vimeo or Loom video URL.',
+  videoUrl: 'Enter a YouTube, Vimeo or Loom URL, or a video attached on GitHub (github.com/user-attachments/assets/…).',
   stackOverride: 'Choose a stack from the list.',
 } as const
 

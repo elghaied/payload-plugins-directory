@@ -24,11 +24,13 @@ export const readmeSanitizeSchema: SanitizeOptions = {
   clobberPrefix: CLOBBER_PREFIX,
   // Dropped with their text content (the default only strips <script>).
   strip: [...(defaultSchema.strip ?? []), 'style', 'iframe', 'noscript', 'textarea'],
-  tagNames: [...(defaultSchema.tagNames ?? []), 'picture', 'source'],
+  // <video> keeps only `src` here; rehypeReadme then allows it only for GitHub attachments and sets every other attribute.
+  tagNames: [...(defaultSchema.tagNames ?? []), 'picture', 'source', 'video'],
   attributes: {
     ...defaultSchema.attributes,
     // srcSet is not covered by the schema's protocol check; rehypeReadme re-validates every candidate.
     source: ['srcSet', 'media', 'type'],
+    video: ['src'],
     img: [...((defaultSchema.attributes?.img ?? []) as never[]).filter((a) => a !== 'longDesc'), 'srcSet'],
   },
 }
@@ -168,6 +170,50 @@ export function isAllowedReadmeImageUrl(url: string): boolean {
 
 const EXTERNAL_REL = 'nofollow ugc noopener noreferrer'
 
+const ATTACHMENT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const VIDEO_FILE = /\.(?:mp4|webm|mov)$/i
+
+/** The asset id of a `https://github.com/user-attachments/assets/<id>` URL (a file attached on GitHub), or null. */
+export function githubAttachmentId(raw: string): string | null {
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== 'github.com' || url.search || url.hash) return null
+  const s = url.pathname.split('/').filter(Boolean)
+  return s.length === 3 && s[0] === 'user-attachments' && s[1] === 'assets' && ATTACHMENT_ID.test(s[2]) ? s[2].toLowerCase() : null
+}
+
+/**
+ * A video attached on GitHub, as GitHub shows it: a native player that downloads nothing until the visitor presses
+ * play (preload none, no poster, no autoplay), with a plain link as the fallback.
+ */
+function attachmentVideo(id: string): Element {
+  const src = `https://github.com/user-attachments/assets/${id}`
+  return {
+    type: 'element',
+    tagName: 'video',
+    properties: { src, controls: true, preload: 'none', playsInline: true },
+    children: [{ type: 'element', tagName: 'a', properties: { href: src, rel: EXTERNAL_REL, target: '_blank' }, children: [{ type: 'text', value: 'Video on GitHub' }] }],
+  }
+}
+
+/** A link GitHub would show as a video: to an attachment, with a video file name or the bare URL as its text. */
+function videoLinkId(el: Element): string | null {
+  const href = typeof el.properties.href === 'string' ? el.properties.href : ''
+  const id = href ? githubAttachmentId(href) : null
+  if (!id) return null
+  let hasImage = false
+  forEachElement(el, (c) => {
+    if (c.tagName === 'img' || c.tagName === 'picture') hasImage = true
+  })
+  if (hasImage) return null
+  const text = textContent(el).trim()
+  return VIDEO_FILE.test(text) || text === href ? id : null
+}
+
 const NO_REFERRER = 'no-referrer'
 const BLOCK_TAGS = new Set(['table', 'div', 'ul', 'ol', 'pre', 'blockquote', 'details', 'hr', 'section', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'dl', 'figure'])
 const ID_PREFIX = 'user-content-'
@@ -294,6 +340,18 @@ export function rehypeReadme(repo: RepoRef, options: RehypeReadmeOptions = {}) {
         if (!srcSet) continue
         props.srcSet = srcSet
         props.referrerPolicy = NO_REFERRER
+      } else if (tag === 'video') {
+        // Only GitHub attachments play inline; any other video becomes a plain link (no third-party media request).
+        const src = typeof props.src === 'string' ? props.src : ''
+        const id = src && !inAnchor ? githubAttachmentId(src) : null
+        if (id) next.push(attachmentVideo(id))
+        else if (ABSOLUTE_HTTP.test(src) && !inAnchor) {
+          next.push({ type: 'element', tagName: 'a', properties: { href: src, rel: EXTERNAL_REL, target: '_blank' }, children: [{ type: 'text', value: '[video]' }] })
+        }
+        continue
+      } else if (tag === 'a' && !inAnchor && videoLinkId(child)) {
+        next.push(attachmentVideo(videoLinkId(child) as string))
+        continue
       } else if (tag === 'a') {
         const href = typeof props.href === 'string' ? props.href : undefined
         if (href && !href.startsWith('#')) {

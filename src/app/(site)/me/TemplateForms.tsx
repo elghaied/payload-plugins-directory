@@ -73,7 +73,7 @@ export function TemplateDetailsForm({
         <Input id={id('demo')} {...bind('demoUrl')} type="url" maxLength={500} placeholder="https://demo.example.com" />
       </div>
       <div className="space-y-1.5">
-        <label htmlFor={id('video')} className="text-xs font-medium text-muted-foreground">Video (YouTube, Vimeo or Loom)</label>
+        <label htmlFor={id('video')} className="text-xs font-medium text-muted-foreground">Video (YouTube, Vimeo, Loom or a GitHub attachment)</label>
         <Input id={id('video')} {...bind('videoUrl')} type="url" maxLength={500} placeholder="https://www.youtube.com/watch?v=…" />
       </div>
       <div className="space-y-1.5">

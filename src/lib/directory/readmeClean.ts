@@ -72,5 +72,5 @@ export function cleanStoredReadmeHtml(html: string): string | null {
  */
 export function getCleanReadmeHtml(slug: string, html: string, version: string | null, tag: string = pluginTag(slug)): Promise<string | null> {
   const hash = createHash('sha256').update(html).digest('hex').slice(0, 32)
-  return unstable_cache(async () => cleanStoredReadmeHtml(html), ['readme-html-clean', slug, version ?? 'none', hash], { tags: [tag] })()
+  return unstable_cache(async () => cleanStoredReadmeHtml(html), ['readme-html-clean-v2', slug, version ?? 'none', hash], { tags: [tag] })()
 }

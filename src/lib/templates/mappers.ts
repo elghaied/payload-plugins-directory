@@ -2,7 +2,7 @@ import { readmePreview } from '@/lib/directory/readme'
 import { authorDescriptionOf } from '@/lib/directory/tagline'
 import type { Media, Repository, Template } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
-import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange, storedFallbackImage } from './links'
+import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange, storedFallbackImage, type VideoRef } from './links'
 import { effectiveStack } from './stack'
 import type { TemplateDetail, TemplateImage, TemplateSummary } from './types'
 
@@ -95,6 +95,9 @@ function aiOf(doc: TemplateDoc): TemplateDetail['ai'] {
   return { summary, features, goodFor, generated: Boolean(summary) && !doc.locks?.summary }
 }
 
+/** The page's video block for a parsed video URL. */
+export const videoFor = (ref: VideoRef): NonNullable<TemplateDetail['video']> => ({ provider: ref.provider, embedUrl: embedUrlFor(ref), watchUrl: canonicalVideoUrl(ref) })
+
 export function toTemplateDetail(doc: TemplateDoc): TemplateDetail {
   const repo = repoOf(doc)
   const category = categoryOf(doc)
@@ -112,7 +115,7 @@ export function toTemplateDetail(doc: TemplateDoc): TemplateDetail {
       const height = m.variants?.gallery?.height ?? m.height
       return { full: galleryUrl(m), card: cardUrl(m), alt: m.alt, ...(width ? { width } : {}), ...(height ? { height } : {}) }
     }),
-    ...(ref ? { video: { provider: ref.provider, embedUrl: embedUrlFor(ref), watchUrl: canonicalVideoUrl(ref) } } : {}),
+    ...(ref ? { video: videoFor(ref) } : {}),
     getStarted: getStartedFor({
       isOfficial: Boolean(doc.isOfficial), slug: doc.slug, fullName: repo.fullName, path: doc.path || null, isTemplateRepo: Boolean(doc.isTemplateRepo),
     }),

@@ -9,7 +9,7 @@ type Video = NonNullable<TemplateDetail["video"]>;
 /** Played only after the visitor's click, so the click is the consent to start it (Ruling 7). */
 const withAutoplay = (embedUrl: string) => `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}autoplay=1`;
 
-const PROVIDER_LABEL: Record<Video["provider"], string> = { youtube: "YouTube", vimeo: "Vimeo", loom: "Loom" };
+const PROVIDER_LABEL: Record<Video["provider"], string> = { youtube: "YouTube", vimeo: "Vimeo", loom: "Loom", github: "GitHub" };
 
 type ViewProps = {
   video: Video;
@@ -25,6 +25,16 @@ type ViewProps = {
  * DOM at all; once playing, the sandboxed provider iframe.
  */
 export function VideoEmbedView({ video, poster, title, playing, onPlay }: ViewProps) {
+  if (playing && video.provider === "github") {
+    // A file attached on GitHub: the browser's own player (GitHub redirects to a short-lived signed link).
+    return (
+      <video src={video.embedUrl} title={title} controls autoPlay playsInline preload="auto" className="h-full w-full bg-black object-contain">
+        <a href={video.watchUrl} target="_blank" rel="nofollow ugc noopener noreferrer">
+          Open the video on GitHub
+        </a>
+      </video>
+    );
+  }
   if (playing) {
     return (
       <iframe

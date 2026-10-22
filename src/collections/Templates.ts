@@ -182,7 +182,7 @@ export const Templates: CollectionConfig = {
       },
       validate: (value: unknown) => {
         if (value === undefined || value === null || value === '') return true
-        return parseVideoUrl(value) !== null || 'Enter a YouTube, Vimeo or Loom video URL.'
+        return parseVideoUrl(value) !== null || 'Enter a YouTube, Vimeo or Loom URL, or a video attached on GitHub (github.com/user-attachments/assets/…).'
       },
     },
     // Visibility

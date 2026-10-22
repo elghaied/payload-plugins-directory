@@ -38,7 +38,7 @@ export type TemplateDetail = TemplateSummary & {
   path: string | null
   fullName: string
   screenshots: { full: string; card: string; alt: string; width?: number; height?: number }[]
-  video?: { provider: 'youtube' | 'vimeo' | 'loom'; embedUrl: string; watchUrl: string }
+  video?: { provider: 'youtube' | 'vimeo' | 'loom' | 'github'; embedUrl: string; watchUrl: string }
   getStarted: { kind: 'command' | 'link'; value: string }
   /** Plain strings only: render as text. */
   ai?: { summary?: string; features: string[]; goodFor: string[]; generated: boolean }

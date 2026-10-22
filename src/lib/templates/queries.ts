@@ -6,7 +6,8 @@ import { buildCategoryOptions, type CategoryOption } from '@/lib/directory/filte
 import { stampMatchesText } from '@/lib/directory/readmeStamp'
 import { toCategoryNodes, type CategoryNode } from '@/taxonomy/tree'
 import { compareTemplatesDefault, rankSimilarTemplates, templateCategoryPageData, type TemplateCategoryPageData } from './filters'
-import { TEMPLATE_SUMMARY_SELECT, toTemplateDetail, toTemplateSummary } from './mappers'
+import { firstReadmeVideo } from './links'
+import { TEMPLATE_SUMMARY_SELECT, toTemplateDetail, toTemplateSummary, videoFor } from './mappers'
 import type { TemplateDetail, TemplateSummary } from './types'
 
 async function payload() {
@@ -73,7 +74,10 @@ export async function getTemplateDetail(slug: string): Promise<TemplateDetail | 
         collection: 'templates', id: doc.id, overrideAccess: true, depth: 0,
         select: { readmeHtml: true, readmeRenderVersion: true, readme: true, fallbackImageUrl: true },
       })
-      const detail = toTemplateDetail({ ...doc, fallbackImageUrl: admin.fallbackImageUrl ?? null } as never)
+      const parsed = toTemplateDetail({ ...doc, fallbackImageUrl: admin.fallbackImageUrl ?? null } as never)
+      // No video set: the first video the README attaches on GitHub (played the same click-to-load way).
+      const readmeVideo = parsed.video ? null : firstReadmeVideo(admin.readme)
+      const detail = readmeVideo ? { ...parsed, video: videoFor(readmeVideo) } : parsed
       return admin.readmeHtml && stampMatchesText(admin.readmeRenderVersion, admin.readme)
         ? { ...detail, readmeHtml: admin.readmeHtml, ...(admin.readmeRenderVersion ? { readmeRenderVersion: admin.readmeRenderVersion } : {}) }
         : detail
