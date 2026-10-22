@@ -66,8 +66,9 @@ The flow, step by step:
 **Plugins:** add the `payload-plugin` topic to your GitHub repository (Settings → Topics). The next discovery run (at
 most 6 hours) picks it up. Plugins without the topic can be submitted at [`/submit`](https://payloaddirectory.dev/submit).
 
-**Templates:** submit the repository (or a folder of a monorepo) at `/submit` and choose **Template**. An admin reviews it;
-once approved it is synced within a minute and summarised by the next hourly AI run.
+**Templates:** add the `payload-template` topic to your repository and the next discovery run (at most 6 hours) lists it.
+Or submit the repository (or a folder of a monorepo) at `/submit` and choose **Template**: an admin reviews it, and once
+approved it is synced within a minute and summarised by the next hourly AI run.
 
 **Own a listing?** Open its page and click **Claim**. The claim is approved instantly when GitHub confirms the repository
 is yours: it lives under your own account, or under an organisation where your membership is public. Otherwise an admin
@@ -201,7 +202,7 @@ admin dashboard.
 |-----|------|--------------|
 | `discover` | every 6 h (:00) | Searches GitHub for the `payload-plugin` topic (archived repos included) and the monorepo's `packages/plugin-*`; queues `sync-repository` per repository; moves plugins to Trash when their repository stays missing |
 | `sync-repository` | queued | Refreshes repository metadata; when pushed to since the last sync, re-reads `package.json` (single package or workspaces), the Payload version, npm name and README. Rate limits re-queue the job |
-| `discover-templates` | every 6 h (:15) | Queues `sync-template` for the official `templates/*` folders and every approved or listed community template. Also queued when the worker starts and there are no templates yet |
+| `discover-templates` | every 6 h (:15) | Queues `sync-template` for the official `templates/*` folders and every approved or listed community template. Then searches GitHub: repos with the `payload-template` topic are listed automatically; broader matches (`payloadcms`/`payload-cms`/`payload` + template/starter/boilerplate topics, or GitHub template repos) become **suggested** submissions for review. Both must depend on Payload (root, common app folders or workspaces); rejected suggestions are never suggested again. Also queued when the worker starts and there are no templates yet |
 | `sync-template` | queued | Refreshes one template: metadata, folder README, last commit date, Payload version and stack (Next.js or TanStack Start) |
 | `npm-stats` | daily 01:00 UTC | Downloads, latest version, size and dependency count from npm; recomputes the health score |
 | `snapshot` | daily 00:30 UTC | Daily trend snapshots; also sweeps orphaned uploads |
@@ -251,7 +252,7 @@ topics that no alias covers.
 
 The admin lives at `/admin`. Its dashboard has three widgets:
 
-- **Submissions:** pending listings and claims, oldest first, with **Approve**, **Reject** (optional reason the
+- **Submissions:** pending listings and claims (including suggestions from template discovery), oldest first, with **Approve**, **Reject** (optional reason the
   submitter sees on `/me`) and **Duplicate**. These go through the normal update, so approving a template listing queues
   its sync and approving a claim makes the submitter a maintainer.
 - **Sync jobs:** job health and the **Run now** buttons.

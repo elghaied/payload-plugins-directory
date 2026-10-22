@@ -23,6 +23,7 @@ import * as migration_20261021_113614_template_tasks from './20261021_113614_tem
 import * as migration_20261021_120037_enrich_template_task from './20261021_120037_enrich_template_task';
 import * as migration_20261021_124916_submission_kind from './20261021_124916_submission_kind';
 import * as migration_20261021_133322_search_templates from './20261021_133322_search_templates';
+import * as migration_20261022_015319_template_discovery from './20261022_015319_template_discovery';
 
 export const migrations = [
   {
@@ -148,6 +149,11 @@ export const migrations = [
   {
     up: migration_20261021_133322_search_templates.up,
     down: migration_20261021_133322_search_templates.down,
-    name: '20261021_133322_search_templates'
+    name: '20261021_133322_search_templates',
+  },
+  {
+    up: migration_20261022_015319_template_discovery.up,
+    down: migration_20261022_015319_template_discovery.down,
+    name: '20261022_015319_template_discovery'
   },
 ];

@@ -135,7 +135,8 @@ export function SubmitForm({ defaultKind = 'plugin' }: { defaultKind?: ListingKi
         />
         {template && (
           <p id="url-help" className="text-sm text-muted-foreground">
-            Template repositories don&apos;t need to be tagged with a topic. Templates in a subfolder are fine: paste the
+            Tip: add the <code className="font-mono">payload-template</code> topic to your repository and it is listed automatically. You
+            can also submit it here, topic or not. Templates in a subfolder are fine: paste the
             folder&apos;s URL (for example <code className="font-mono">https://github.com/owner/repo/tree/main/apps/site</code>).
           </p>
         )}

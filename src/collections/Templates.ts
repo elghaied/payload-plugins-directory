@@ -68,7 +68,8 @@ export const Templates: CollectionConfig = {
     { name: 'path', type: 'text', admin: { description: 'Subdirectory within the repository; empty for a repo-root template.' } },
     { name: 'url', type: 'text', required: true },
     { name: 'isOfficial', type: 'checkbox', defaultValue: false, index: true },
-    { name: 'source', type: 'select', required: true, defaultValue: 'submission', options: ['official', 'submission', 'converted'] },
+    // topic: auto-listed from the `payload-template` GitHub topic (template discovery).
+    { name: 'source', type: 'select', required: true, defaultValue: 'submission', options: ['official', 'submission', 'converted', 'topic'] },
     { name: 'firstSeenAt', type: 'date' },
     // Source content
     { name: 'description', type: 'textarea', maxLength: DESCRIPTION_MAX_CHARS },

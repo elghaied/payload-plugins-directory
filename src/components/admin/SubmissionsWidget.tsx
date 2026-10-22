@@ -48,7 +48,7 @@ export async function SubmissionsWidget({ req }: WidgetServerProps) {
       limit: SUBMISSIONS_WIDGET_LIMIT,
       sort: 'createdAt',
       where: { status: { equals: 'pending' } },
-      select: { type: true, kind: true, url: true, path: true, plugin: true, template: true, submittedBy: true, note: true, createdAt: true },
+      select: { type: true, kind: true, url: true, path: true, plugin: true, template: true, submittedBy: true, note: true, createdAt: true, origin: true },
     })
   } catch (err) {
     req.payload.logger.error({ err, msg: 'Submissions widget: could not load submissions' })
@@ -93,7 +93,7 @@ export async function SubmissionsWidget({ req }: WidgetServerProps) {
             return (
               <li className="pd-sub" key={s.id}>
                 <span className="pd-avatar" aria-hidden>
-                  {(login ?? '?').slice(0, 2)}
+                  {s.origin === 'discovery' ? '✦' : (login ?? '?').slice(0, 2)}
                 </span>
                 <div className="pd-sub__body">
                   <div className="pd-pills">
@@ -103,6 +103,11 @@ export async function SubmissionsWidget({ req }: WidgetServerProps) {
                     <Pill pillStyle="light-gray" rounded size="small">
                       {s.kind === 'template' ? 'Template' : 'Plugin'}
                     </Pill>
+                    {s.origin === 'discovery' && (
+                      <Pill pillStyle="warning" rounded size="small">
+                        Suggested
+                      </Pill>
+                    )}
                     {s.path && <span className="pd-mono pd-muted">{s.path}</span>}
                   </div>
                   {t.href ? (
@@ -113,7 +118,9 @@ export async function SubmissionsWidget({ req }: WidgetServerProps) {
                     <span className="pd-sub__target">{t.label}</span>
                   )}
                   <span className="pd-small pd-muted">
-                    {login ? (
+                    {s.origin === 'discovery' ? (
+                      'found by template discovery'
+                    ) : login ? (
                       <>
                         by{' '}
                         <a className="pd-link" href={`https://github.com/${encodeURIComponent(login)}`} target="_blank" rel="noopener noreferrer">

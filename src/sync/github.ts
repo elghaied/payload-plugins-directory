@@ -58,6 +58,8 @@ export type SearchResult = { repos: GitHubRepo[]; complete: boolean; totalCount:
 export interface GitHubClient {
   /** `topic:payload-plugin fork:true`, every page up to GitHub's 1000-result cap. Archived repos are kept (spec §4.3). */
   searchTopicRepos(): Promise<SearchResult>
+  /** Any repository search (`q` as typed on github.com, e.g. `topic:payload-template`), up to `cap` results. */
+  searchRepos(query: string, cap?: number): Promise<SearchResult>
   /** By numeric id when known (survives renames), else by full name. null = 404. */
   getRepo(ref: { githubId?: number | null; fullName: string }): Promise<GitHubRepo | null>
   /** Directory listing via the contents API. null = 404, or the path is not a directory. */
@@ -130,6 +132,9 @@ const SEARCH_CAP = 1000
 const PER_PAGE = 100
 const SEARCH_QUERY = 'q=topic:payload-plugin+fork:true&sort=updated&order=desc'
 
+/** The search URL's query string for a GitHub search expression (spaces become `+`, like the web UI). */
+export const searchQueryString = (query: string) => `q=${encodeURIComponent(query.trim()).replace(/%20/g, '+').replace(/%3A/gi, ':')}&sort=updated&order=desc`
+
 export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?: () => Date }): GitHubClient {
   const now = opts.now ?? (() => new Date())
   const apiHeaders: Record<string, string> = {
@@ -162,35 +167,43 @@ export function createGitHubClient(opts: { fetch: FetchFn; token?: string; now?:
     return res
   }
 
+  async function searchRepos(query: string, cap = SEARCH_CAP): Promise<SearchResult> {
+    const qs = query ? searchQueryString(query) : SEARCH_QUERY
+    const max = Math.min(cap, SEARCH_CAP)
+    const byId = new Map<number, GitHubRepo>()
+    let totalCount = 0
+    let complete = true
+    let fetched = 0
+    for (let page = 1; fetched < max; page++) {
+      const url = `${GITHUB_API}/search/repositories?${qs}&per_page=${PER_PAGE}&page=${page}`
+      const res = await request(url, apiHeaders)
+      if (!res) throw new HttpError(404, url)
+      const body = (await res.json()) as { total_count?: number; incomplete_results?: boolean; items?: GitHubRepo[] } | null
+      if (!body || typeof body !== 'object' || !Array.isArray(body.items)) {
+        complete = false
+        break
+      }
+      if (page === 1) totalCount = body.total_count ?? 0
+      if (body.incomplete_results) complete = false
+      // Results are sorted by "updated", so a repo can move between pages mid-pagination: dedupe by id.
+      for (const repo of body.items) byId.set(repo.id, repo)
+      fetched += body.items.length
+      if (body.items.length < PER_PAGE) break
+    }
+    if (totalCount > max) complete = false
+    return { repos: [...byId.values()], complete, totalCount }
+  }
+
   return {
     get quota() {
       return quota
     },
 
     async searchTopicRepos() {
-      const byId = new Map<number, GitHubRepo>()
-      let totalCount = 0
-      let complete = true
-      let fetched = 0
-      for (let page = 1; fetched < SEARCH_CAP; page++) {
-        const url = `${GITHUB_API}/search/repositories?${SEARCH_QUERY}&per_page=${PER_PAGE}&page=${page}`
-        const res = await request(url, apiHeaders)
-        if (!res) throw new HttpError(404, url)
-        const body = (await res.json()) as { total_count?: number; incomplete_results?: boolean; items?: GitHubRepo[] } | null
-        if (!body || typeof body !== 'object' || !Array.isArray(body.items)) {
-          complete = false
-          break
-        }
-        if (page === 1) totalCount = body.total_count ?? 0
-        if (body.incomplete_results) complete = false
-        // Results are sorted by "updated", so a repo can move between pages mid-pagination: dedupe by id.
-        for (const repo of body.items) byId.set(repo.id, repo)
-        fetched += body.items.length
-        if (body.items.length < PER_PAGE) break
-      }
-      if (totalCount > SEARCH_CAP) complete = false
-      return { repos: [...byId.values()], complete, totalCount }
+      return searchRepos('', SEARCH_CAP)
     },
+
+    searchRepos,
 
     async getRepo({ githubId, fullName }) {
       const url = githubId

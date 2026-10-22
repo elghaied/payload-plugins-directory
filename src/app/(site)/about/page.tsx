@@ -195,8 +195,10 @@ export default function AboutPage() {
             <h2 className="text-lg font-semibold mb-3">Templates</h2>
             <p className="text-muted-foreground leading-relaxed">
               Besides plugins, the directory lists Payload templates: complete starter projects you can scaffold or
-              clone. Official templates come from the Payload repository and appear automatically; community templates are
-              added by submission and reviewed before they are listed. Have one of your own? Submit it at{" "}
+              clone. Official templates come from the Payload repository, and repositories with the{" "}
+              <code className="font-mono bg-secondary px-1.5 py-0.5 rounded text-sm">payload-template</code> GitHub topic are listed
+              automatically. Other community templates are added by submission (or suggested by discovery) and reviewed before
+              they are listed. Have one of your own? Add the topic, or submit it at{" "}
               <a
                 href="/submit"
                 className="text-primary underline underline-offset-4 hover:text-primary/80 transition-colors"

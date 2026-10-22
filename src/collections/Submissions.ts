@@ -184,11 +184,22 @@ export const Submissions: CollectionConfig = {
       },
     },
     {
+      // Who made the request. Empty only for suggestions template discovery creates (origin "discovery").
       name: 'submittedBy',
       type: 'relationship',
       relationTo: 'maintainers',
-      required: true,
       access: { create: adminOnly, update: adminOnly },
+      validate: (value: unknown, { siblingData }: { siblingData?: { origin?: string } }) =>
+        value != null || siblingData?.origin === 'discovery' || 'A submission needs the maintainer who made it.',
+    },
+    {
+      // user: made by a maintainer (or an admin on their behalf); discovery: a suggestion found by template discovery.
+      name: 'origin',
+      type: 'select',
+      defaultValue: 'user',
+      options: ['user', 'discovery'],
+      access: { create: adminOnly, update: adminOnly },
+      admin: { readOnly: true, position: 'sidebar' },
     },
     { name: 'note', type: 'textarea', maxLength: 1000 },
     {

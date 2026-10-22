@@ -536,7 +536,7 @@ export interface Template {
   path?: string | null;
   url: string;
   isOfficial?: boolean | null;
-  source: 'official' | 'submission' | 'converted';
+  source: 'official' | 'submission' | 'converted' | 'topic';
   firstSeenAt?: string | null;
   description?: string | null;
   readme?: string | null;
@@ -665,7 +665,8 @@ export interface Submission {
   repositoryFullName?: string | null;
   plugin?: (number | null) | Plugin;
   template?: (number | null) | Template;
-  submittedBy: number | Maintainer;
+  submittedBy?: (number | null) | Maintainer;
+  origin?: ('user' | 'discovery') | null;
   note?: string | null;
   status: 'pending' | 'approved' | 'rejected' | 'duplicate';
   lastClaimCheckAt?: string | null;
@@ -1359,6 +1360,7 @@ export interface SubmissionsSelect<T extends boolean = true> {
   plugin?: T;
   template?: T;
   submittedBy?: T;
+  origin?: T;
   note?: T;
   status?: T;
   lastClaimCheckAt?: T;
@@ -1883,6 +1885,10 @@ export interface TaskDiscoverTemplates {
   output: {
     status?: string | null;
     queued?: number | null;
+    autoListed?: number | null;
+    suggested?: number | null;
+    found?: number | null;
+    warning?: string | null;
   };
 }
 /**
@@ -1894,7 +1900,7 @@ export interface TaskSyncTemplate {
     fullName: string;
     githubId?: number | null;
     path?: string | null;
-    source: 'official' | 'submission' | 'converted';
+    source: 'official' | 'submission' | 'converted' | 'topic';
   };
   output: {
     status?: string | null;

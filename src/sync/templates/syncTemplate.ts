@@ -16,7 +16,7 @@ import { renderReadmeFor, repositoryChanged, resolveRepository, toRepositoryData
 import { trashTemplates } from '../trash'
 import { extractCommunityTemplate, extractOfficialTemplates, type ExtractedTemplate } from './extract'
 
-export type TemplateSource = 'official' | 'submission' | 'converted'
+export type TemplateSource = 'official' | 'submission' | 'converted' | 'topic'
 
 export type SyncTemplateInput = { fullName: string; githubId?: number | null; path?: string | null; source: TemplateSource }
 
@@ -356,7 +356,7 @@ export async function runDiscoverTemplates(payload: Payload): Promise<SyncTempla
     collection: 'templates', overrideAccess: true, depth: 0, limit: 0, pagination: false, sort: 'id', trash: true,
     where: {
       and: [
-        { source: { in: ['submission', 'converted'] } },
+        { source: { in: ['submission', 'converted', 'topic'] } },
         { or: [{ deletedAt: { exists: false } }, { syncTrashReason: { equals: 'repository-gone' } }] },
       ],
     },
@@ -375,7 +375,7 @@ export async function runDiscoverTemplates(payload: Payload): Promise<SyncTempla
   for (const t of community.docs) {
     const repo = repoById.get(relationId(t.repository) as number)
     if (!repo) continue
-    add({ fullName: repo.fullName, githubId: repo.githubId ?? null, path: t.path || null, source: t.source === 'converted' ? 'converted' : 'submission' })
+    add({ fullName: repo.fullName, githubId: repo.githubId ?? null, path: t.path || null, source: t.source === 'converted' || t.source === 'topic' ? t.source : 'submission' })
   }
 
   for (const i of await approvedTemplateSubmissionInputs(payload)) add(i)

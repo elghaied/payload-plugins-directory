@@ -76,7 +76,7 @@ export function describeCron(cron: string | undefined): string | null {
 }
 
 const OUTPUT_FIELDS: [key: string, label: string][] = [
-  ['queued', 'queued'], ['templatesQueued', 'templates queued'], ['discovered', 'found'], ['checked', 'checked'],
+  ['queued', 'queued'], ['autoListed', 'auto-listed'], ['suggested', 'suggested'], ['templatesQueued', 'templates queued'], ['discovered', 'found'], ['checked', 'checked'],
   ['updated', 'updated'], ['rendered', 'rendered'], ['considered', 'considered'], ['repositories', 'repos'],
   ['plugins', 'plugins'], ['count', 'tags'], ['applied', 'applied'], ['stale', 'stale'], ['trashed', 'trashed'],
   ['created', 'created'], ['failed', 'failed'], ['errors', 'errors'],

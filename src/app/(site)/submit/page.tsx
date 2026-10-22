@@ -20,9 +20,9 @@ export default async function SubmitPage({ searchParams }: { searchParams: Promi
       <div className="container mx-auto max-w-2xl px-4 py-8">
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Submit a plugin or template</h1>
         <p className="mt-2 text-muted-foreground break-words">
-          Signed in as <span className="font-medium text-foreground">@{maintainer.login}</span>. Plugins tagged with the{' '}
-          <code className="font-mono text-sm">payload-plugin</code> GitHub topic are found automatically; use this form for anything we
-          missed, and for Payload templates.
+          Signed in as <span className="font-medium text-foreground">@{maintainer.login}</span>. Repositories tagged with the{' '}
+          <code className="font-mono text-sm">payload-plugin</code> or <code className="font-mono text-sm">payload-template</code> GitHub
+          topic are found automatically; use this form for anything we missed.
         </p>
         <Card className="mt-6">
           <CardContent className="p-6">
