@@ -96,7 +96,7 @@ type RepositoryData = ReturnType<typeof toRepositoryData>
  */
 const skipContext = () => ({ skipRevalidate: true })
 
-const COMPARED = ['fullName', 'owner', 'ownerAvatar', 'description', 'stars', 'forks', 'openIssues', 'license', 'isArchived', 'defaultBranch'] as const
+const COMPARED = ['fullName', 'owner', 'ownerAvatar', 'description', 'stars', 'forks', 'openIssues', 'license', 'isArchived', 'defaultBranch', 'homepage'] as const
 
 export function repositoryChanged(prev: Repository | null, next: RepositoryData): boolean {
   if (!prev) return true
