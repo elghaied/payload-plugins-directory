@@ -47,9 +47,9 @@ describe('EnrichmentWidget', () => {
   it('renders the success state with an empty job_status (no sweep yet)', async () => {
     const payload = empty()
     const html = renderToStaticMarkup((await EnrichmentWidget({ req: { user: { collection: 'users' }, payload } } as unknown as WidgetServerProps))!)
-    expect(html).toContain('0/0 enriched with claude-sonnet-5-5')
-    expect(html).toContain('Last sweep: never')
-    expect(html).not.toContain('Last job error')
+    expect(html).toContain('0 of 0 plugins')
+    expect(html).toContain('claude-sonnet-5-5 · last sweep never')
+    expect(html).not.toContain('last job error')
     expect(html).not.toContain('could not be loaded')
     expect(html).not.toContain('switched off')
     expect(payload.logger.error).not.toHaveBeenCalled()

@@ -122,10 +122,10 @@ export interface Config {
   };
   locale: null;
   widgets: {
-    submissions: SubmissionsWidget;
-    'job-health': JobHealthWidget;
-    enrichment: EnrichmentWidget;
     welcome: WelcomeWidget;
+    'job-health': JobHealthWidget;
+    submissions: SubmissionsWidget;
+    enrichment: EnrichmentWidget;
     collections: CollectionsWidget;
     'collection-query': CollectionQueryWidget;
     activity: ActivityWidget;
@@ -1675,19 +1675,29 @@ export interface PayloadJobsStatsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "submissions_widget".
+ * via the `definition` "welcome_widget".
  */
-export interface SubmissionsWidget {
+export interface WelcomeWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: 'medium' | 'large' | 'x-large' | 'full';
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "job-health_widget".
  */
 export interface JobHealthWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'large' | 'x-large' | 'full';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "submissions_widget".
+ */
+export interface SubmissionsWidget {
   data?: {
     [k: string]: unknown;
   };
@@ -1701,17 +1711,7 @@ export interface EnrichmentWidget {
   data?: {
     [k: string]: unknown;
   };
-  width: 'medium' | 'large' | 'x-large' | 'full';
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "welcome_widget".
- */
-export interface WelcomeWidget {
-  data?: {
-    [k: string]: unknown;
-  };
-  width: 'full';
+  width: 'small' | 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

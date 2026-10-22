@@ -35,28 +35,35 @@ export default buildConfig({
     dashboard: {
       widgets: [
         {
+          slug: 'welcome',
+          label: 'Welcome',
+          Component: './components/admin/WelcomeWidget.tsx#WelcomeWidget',
+          minWidth: 'large',
+        },
+        {
+          slug: 'job-health',
+          label: 'Jobs',
+          Component: './components/admin/JobHealthWidget.tsx#JobHealthWidget',
+          minWidth: 'large',
+        },
+        {
           slug: 'submissions',
           label: 'Submissions',
           Component: './components/admin/SubmissionsWidget.tsx#SubmissionsWidget',
           minWidth: 'medium',
         },
         {
-          slug: 'job-health',
-          label: 'Job health',
-          Component: './components/admin/JobHealthWidget.tsx#JobHealthWidget',
-          minWidth: 'medium',
-        },
-        {
           slug: 'enrichment',
           label: 'AI enrichment',
           Component: './components/admin/EnrichmentWidget.tsx#EnrichmentWidget',
-          minWidth: 'medium',
+          minWidth: 'small',
         },
       ],
       defaultLayout: [
-        { widgetSlug: 'submissions', width: 'full' },
+        { widgetSlug: 'welcome', width: 'full' },
         { widgetSlug: 'job-health', width: 'full' },
-        { widgetSlug: 'enrichment', width: 'full' },
+        { widgetSlug: 'submissions', width: 'large' },
+        { widgetSlug: 'enrichment', width: 'small' },
         { widgetSlug: 'collections', width: 'full' },
       ],
     },

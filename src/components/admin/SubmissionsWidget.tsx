@@ -1,14 +1,14 @@
+import Link from 'next/link'
 import type { WidgetServerProps } from 'payload'
+import { Pill } from '@payloadcms/ui'
 import { isAdminUser } from '@/access'
 import type { Maintainer, Plugin, Submission, Template } from '@/payload-types'
 import { SubmissionActions } from './SubmissionActions'
+import './dashboard.css'
 
 /** Rows shown at once; the rest are one click away in the Submissions list. */
 export const SUBMISSIONS_WIDGET_LIMIT = 25
 
-const muted = { color: 'var(--theme-elevation-600)' }
-const linkStyle = { textDecoration: 'underline', textUnderlineOffset: '2px' }
-const pill = { fontSize: '0.7rem', padding: '0.1rem 0.4rem', borderRadius: '999px', border: '1px solid var(--theme-elevation-150)' }
 
 function age(iso: string, now: Date): string {
   const minutes = Math.max(0, Math.round((now.getTime() - new Date(iso).getTime()) / 60_000))
@@ -53,64 +53,82 @@ export async function SubmissionsWidget({ req }: WidgetServerProps) {
   } catch (err) {
     req.payload.logger.error({ err, msg: 'Submissions widget: could not load submissions' })
     return (
-      <div className="card">
-        <h3 style={{ margin: 0 }}>Submissions</h3>
-        <p role="alert" style={{ margin: '0.75rem 0 0', color: 'var(--theme-error-500)' }}>
+      <section className="pd-panel">
+        <div>
+          <span className="pd-eyebrow">Review queue</span>
+          <h2 className="pd-title">Submissions</h2>
+        </div>
+        <p role="alert" className="pd-alert pd-alert--danger" style={{ margin: 0 }}>
           Submissions could not be loaded. See the server log for details.
         </p>
-      </div>
+      </section>
     )
   }
   const now = new Date()
   const listHref = '/admin/collections/submissions?where[status][equals]=pending'
   return (
-    <div className="card" style={{ display: 'grid', gap: '0.75rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
-        <h3 style={{ margin: 0 }}>Submissions waiting: {res.totalDocs}</h3>
-        <a href={listHref} style={{ fontSize: '0.85rem', ...linkStyle }}>
-          Open the full list
-        </a>
+    <section className="pd-panel">
+      <div className="pd-head">
+        <div>
+          <span className="pd-eyebrow">Review queue</span>
+          <h2 className="pd-title">Submissions</h2>
+        </div>
+        <div className="pd-pills">
+          <Pill pillStyle={res.totalDocs ? 'warning' : 'success'} rounded>
+            {res.totalDocs ? `${res.totalDocs} waiting` : 'All clear'}
+          </Pill>
+          <a className="pd-link pd-small" href={listHref}>
+            Open the full list
+          </a>
+        </div>
       </div>
       {res.docs.length === 0 ? (
-        <p style={{ margin: 0, ...muted }}>Nothing to review.</p>
+        <div className="pd-empty">Nothing to review.</div>
       ) : (
-        <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: '0.5rem' }}>
+        <ul className="pd-subs">
           {res.docs.map((s) => {
             const t = target(s)
             const by = s.submittedBy as Maintainer | number | null
             const login = by && typeof by === 'object' ? by.login : null
             return (
-              <li
-                key={s.id}
-                style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', padding: '0.625rem 0', borderTop: '1px solid var(--theme-elevation-100)' }}
-              >
-                <div style={{ display: 'grid', gap: '0.25rem', minWidth: 0, flex: '1 1 20rem' }}>
-                  <div style={{ display: 'flex', gap: '0.375rem', alignItems: 'center', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-                    <span style={pill}>{s.type === 'claim' ? 'Claim' : 'Listing'}</span>
-                    <span style={pill}>{s.kind === 'template' ? 'Template' : 'Plugin'}</span>
-                    {t.href ? (
-                      <a href={t.href} target="_blank" rel="noopener noreferrer" style={{ overflowWrap: 'anywhere', ...linkStyle }}>
-                        {t.label}
-                      </a>
-                    ) : (
-                      <span>{t.label}</span>
-                    )}
-                    {s.path && <code style={{ fontSize: '0.75rem' }}>{s.path}</code>}
+              <li className="pd-sub" key={s.id}>
+                <span className="pd-avatar" aria-hidden>
+                  {(login ?? '?').slice(0, 2)}
+                </span>
+                <div className="pd-sub__body">
+                  <div className="pd-pills">
+                    <Pill pillStyle={s.type === 'claim' ? 'dark' : 'light'} rounded size="small">
+                      {s.type === 'claim' ? 'Claim' : 'Listing'}
+                    </Pill>
+                    <Pill pillStyle="light-gray" rounded size="small">
+                      {s.kind === 'template' ? 'Template' : 'Plugin'}
+                    </Pill>
+                    {s.path && <span className="pd-mono pd-muted">{s.path}</span>}
                   </div>
-                  <div style={{ fontSize: '0.75rem', ...muted }}>
+                  {t.href ? (
+                    <a className="pd-sub__target pd-link" href={t.href} target="_blank" rel="noopener noreferrer">
+                      {t.label}
+                    </a>
+                  ) : (
+                    <span className="pd-sub__target">{t.label}</span>
+                  )}
+                  <span className="pd-small pd-muted">
                     {login ? (
                       <>
                         by{' '}
-                        <a href={`https://github.com/${encodeURIComponent(login)}`} target="_blank" rel="noopener noreferrer" style={linkStyle}>
+                        <a className="pd-link" href={`https://github.com/${encodeURIComponent(login)}`} target="_blank" rel="noopener noreferrer">
                           @{login}
                         </a>
                       </>
                     ) : (
                       'by an unknown user'
                     )}{' '}
-                    · {age(s.createdAt, now)} · <a href={`/admin/collections/submissions/${s.id}`} style={linkStyle}>Open</a>
-                  </div>
-                  {s.note && <p style={{ margin: 0, fontSize: '0.8rem', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{s.note}</p>}
+                    · {age(s.createdAt, now)} ·{' '}
+                    <Link className="pd-link" href={`/admin/collections/submissions/${s.id}`}>
+                      Open
+                    </Link>
+                  </span>
+                  {s.note && <p className="pd-sub__note">{s.note}</p>}
                 </div>
                 <SubmissionActions id={s.id} label={t.label} />
               </li>
@@ -119,10 +137,13 @@ export async function SubmissionsWidget({ req }: WidgetServerProps) {
         </ul>
       )}
       {res.totalDocs > res.docs.length && (
-        <p style={{ margin: 0, fontSize: '0.8rem', ...muted }}>
-          Showing the oldest {res.docs.length} of {res.totalDocs}. <a href={listHref} style={linkStyle}>See all</a>
+        <p className="pd-small pd-muted" style={{ margin: 0 }}>
+          Showing the oldest {res.docs.length} of {res.totalDocs}.{' '}
+          <a className="pd-link" href={listHref}>
+            See all
+          </a>
         </p>
       )}
-    </div>
+    </section>
   )
 }

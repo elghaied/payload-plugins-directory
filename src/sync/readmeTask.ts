@@ -2,6 +2,7 @@ import type { TaskConfig } from 'payload'
 import { README_COLLECTIONS, renderReadmeBatch, type ReadmeCollection } from '@/lib/directory/renderReadmes'
 import { getSyncDeps, defaultReadmeRendering } from './deps'
 import { QUEUES } from './queues'
+import { track } from './taskKit'
 
 export type RenderReadmesInput = { afterId?: number | null; all?: boolean; collection?: ReadmeCollection | null }
 
@@ -42,14 +43,18 @@ export const renderReadmesTask: TaskConfig<'render-readmes'> = {
     }
     const { afterId = null, all = false, collection: requested } = (input ?? {}) as RenderReadmesInput
     const collection: ReadmeCollection = requested ?? 'plugins'
-    const r = await renderReadmeBatch(payload, rendering, { afterId, all, collection })
-    const next = README_COLLECTIONS[README_COLLECTIONS.indexOf(collection) + 1]
-    if (r.more) {
-      await payload.jobs.queue({ task: 'render-readmes', input: { afterId: r.lastId, all, collection }, queue: QUEUES.default, overrideAccess: true })
-    } else if (next) {
-      await payload.jobs.queue({ task: 'render-readmes', input: { afterId: null, all, collection: next }, queue: QUEUES.default, overrideAccess: true })
-    }
-    if (r.rendered > 0 || r.raced > 0) payload.logger.info({ ...r, collection }, 'README render batch')
-    return { output: { status: 'ok', considered: r.considered, rendered: r.rendered, plainText: r.plainText, skipped: r.skipped, raced: r.raced, continued: r.more || Boolean(next) } }
+    // Tracked like the sync jobs, so the dashboard shows its last run, result and duration.
+    const output = await track(payload, 'render-readmes', new Date(), async () => {
+      const r = await renderReadmeBatch(payload, rendering, { afterId, all, collection })
+      const next = README_COLLECTIONS[README_COLLECTIONS.indexOf(collection) + 1]
+      if (r.more) {
+        await payload.jobs.queue({ task: 'render-readmes', input: { afterId: r.lastId, all, collection }, queue: QUEUES.default, overrideAccess: true })
+      } else if (next) {
+        await payload.jobs.queue({ task: 'render-readmes', input: { afterId: null, all, collection: next }, queue: QUEUES.default, overrideAccess: true })
+      }
+      if (r.rendered > 0 || r.raced > 0) payload.logger.info({ ...r, collection }, 'README render batch')
+      return { status: 'ok', considered: r.considered, rendered: r.rendered, plainText: r.plainText, skipped: r.skipped, raced: r.raced, continued: r.more || Boolean(next) }
+    })
+    return { output }
   },
 }

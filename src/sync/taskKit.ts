@@ -8,6 +8,9 @@ import { QUEUES } from './queues'
 
 export type RateLimited = { status: 'rate-limited' }
 
+/** job_status key holding when the latest run of `slug` started (its `lastSuccessAt`). */
+export const startedKey = (slug: string) => `started:${slug}`
+
 export async function queueRevalidate(payload: Payload, tags: readonly string[]): Promise<void> {
   if (tags.length === 0) return
   await payload.jobs.queue({ task: 'revalidate', input: { tags: [...new Set(tags)] }, queue: QUEUES.default, overrideAccess: true })
@@ -56,9 +59,15 @@ export async function track<T extends Record<string, unknown>>(
   run: () => Promise<T>,
   requeue?: (err: RateLimitError) => Promise<unknown>,
 ): Promise<T | RateLimited> {
+  // The dashboard's "running for" (Payload's lease is renewed while a job runs, so it cannot tell when a run began).
+  await recordJobSuccess(payload, startedKey(slug), {}, at).catch((err: unknown) =>
+    payload.logger.error({ err, msg: `Could not record the start of ${slug}` }),
+  )
+  const started = Date.now()
   try {
     const output = await run()
-    await recordJobSuccess(payload, slug, output, at)
+    // durationMs: the dashboard shows it and estimates the progress of the next run from it. Not part of the job output.
+    await recordJobSuccess(payload, slug, { ...output, durationMs: Date.now() - started }, at)
     return output
   } catch (err) {
     if (err instanceof RateLimitError && requeue) {

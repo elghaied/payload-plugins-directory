@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from 'vitest'
 import type { WidgetServerProps } from 'payload'
 import { SubmissionsWidget } from '@/components/admin/SubmissionsWidget'
 
-vi.mock('@payloadcms/ui', () => ({ Button: ({ children }: { children: unknown }) => createElement('button', { type: 'button' }, children as never) }))
+vi.mock('@payloadcms/ui', () => ({
+  Button: ({ children }: { children: unknown }) => createElement('button', { type: 'button' }, children as never),
+  Pill: ({ children }: { children: unknown }) => createElement('span', null, children as never),
+}))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => {} }) }))
 
 const now = new Date().toISOString()
@@ -23,7 +26,7 @@ describe('SubmissionsWidget', () => {
     const find = vi.fn(async () => ({ docs, totalDocs: 30 }))
     const html = renderToStaticMarkup((await SubmissionsWidget(props({ collection: 'users' }, find).props))!)
     expect(find).toHaveBeenCalledWith(expect.objectContaining({ collection: 'submissions', sort: 'createdAt', where: { status: { equals: 'pending' } } }))
-    expect(html).toContain('Submissions waiting: 30')
+    expect(html).toContain('30 waiting')
     expect(html).toContain('href="https://github.com/acme/site"')
     expect(html).toContain('apps/site')
     expect(html).toContain('href="/plugins/seo-kit"')

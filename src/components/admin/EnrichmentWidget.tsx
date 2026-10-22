@@ -1,10 +1,12 @@
 import type { Where, WidgetServerProps } from 'payload'
+import { Pill } from '@payloadcms/ui'
 import { isAdminUser } from '@/access'
 import { getEnrichmentHealth } from '@/enrich/health'
 import { FAILED_WHERE, LOW_CONFIDENCE_WHERE, UNCATEGORIZED_WHERE } from '@/enrich/presets'
+import './dashboard.css'
 
 const when = (iso: string | null) => (iso ? `${iso.slice(0, 16).replace('T', ' ')} UTC` : '–')
-const danger = { color: 'var(--theme-error-500)' }
+const danger = { color: 'var(--color-text-danger)' }
 const MAX_TEXT = 140
 
 /** Failure reasons and names come from model output / GitHub: cap their length (they render as React text only). */
@@ -37,31 +39,60 @@ export async function EnrichmentWidget({ req }: WidgetServerProps) {
   } catch (err) {
     req.payload.logger.error({ err, msg: 'Enrichment widget: could not load enrichment health' })
     return (
-      <div className="card">
-        <h3 style={{ margin: 0 }}>AI enrichment</h3>
-        <p role="alert" style={{ margin: '0.75rem 0 0', ...danger }}>
+      <section className="pd-panel">
+        <div>
+          <span className="pd-eyebrow">AI enrichment</span>
+          <h2 className="pd-title">Claude summaries</h2>
+        </div>
+        <p role="alert" className="pd-alert pd-alert--danger" style={{ margin: 0 }}>
           Enrichment health could not be loaded. See the server log for details.
         </p>
-      </div>
+      </section>
     )
   }
+  const coverage = h.total ? Math.round((h.enriched / h.total) * 100) : 0
+  const issues = [
+    { label: 'Uncategorized', count: h.uncategorized, href: LINKS.uncategorized },
+    { label: 'Low confidence', count: h.lowConfidence, href: LINKS.lowConfidence },
+    { label: 'Failed', count: h.failed, href: LINKS.failed },
+  ]
   return (
-    <div className="card" style={{ display: 'grid', gap: '0.75rem' }}>
-      <h3 style={{ margin: 0 }}>AI enrichment</h3>
+    <section className="pd-panel">
+      <div className="pd-head">
+        <div>
+          <span className="pd-eyebrow">AI enrichment</span>
+          <h2 className="pd-title">Claude summaries</h2>
+        </div>
+        <Pill pillStyle={!h.enabled ? 'error' : h.failed ? 'warning' : 'success'} rounded>
+          {!h.enabled ? 'Switched off' : h.failed ? `${h.failed} failed` : 'Healthy'}
+        </Pill>
+      </div>
       {!h.enabled && (
-        <p role="alert" style={{ margin: 0, ...danger }}>
+        <p role="alert" className="pd-alert pd-alert--danger" style={{ margin: 0 }}>
           Enrichment is switched off (Directory settings → AI → enabled).
         </p>
       )}
-      <p style={{ margin: 0, fontSize: '0.85rem' }}>
-        {h.enriched}/{h.total} enriched with {h.model} · <a href={LINKS.uncategorized}>{h.uncategorized} uncategorized</a> ·{' '}
-        <a href={LINKS.lowConfidence}>{h.lowConfidence} low confidence</a> ·{' '}
-        <a href={LINKS.failed} style={h.failed ? danger : undefined}>
-          {h.failed} failed
-        </a>
-      </p>
+      <div>
+        <div className="pd-score">
+          <strong>{coverage}%</strong>
+          <span className="pd-small pd-muted">
+            {h.enriched.toLocaleString('en')} of {h.total.toLocaleString('en')} plugins
+          </span>
+        </div>
+        <div className="pd-bar pd-bar--success" style={{ marginTop: 'var(--spacer-2)' }} aria-label={`AI coverage ${coverage}%`}>
+          <span style={{ width: `${coverage}%` }} />
+        </div>
+      </div>
+      <div className="pd-issues">
+        {issues.map((i) => (
+          <a key={i.label} href={i.href}>
+            <span>{i.label}</span>
+            <strong style={i.label === 'Failed' && i.count ? danger : undefined}>{i.count}</strong>
+          </a>
+        ))}
+      </div>
       {h.recentFailures.length > 0 && (
-        <ul style={{ margin: 0, paddingLeft: '1.1rem', fontSize: '0.85rem' }}>
+        <ul className="pd-small" style={{ margin: 0, paddingLeft: '1.1rem' }}>
           {h.recentFailures.map((f) => (
             <li key={f.slug}>
               {truncate(f.name, 60)} — {truncate(f.reason)} ({when(f.failedAt)})
@@ -69,10 +100,10 @@ export async function EnrichmentWidget({ req }: WidgetServerProps) {
           ))}
         </ul>
       )}
-      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--theme-elevation-600)' }}>
-        Last sweep: {h.lastRun.status ?? 'never'} ({when(h.lastRun.at)})
-        {h.lastError.at && ` · Last job error ${when(h.lastError.at)}: ${truncate(h.lastError.message ?? '')}`}
+      <p className="pd-small pd-muted" style={{ margin: 'auto 0 0' }}>
+        {h.model} · last sweep {h.lastRun.status ?? 'never'} ({when(h.lastRun.at)})
+        {h.lastError.at && ` · last job error ${when(h.lastError.at)}: ${truncate(h.lastError.message ?? '')}`}
       </p>
-    </div>
+    </section>
   )
 }

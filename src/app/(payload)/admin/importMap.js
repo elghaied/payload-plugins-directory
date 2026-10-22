@@ -17,8 +17,9 @@ import { LLMInstructionsDescription as LLMInstructionsDescription_3817bf644402e6
 import { LLMInstructionsCell as LLMInstructionsCell_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { TagIcon as TagIcon_3817bf644402e67bfe6577f60ef982de } from '@payloadcms/ui'
 import { HierarchySidebarTabServer as HierarchySidebarTabServer_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
-import { SubmissionsWidget as SubmissionsWidget_2e64728d1824be571f50ac4aa192e9e2 } from '../../../components/admin/SubmissionsWidget.tsx'
+import { WelcomeWidget as WelcomeWidget_d9e26737c2bce427a8a1614af8c4715d } from '../../../components/admin/WelcomeWidget.tsx'
 import { JobHealthWidget as JobHealthWidget_ec5840a75e264cebe5354eb0686923a0 } from '../../../components/admin/JobHealthWidget.tsx'
+import { SubmissionsWidget as SubmissionsWidget_2e64728d1824be571f50ac4aa192e9e2 } from '../../../components/admin/SubmissionsWidget.tsx'
 import { EnrichmentWidget as EnrichmentWidget_e9ab92e8f053876f44b461b695174279 } from '../../../components/admin/EnrichmentWidget.tsx'
 import { WelcomeWidget as WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
@@ -50,8 +51,9 @@ export const importMap = {
   "@payloadcms/ui/rsc#LLMInstructionsCell": LLMInstructionsCell_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui#TagIcon": TagIcon_3817bf644402e67bfe6577f60ef982de,
   "@payloadcms/ui/rsc#HierarchySidebarTabServer": HierarchySidebarTabServer_ab83ff7e88da8d3530831f296ec4756a,
-  "./components/admin/SubmissionsWidget.tsx#SubmissionsWidget": SubmissionsWidget_2e64728d1824be571f50ac4aa192e9e2,
+  "./components/admin/WelcomeWidget.tsx#WelcomeWidget": WelcomeWidget_d9e26737c2bce427a8a1614af8c4715d,
   "./components/admin/JobHealthWidget.tsx#JobHealthWidget": JobHealthWidget_ec5840a75e264cebe5354eb0686923a0,
+  "./components/admin/SubmissionsWidget.tsx#SubmissionsWidget": SubmissionsWidget_2e64728d1824be571f50ac4aa192e9e2,
   "./components/admin/EnrichmentWidget.tsx#EnrichmentWidget": EnrichmentWidget_e9ab92e8f053876f44b461b695174279,
   "@payloadcms/ui/rsc#WelcomeWidget": WelcomeWidget_ab83ff7e88da8d3530831f296ec4756a,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a,
