@@ -88,3 +88,27 @@ describe('toTemplateDetail', () => {
     expect(toTemplateDetail({ ...base, slug: 'website', isOfficial: true } as never).getStarted).toEqual({ kind: 'command', value: 'npx create-payload-app -t website' })
   })
 })
+
+describe("the repository's About → Website as a fallback", () => {
+  const withSite = (homepage: string | null, over: Record<string, unknown> = {}) => ({ ...base, repository: { ...repo, homepage }, ...over })
+  it('is the demo link when the template has none', () => {
+    expect(toTemplateSummary(withSite('https://payloadstarter.dev') as never).demoUrl).toBe('https://payloadstarter.dev/')
+    expect(toTemplateDetail(withSite('https://cool.vercel.app/') as never).demoUrl).toBe('https://cool.vercel.app/')
+  })
+  it('never overrides a demo or video set by the admin or owner', () => {
+    expect(toTemplateSummary(withSite('https://other.dev', { demoUrl: 'https://mine.dev' }) as never).demoUrl).toBe('https://mine.dev/')
+    const d = toTemplateDetail(withSite('https://www.youtube.com/watch?v=egKaeOudXjk', { videoUrl: 'https://vimeo.com/123' }) as never)
+    expect(d.video?.provider).toBe('vimeo')
+  })
+  it('becomes the video (not a demo) when it is a video link', () => {
+    const d = toTemplateDetail(withSite('https://www.youtube.com/watch?v=egKaeOudXjk') as never)
+    expect(d.video).toMatchObject({ provider: 'youtube', watchUrl: 'https://www.youtube.com/watch?v=egKaeOudXjk' })
+    expect(d.demoUrl).toBeUndefined()
+  })
+  it('is ignored when it points back to GitHub, is not https, or the template is official', () => {
+    for (const homepage of ['https://github.com/a/b', 'https://a.github.com/x', 'http://insecure.dev', 'not a url', '']) {
+      expect(toTemplateSummary(withSite(homepage) as never).demoUrl).toBeUndefined()
+    }
+    expect(toTemplateSummary(withSite('https://payloadcms.com', { isOfficial: true, source: 'official' }) as never).demoUrl).toBeUndefined()
+  })
+})

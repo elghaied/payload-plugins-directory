@@ -2,7 +2,7 @@ import { readmePreview } from '@/lib/directory/readme'
 import { authorDescriptionOf } from '@/lib/directory/tagline'
 import type { Media, Repository, Template } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
-import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange, storedFallbackImage, type VideoRef } from './links'
+import { embedUrlFor, canonicalVideoUrl, fallbackImageFor, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange, storedFallbackImage, websiteFallback, type VideoRef } from './links'
 import { effectiveStack } from './stack'
 import type { TemplateDetail, TemplateImage, TemplateSummary } from './types'
 
@@ -65,7 +65,8 @@ export function toTemplateSummary(doc: TemplateDoc): TemplateSummary {
   const category = categoryOf(doc)
   const tags = tagsOf(doc)
   const majors = (doc.payloadMajors ?? []) as PayloadMajor[]
-  const demoUrl = doc.demoUrl ? parseDemoUrl(doc.demoUrl) : null
+  // A demo set by the admin or owner wins; else the repository's About → Website when it is a demo site.
+  const demoUrl = (doc.demoUrl ? parseDemoUrl(doc.demoUrl) : null) ?? websiteFallback(repo.homepage, Boolean(doc.isOfficial)).demoUrl
   return {
     slug: doc.slug,
     name: doc.name,
@@ -102,7 +103,7 @@ export function toTemplateDetail(doc: TemplateDoc): TemplateDetail {
   const repo = repoOf(doc)
   const category = categoryOf(doc)
   const ai = aiOf(doc)
-  const ref = doc.videoUrl ? parseVideoUrl(doc.videoUrl) : null
+  const ref = (doc.videoUrl ? parseVideoUrl(doc.videoUrl) : null) ?? websiteFallback(repo.homepage, Boolean(doc.isOfficial)).video
   return {
     ...toTemplateSummary(doc),
     authorDescription: authorDescriptionOf(doc.description),

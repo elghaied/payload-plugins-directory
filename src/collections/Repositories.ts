@@ -17,6 +17,8 @@ export const Repositories: CollectionConfig = {
     { name: 'ownerAvatar', type: 'text' },
     { name: 'url', type: 'text', required: true },
     { name: 'description', type: 'textarea', maxLength: DESCRIPTION_MAX_CHARS },
+    // GitHub's About → Website. Shown only after validation (templates use it as the demo link or video when none is set).
+    { name: 'homepage', type: 'text', maxLength: 500 },
     { name: 'stars', type: 'number', defaultValue: 0, index: true },
     { name: 'forks', type: 'number', defaultValue: 0 },
     { name: 'openIssues', type: 'number', defaultValue: 0 },

@@ -284,6 +284,7 @@ export interface Repository {
   ownerAvatar?: string | null;
   url: string;
   description?: string | null;
+  homepage?: string | null;
   stars?: number | null;
   forks?: number | null;
   openIssues?: number | null;
@@ -1144,6 +1145,7 @@ export interface RepositoriesSelect<T extends boolean = true> {
   ownerAvatar?: T;
   url?: T;
   description?: T;
+  homepage?: T;
   stars?: T;
   forks?: T;
   openIssues?: T;

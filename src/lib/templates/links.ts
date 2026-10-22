@@ -89,6 +89,23 @@ export function firstReadmeVideo(readme: string | null | undefined): VideoRef | 
   return { provider: 'github', id: first[1].toLowerCase() }
 }
 
+/** Hosts whose links are never a demo: the repository's own pages. */
+const NOT_A_DEMO = /(^|\.)github\.com$/
+
+/**
+ * A template's repository Website (GitHub About → Website) as a fallback: the demo link when it is a site, the video when
+ * it is a YouTube/Vimeo/Loom/GitHub video. Never for official templates (their Website is the Payload site), never a
+ * link back to GitHub, and only when the admin or owner has not set one (callers check that). Never fetched.
+ */
+export function websiteFallback(homepage: string | null | undefined, isOfficial: boolean): { demoUrl: string | null; video: VideoRef | null } {
+  if (isOfficial || !homepage) return { demoUrl: null, video: null }
+  const video = parseVideoUrl(homepage)
+  if (video) return { demoUrl: null, video }
+  const demo = parseDemoUrl(homepage)
+  if (!demo || NOT_A_DEMO.test(new URL(demo).hostname.toLowerCase())) return { demoUrl: null, video: null }
+  return { demoUrl: demo, video: null }
+}
+
 export function canonicalVideoUrl(ref: VideoRef): string {
   if (ref.provider === 'github') return githubAttachmentUrl(ref.id)
   if (ref.provider === 'youtube') return `https://www.youtube.com/watch?v=${ref.id}`

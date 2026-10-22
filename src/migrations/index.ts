@@ -24,6 +24,7 @@ import * as migration_20261021_120037_enrich_template_task from './20261021_1200
 import * as migration_20261021_124916_submission_kind from './20261021_124916_submission_kind';
 import * as migration_20261021_133322_search_templates from './20261021_133322_search_templates';
 import * as migration_20261022_015319_template_discovery from './20261022_015319_template_discovery';
+import * as migration_20261022_031335_repository_homepage from './20261022_031335_repository_homepage';
 
 export const migrations = [
   {
@@ -154,6 +155,11 @@ export const migrations = [
   {
     up: migration_20261022_015319_template_discovery.up,
     down: migration_20261022_015319_template_discovery.down,
-    name: '20261022_015319_template_discovery'
+    name: '20261022_015319_template_discovery',
+  },
+  {
+    up: migration_20261022_031335_repository_homepage.up,
+    down: migration_20261022_031335_repository_homepage.down,
+    name: '20261022_031335_repository_homepage'
   },
 ];

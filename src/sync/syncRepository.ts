@@ -73,6 +73,7 @@ export function toRepositoryData(meta: GitHubRepo, isMonorepo: boolean, now: Dat
     ownerAvatar: meta.owner.avatar_url,
     url: meta.html_url,
     description: typeof meta.description === 'string' ? clampChars(meta.description, DESCRIPTION_MAX_CHARS) : null,
+    homepage: typeof meta.homepage === 'string' && meta.homepage.trim() && meta.homepage.length <= 500 ? meta.homepage.trim() : null,
     stars: meta.stargazers_count,
     forks: meta.forks_count,
     openIssues: meta.open_issues_count,

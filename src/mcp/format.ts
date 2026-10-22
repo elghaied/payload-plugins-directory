@@ -1,7 +1,7 @@
 import type { Category, Plugin, Repository, Template } from '@/payload-types'
 import { clampChars } from '@/sync/limits'
 import { authorDescriptionOf, pluginTagline } from '@/lib/directory/tagline'
-import { canonicalVideoUrl, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange } from '@/lib/templates/links'
+import { canonicalVideoUrl, getStartedFor, parseDemoUrl, parseVideoUrl, shownVersionRange, websiteFallback } from '@/lib/templates/links'
 import { templateTagline } from '@/lib/templates/mappers'
 import { effectiveStack, type StackValue } from '@/lib/templates/stack'
 import { UNTRUSTED_NOTICE } from './instructions'
@@ -200,7 +200,8 @@ export function toMcpTemplateSummary(doc: Template, siteURL: string): McpTemplat
 export function toMcpTemplateDetail(doc: Template, siteURL: string): McpTemplateDetail {
   const repo = obj<Repository>(doc.repository)
   const readme = doc.readme ?? null
-  const video = doc.videoUrl ? parseVideoUrl(doc.videoUrl) : null
+  const website = websiteFallback(repo?.homepage, Boolean(doc.isOfficial))
+  const video = (doc.videoUrl ? parseVideoUrl(doc.videoUrl) : null) ?? website.video
   return {
     ...toMcpTemplateSummary(doc, siteURL),
     summary: doc.ai?.summary?.trim() || null,
@@ -211,7 +212,7 @@ export function toMcpTemplateDetail(doc: Template, siteURL: string): McpTemplate
       isOfficial: Boolean(doc.isOfficial), slug: doc.slug, fullName: repo?.fullName ?? '', path: doc.path || null, isTemplateRepo: Boolean(doc.isTemplateRepo),
     }),
     // Re-validated on the way out: only a clean https demo URL and a known video host ever reach an agent.
-    demoUrl: doc.demoUrl ? parseDemoUrl(doc.demoUrl) : null,
+    demoUrl: (doc.demoUrl ? parseDemoUrl(doc.demoUrl) : null) ?? website.demoUrl,
     videoUrl: video ? canonicalVideoUrl(video) : null,
     license: doc.license ?? repo?.license ?? null,
     payloadVersionRange: shownVersionRange(doc.payloadVersionRange),

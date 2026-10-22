@@ -17,6 +17,8 @@ export interface GitHubRepo {
   open_issues_count: number
   archived: boolean
   is_template?: boolean
+  /** The repository's About → Website field. */
+  homepage?: string | null
 }
 
 export interface GitHubContent {
