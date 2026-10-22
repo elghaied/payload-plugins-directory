@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Expand, Play, X } from "lucide-react";
 import type { TemplateDetail, TemplateImage } from "@/lib/templates/types";
 import type { StackValue } from "@/lib/templates/stack";
 import { TemplatePanel } from "./TemplatePanel";
-import { VideoEmbed } from "./VideoEmbed";
+import { PROVIDER_LABEL, VideoEmbed } from "./VideoEmbed";
 
 type Screenshot = TemplateDetail["screenshots"][number];
 type Video = NonNullable<TemplateDetail["video"]>;
@@ -154,6 +154,13 @@ export function TemplateGallery({ name, screenshots, video, fallback, stack }: P
           </button>
         )}
       </div>
+      {showingVideo && video && (
+        <p className="mt-2 text-right text-xs">
+          <a href={video.watchUrl} target="_blank" rel="nofollow ugc noopener noreferrer" className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
+            Watch on {PROVIDER_LABEL[video.provider]} ↗
+          </a>
+        </p>
+      )}
 
       {(count > 1 || video) && (
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Gallery thumbnails">

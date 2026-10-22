@@ -45,7 +45,7 @@ describe('VideoEmbed', () => {
     expect(html).toContain('title="Demo video"')
     expect(html).toContain('allow="autoplay; fullscreen; picture-in-picture"')
     expect(html).toContain('referrerPolicy="strict-origin-when-cross-origin"')
-    expect(html).toContain('sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"')
+    expect(html).toContain('sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"')
     expect(html).toContain('loading="lazy"')
     expect(html).not.toContain('Play video (loads')
   })

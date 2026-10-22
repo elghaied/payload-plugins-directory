@@ -9,7 +9,7 @@ type Video = NonNullable<TemplateDetail["video"]>;
 /** Played only after the visitor's click, so the click is the consent to start it (Ruling 7). */
 const withAutoplay = (embedUrl: string) => `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}autoplay=1`;
 
-const PROVIDER_LABEL: Record<Video["provider"], string> = { youtube: "YouTube", vimeo: "Vimeo", loom: "Loom", github: "GitHub" };
+export const PROVIDER_LABEL: Record<Video["provider"], string> = { youtube: "YouTube", vimeo: "Vimeo", loom: "Loom", github: "GitHub" };
 
 type ViewProps = {
   video: Video;
@@ -42,7 +42,9 @@ export function VideoEmbedView({ video, poster, title, playing, onPlay }: ViewPr
         title={title}
         allow="autoplay; fullscreen; picture-in-picture"
         referrerPolicy="strict-origin-when-cross-origin"
-        sandbox="allow-scripts allow-same-origin allow-presentation allow-popups"
+        // allow-popups-to-escape-sandbox: links the player opens (its logo, "Watch on YouTube") open as normal tabs;
+        // a popup that inherits the sandbox is refused by the provider (ERR_BLOCKED_BY_RESPONSE).
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"
         loading="lazy"
         className="h-full w-full border-0"
       />
