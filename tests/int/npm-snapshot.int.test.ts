@@ -56,6 +56,16 @@ describe('runNpmStats', () => {
     expect(official.healthScore).toBeGreaterThan(0)
   })
 
+  it('keeps the monorepo major of a workspace:<version> range alongside the npm latest major', async () => {
+    const { official } = await fixture()
+    await createPlugin(payload, official.id, {
+      slug: 'official-plugin-redirects', packageName: '@payloadcms/plugin-redirects', payloadVersionRange: 'workspace:4.0.0-beta.4',
+      payloadMajors: ['4'], source: 'official', isOfficial: true,
+    })
+    await runNpmStats(payload, {}, ctx({ ...routes(), ...npmRoutes('@payloadcms/plugin-redirects', { version: '3.92.0' }) }))
+    expect((await bySlug('official-plugin-redirects')).payloadMajors).toEqual(['3', '4'])
+  })
+
   it('queues no revalidate job of its own: its writes pass skipRevalidate (the task queues the tags)', async () => {
     await fixture()
     const r = await runNpmStats(payload, {}, ctx(routes()))

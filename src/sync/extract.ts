@@ -2,6 +2,7 @@ import { isValidSlug } from '@/lib/cacheTags'
 import { NO_DESCRIPTION } from '@/lib/directory/tagline'
 import type { PackageJson } from '@/types'
 import { InvalidGitHubPathError, type GitHubClient, type GitHubRepo, type RawFileLimit } from './github'
+import { exactVersion } from '@/lib/versions'
 import { getPayloadVersion, getWorkspaceDirs, isLikelyPlugin, isMonorepo } from './packages'
 
 export const OFFICIAL_REPO = 'payloadcms/payload'
@@ -14,6 +15,8 @@ export type ExtractedPlugin = {
   url: string
   description: string
   payloadVersionRange: string | null
+  /** Official monorepo only: the package's `version` on the default branch, what its `workspace:*` range resolves to. */
+  workspaceVersion?: string
   readme?: string
   keywords: string[]
   isOfficial: boolean
@@ -174,6 +177,8 @@ export async function extractOfficialPlugins(repo: GitHubRepo, gh: GitHubClient)
         const pkg = await readPackageJson(gh, repo.full_name, ref, path)
         if (!pkg) return null
         const displayName = entry.name.replace('plugin-', '').replace(/-/g, ' ')
+        // Monorepo packages are versioned in lockstep with `payload`, so their own version is what `workspace:*` means.
+        const workspaceVersion = exactVersion(pkg.json.version)
         return {
           slug: `official-${entry.name}`,
           name: displayName,
@@ -182,6 +187,7 @@ export async function extractOfficialPlugins(repo: GitHubRepo, gh: GitHubClient)
           url: `${repo.html_url}/tree/${ref}/${path}`,
           description: pkg.json.description || `Official Payload CMS ${displayName} plugin`,
           payloadVersionRange: getPayloadVersion(pkg.json),
+          ...(workspaceVersion ? { workspaceVersion } : {}),
           readme: await readReadme(gh, repo.full_name, ref, path),
           keywords: keywordsOf(pkg.json),
           isOfficial: true,

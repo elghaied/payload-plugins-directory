@@ -2,6 +2,7 @@ import { readmePreview } from './readme'
 import { authorDescriptionOf, pluginTagline } from './tagline'
 import type { Plugin, Repository } from '@/payload-types'
 import type { PayloadMajor } from '@/lib/versions'
+import { shownVersionRange } from '@/lib/templates/links'
 import type { PluginDetail, PluginSummary } from './types'
 
 export const SUMMARY_SELECT = {
@@ -85,7 +86,7 @@ export function toDetail(doc: Plugin): PluginDetail {
     readme: readmePreview(doc.readme),
     readmeFull: doc.readme ?? undefined,
     readmeTruncated: doc.readmeTruncated === true,
-    payloadVersionRange: doc.payloadVersionRange ?? null,
+    payloadVersionRange: shownVersionRange(doc.payloadVersionRange),
     npm: doc.npm ?? undefined,
     ...(ai ? { ai } : {}),
     ...(category ? { category } : {}),

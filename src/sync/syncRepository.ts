@@ -272,7 +272,10 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
       if (templateHeld.has(p.path ?? '')) continue // a template owns this repository path
       kept.push(p.slug)
       const prev = bySlug.get(p.slug)
+      // Hashed from the range as written (`workspace:*`): a monorepo release never changes the hash or re-bills enrichment.
       const contentHash = computeContentHash(p)
+      // `workspace:<version>` keeps the monorepo version, so npm-stats can recompute the majors without GitHub.
+      const storedRange = p.workspaceVersion && p.payloadVersionRange?.startsWith('workspace:') ? `workspace:${p.workspaceVersion}` : p.payloadVersionRange
       const readmeRender = await renderReadmeFor(payload, ctx, prev, p, repoData)
       const data = {
         name: p.name,
@@ -287,8 +290,8 @@ export async function runSyncRepository(payload: Payload, input: SyncRepositoryI
         readmeTruncated: (extracted.readme?.length ?? 0) > (p.readme?.length ?? 0),
         ...readmeRender,
         contentHash,
-        payloadVersionRange: p.payloadVersionRange,
-        payloadMajors: payloadMajorsFromRange(p.payloadVersionRange, prev?.npm?.latestVersion ?? latestVersions.get(p.slug) ?? null),
+        payloadVersionRange: storedRange,
+        payloadMajors: payloadMajorsFromRange(storedRange, prev?.npm?.latestVersion ?? latestVersions.get(p.slug) ?? null),
         healthScore: scoreFor(repoData, { isOfficial: p.isOfficial, npm: prev?.npm, ignoreIssues: official }, now),
       }
       const aliasIds = aliasTagIds([...repoData.topics, ...p.keywords], aliasTags)

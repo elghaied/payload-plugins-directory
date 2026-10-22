@@ -186,8 +186,8 @@ describe('extractOfficialPlugins', () => {
         dirEntry('plugin-seo', 'packages/plugin-seo'), dirEntry('plugin-form-builder', 'packages/plugin-form-builder'),
         dirEntry('ui', 'packages/ui'), dirEntry('next', 'packages/next'),
       ]),
-      [raw('payloadcms/payload', 'packages/plugin-seo/package.json')]: pkg({ name: '@payloadcms/plugin-seo', description: 'SEO plugin', peerDependencies: { payload: 'workspace:*' } }),
-      [raw('payloadcms/payload', 'packages/plugin-form-builder/package.json')]: pkg({}),
+      [raw('payloadcms/payload', 'packages/plugin-seo/package.json')]: pkg({ name: '@payloadcms/plugin-seo', version: '4.0.0-beta.4', description: 'SEO plugin', peerDependencies: { payload: 'workspace:*' } }),
+      [raw('payloadcms/payload', 'packages/plugin-form-builder/package.json')]: pkg({ version: 'not a version' }),
       [raw('payloadcms/payload', 'packages/plugin-seo/README.md')]: text('# SEO'),
     }))
     expect(result.isMonorepo).toBe(true)
@@ -195,13 +195,14 @@ describe('extractOfficialPlugins', () => {
       expect.objectContaining({
         slug: 'official-plugin-seo', name: 'seo', packageName: '@payloadcms/plugin-seo', path: 'packages/plugin-seo',
         url: 'https://github.com/payloadcms/payload/tree/main/packages/plugin-seo', description: 'SEO plugin',
-        payloadVersionRange: 'workspace:*', readme: '# SEO', isOfficial: true,
+        payloadVersionRange: 'workspace:*', workspaceVersion: '4.0.0-beta.4', readme: '# SEO', isOfficial: true,
       }),
       expect.objectContaining({
         slug: 'official-plugin-form-builder', name: 'form builder', packageName: '@payloadcms/plugin-form-builder',
         description: 'Official Payload CMS form builder plugin', payloadVersionRange: null, readme: undefined,
       }),
     ])
+    expect(result.plugins[1]).not.toHaveProperty('workspaceVersion')
   })
 
   it('skips plugin directories whose slug would not be valid', async () => {

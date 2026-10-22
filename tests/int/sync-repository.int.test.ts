@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CollectionBeforeChangeHook, Payload } from 'payload'
+import { computeContentHash } from '@/sync/contentHash'
 import { RateLimitError } from '@/sync/http'
 import { runSyncRepository } from '@/sync/syncRepository'
 import { trashPlugins } from '@/sync/trash'
@@ -298,6 +299,24 @@ describe('runSyncRepository', () => {
     expect(await plugin('official-plugin-seo')).toMatchObject({
       source: 'official', isOfficial: true, payloadVersionRange: 'workspace:*', payloadMajors: ['3'],
     })
+  })
+
+  it('keeps the monorepo version of an official plugin: npm latest 3.x and main 4.x give both majors', async () => {
+    const PAYLOAD = ghRepo(100, 'payloadcms/payload', { open_issues_count: 900 })
+    const seo = { name: '@payloadcms/plugin-seo', peerDependencies: { payload: 'workspace:*' } }
+    await sync(
+      {
+        [repoById(100)]: json(PAYLOAD),
+        [contents('payloadcms/payload', 'packages')]: json([dirEntry('plugin-seo', 'packages/plugin-seo')]),
+        [raw('payloadcms/payload', 'packages/plugin-seo/package.json')]: pkg({ ...seo, version: '4.0.0-beta.4' }),
+        ...npmRoutes('@payloadcms/plugin-seo', { version: '3.92.0' }),
+      },
+      { fullName: 'payloadcms/payload', githubId: 100, source: 'topic' },
+    )
+    const doc = await plugin('official-plugin-seo')
+    expect(doc).toMatchObject({ payloadVersionRange: 'workspace:4.0.0-beta.4', payloadMajors: ['3', '4'] })
+    // The hash is taken from the range as written, so a version bump on main re-bills no enrichment.
+    expect(doc.contentHash).toBe(computeContentHash({ packageName: seo.name, description: 'Official Payload CMS seo plugin', keywords: [], payloadVersionRange: 'workspace:*' }))
   })
 
   it('keeps plugins and templates apart: skips a templated path, leaves templates untouched, official plugins unaffected', async () => {

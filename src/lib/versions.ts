@@ -12,17 +12,27 @@ export function extractMajorVersions(range: string): number[] {
   return [...majors].sort((a, b) => a - b)
 }
 
+const EXACT_VERSION = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
+const MAX_VERSION_CHARS = 64
+
+/** `value` when it is an exact semver version (e.g. "4.0.0-beta.4"), else null. */
+export function exactVersion(value: unknown): string | null {
+  return typeof value === 'string' && value.length <= MAX_VERSION_CHARS && EXACT_VERSION.test(value) ? value : null
+}
+
 /**
- * Payload majors a plugin supports. `workspace:*` (official monorepo packages)
- * falls back to the major of the package's latest npm version.
+ * Payload majors a plugin supports. A `workspace:` range (official monorepo packages) counts the major of the
+ * package's latest npm version and, for `workspace:<version>`, the major of the version on the monorepo's default
+ * branch: while v4 is in beta, npm `latest` is 3.x and `main` is 4.x, and both are supported releases.
  */
 export function payloadMajorsFromRange(
   range: string | null,
   latestNpmVersion?: string | null,
 ): PayloadMajor[] {
   if (!range) return ['unknown']
-  const source = range.startsWith('workspace:') ? latestNpmVersion : range
-  if (!source) return ['unknown']
-  const majors = extractMajorVersions(source).filter((m) => KNOWN_MAJORS.has(m))
-  return majors.length ? (majors.map(String) as PayloadMajor[]) : ['unknown']
+  const sources = range.startsWith('workspace:')
+    ? [latestNpmVersion, exactVersion(range.slice('workspace:'.length))]
+    : [range]
+  const majors = new Set(sources.flatMap((s) => (s ? extractMajorVersions(s) : [])).filter((m) => KNOWN_MAJORS.has(m)))
+  return majors.size ? ([...majors].sort((a, b) => a - b).map(String) as PayloadMajor[]) : ['unknown']
 }

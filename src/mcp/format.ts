@@ -109,7 +109,7 @@ export function toMcpPluginDetail(doc: Plugin, siteURL: string): McpPluginDetail
           confidence: a?.confidence ?? null,
         }
       : null,
-    payloadVersionRange: doc.payloadVersionRange ?? null,
+    payloadVersionRange: shownVersionRange(doc.payloadVersionRange),
     npm: doc.npm
       ? {
           latestVersion: doc.npm.latestVersion ?? null,
@@ -134,7 +134,7 @@ export function toMcpComparisonRow(doc: Plugin, siteURL: string): McpComparisonR
   const repo = obj<Repository>(doc.repository)
   return {
     ...toMcpPluginSummary(doc, siteURL),
-    payloadVersionRange: doc.payloadVersionRange ?? null,
+    payloadVersionRange: shownVersionRange(doc.payloadVersionRange),
     license: repo?.license ?? null,
     forks: repo?.forks ?? null,
     openIssues: repo?.openIssues ?? null,

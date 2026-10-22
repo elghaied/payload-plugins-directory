@@ -27,6 +27,14 @@ describe('payloadMajorsFromRange', () => {
   it('falls back to the npm major for workspace ranges', () => {
     expect(payloadMajorsFromRange('workspace:*', '4.0.0-beta.2')).toEqual(['4'])
   })
+  it('counts both the npm latest and the monorepo version majors for workspace:<version>', () => {
+    expect(payloadMajorsFromRange('workspace:4.0.0-beta.4', '3.92.0')).toEqual(['3', '4'])
+    expect(payloadMajorsFromRange('workspace:4.1.0', '4.0.0')).toEqual(['4'])
+    expect(payloadMajorsFromRange('workspace:4.0.0-beta.4', null)).toEqual(['4'])
+  })
+  it('ignores a workspace suffix that is not an exact version', () => {
+    expect(payloadMajorsFromRange('workspace:^4.0.0', '3.92.0')).toEqual(['3'])
+  })
   it('returns unknown for workspace ranges without npm data', () => {
     expect(payloadMajorsFromRange('workspace:*', null)).toEqual(['unknown'])
   })
