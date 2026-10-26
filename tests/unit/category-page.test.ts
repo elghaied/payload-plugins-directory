@@ -25,6 +25,12 @@ describe('category page', () => {
     expect(renderToStaticMarkup((await CategoryPage(params('storage-media', 'cloud-storage'))) as never)).toContain('2 plugins, ranked')
   })
 
+  it('names its own URL as canonical, not the homepage', async () => {
+    page([])
+    const meta = await generateMetadata(params('storage-media', 'cloud-storage'))
+    expect(meta.alternates?.canonical).toBe('/categories/storage-media/cloud-storage')
+  })
+
   it('truncates the meta description at a word boundary', async () => {
     page([], `${'word '.repeat(40)}end`)
     const { description } = await generateMetadata(params('storage-media', 'cloud-storage'))

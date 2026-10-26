@@ -21,8 +21,8 @@ const siteMetadata: Metadata = {
   title: "Payload Directory — Discover Community & Official Plugins",
   description:
     "Browse and discover 160+ Payload CMS plugins. Filter by version (v1, v2, v3), sort by stars, forks, or recent updates. Find official and community plugins for your Payload project.",
+  // No canonical here: every page inherits it, so each page names its own.
   alternates: {
-    canonical: "/",
     types: { "application/rss+xml": "/feed.xml" },
   },
   openGraph: {

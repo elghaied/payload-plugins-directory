@@ -19,7 +19,7 @@ vi.mock('@/lib/directory/taxonomy', () => ({
     ]),
 }))
 
-import PluginDetailPage from '@/app/(site)/plugins/[slug]/page'
+import PluginDetailPage, { generateMetadata } from '@/app/(site)/plugins/[slug]/page'
 import { README_RENDER_MAX } from '@/lib/directory/readme'
 
 const base: PluginDetail = {
@@ -89,6 +89,12 @@ describe('plugin detail page', () => {
   it('hides "From the author" when there is no author text', async () => {
     expect(await render({})).toContain('From the author')
     expect(await render({ authorDescription: '' })).not.toContain('From the author')
+  })
+
+  it('names its own URL as canonical, not the homepage', async () => {
+    state.detail = base
+    const meta = await generateMetadata({ params: Promise.resolve({ slug: 's3' }) })
+    expect(meta.alternates?.canonical).toBe('/plugins/s3')
   })
 
   it('shows the maintainer tagline in the header', async () => {

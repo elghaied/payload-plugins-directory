@@ -12,7 +12,9 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
   const { type } = await searchParams;
-  return type === "templates" ? { title: "Payload templates — Payload Directory" } : {};
+  // Filtered and paged views all canonicalise to the homepage. A page's `alternates` replaces the layout's, so keep the feed.
+  const alternates = { canonical: "/", types: { "application/rss+xml": "/feed.xml" } };
+  return type === "templates" ? { title: "Payload templates — Payload Directory", alternates } : { alternates };
 }
 
 export default async function Page() {

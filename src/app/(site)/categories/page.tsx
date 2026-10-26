@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: "Categories — Payload Directory",
   description:
     "Browse Payload CMS plugins by category: storage, authentication, SEO, ecommerce, forms, search, localization, admin UI, AI and more.",
+  alternates: { canonical: "/categories" },
 };
 
 export default async function CategoriesPage() {

@@ -67,6 +67,7 @@ export async function generateMetadata({
   return {
     title,
     description,
+    alternates: { canonical: `/plugins/${encodeURIComponent(plugin.slug)}` },
     openGraph: {
       title,
       description,
